@@ -25,21 +25,28 @@ export const metadata = {
   
   // OGP (Open Graph Protocol)
   openGraph: {
-    type: "website",
-    locale: "ja_JP",
-    url: "https://ai-kansoku.com",
-    siteName: "AI観測ラボ",
-    title: "AI観測ラボ | AIクロール診断ツール",
-    description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
-  },
+  type: "website",
+  locale: "ja_JP",
+  url: "https://ai-kansoku.com",
+  siteName: "AI観測ラボ",
+  title: "AI観測ラボ | AIクロール診断ツール",
+  description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
+  images: [
+    {
+      url: "https://ai-kansoku.com/api/og",
+      width: 1200,
+      height: 630,
+      alt: "AI観測ラボ - AIクロール診断ツール",
+    },
+  ],
+},
   
-  // Twitter Card
   twitter: {
-    card: "summary_large_image",
-    title: "AI観測ラボ | AIクロール診断ツール",
-    description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
-    creator: "@your_twitter", // ← あなたのTwitterアカウントに変更
-  },
+  card: "summary_large_image",
+  title: "AI観測ラボ | AIクロール診断ツール",
+  description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
+  images: ["https://ai-kansoku.com/api/og"],
+},
   
   // Favicon
   icons: {
