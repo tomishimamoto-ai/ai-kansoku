@@ -1,37 +1,16 @@
-# AI観測ラボ - robots.txt
-
-# すべてのクローラーを許可
-User-agent: *
-Allow: /
-
-# 主要AIクローラーを明示的に許可
-User-agent: GPTBot
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: cohere-ai
-Allow: /
-
-User-agent: anthropic-ai
-Allow: /
-
-User-agent: Applebot-Extended
-Allow: /
-
-# クロールしないディレクトリ（もしあれば）
-# Disallow: /api/
-# Disallow: /admin/
-
-# サイトマップの場所
-Sitemap: https://ai-observatory.vercel.app/sitemap.xml
-
-# クロール頻度（オプション）
-Crawl-delay: 1
+User-agent: * 
+Allow: / 
+ 
+User-agent: GPTBot 
+Allow: / 
+ 
+User-agent: ChatGPT-User 
+Allow: / 
+ 
+User-agent: Claude-Web 
+Allow: / 
+ 
+User-agent: PerplexityBot 
+Allow: / 
+ 
+Sitemap: https://ai-kansoku.com/sitemap.xml 

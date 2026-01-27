@@ -27,18 +27,10 @@ export const metadata = {
   openGraph: {
     type: "website",
     locale: "ja_JP",
-    url: "https://ai-observatory.vercel.app",
+    url: "https://ai-kansoku.com",
     siteName: "AI観測ラボ",
     title: "AI観測ラボ | AIクロール診断ツール",
     description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
-    images: [
-      {
-        url: "https://ai-observatory.vercel.app/ogp-image.png",
-        width: 1200,
-        height: 630,
-        alt: "AI観測ラボ - AIクロール診断ツール",
-      },
-    ],
   },
   
   // Twitter Card
@@ -46,7 +38,6 @@ export const metadata = {
     card: "summary_large_image",
     title: "AI観測ラボ | AIクロール診断ツール",
     description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
-    images: ["https://ai-observatory.vercel.app/ogp-image.png"],
     creator: "@your_twitter", // ← あなたのTwitterアカウントに変更
   },
   
@@ -94,7 +85,7 @@ export const metadata = {
   
   // Canonical URL
   alternates: {
-    canonical: "https://ai-observatory.vercel.app",
+    canonical: "https://ai-kansoku.com",
   },
 };
 
@@ -111,7 +102,7 @@ export default function RootLayout({ children }) {
               "@type": "WebApplication",
               "name": "AI観測ラボ",
               "alternateName": "AI Observatory",
-              "url": "https://ai-observatory.vercel.app",
+              "url": "https://ai-kansoku.com",
               "description": "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
               "applicationCategory": "UtilitiesApplication",
               "operatingSystem": "Web Browser",
@@ -123,7 +114,7 @@ export default function RootLayout({ children }) {
               "creator": {
                 "@type": "Organization",
                 "name": "AI観測ラボ",
-                "url": "https://ai-observatory.vercel.app"
+                "url": "https://ai-kansoku.com"
               },
               "featureList": [
                 "構造化データ診断",
