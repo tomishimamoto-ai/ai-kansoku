@@ -102,17 +102,14 @@ function ResultContent() {
   const result = analyzedData ? {
     totalScore: analyzedData.totalScore || 67,
     industryAverage: 54,
-    crawlPermission: {
-      allowed: 3,
-      total: 5,
-      bots: [
-        { name: 'ChatGPT', agent: 'GPTBot', allowed: true },
-        { name: 'Claude', agent: 'ClaudeBot', allowed: true },
-        { name: 'Gemini', agent: 'Google-Extended', allowed: false },
-        { name: 'Perplexity', agent: 'PerplexityBot', allowed: true },
-        { name: 'Cohere', agent: 'cohere-ai', allowed: false }
-      ]
-    },
+    crawlPermission: analyzedData.details?.robotsTxt?.crawlers ? {
+    allowed: analyzedData.details.robotsTxt.allowedCount,
+    total: analyzedData.details.robotsTxt.totalCrawlers,
+    bots: [
+     { name: 'Gemini', agent: 'Google-Extended', allowed: analyzedData.details.robotsTxt.crawlers.gemini },
+     { name: 'Cohere', agent: 'cohere-ai', allowed: analyzedData.details.robotsTxt.crawlers.cohere } 
+  ]
+}
     scores: [
       { 
         icon: '📊', 
