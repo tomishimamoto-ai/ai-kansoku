@@ -1,0 +1,56 @@
+# AI観測ラボ (AI Observatory)
+
+AI観測ラボは、あなたのウェブサイトがChatGPT、Claude、Gemini、Perplexityなどの主要AIクローラーにどれだけ可視化されているかを診断するツールです。
+
+## 主な機能
+
+### 診断項目（8項目）
+- 構造化データ (JSON-LD) の実装状況
+- robots.txt の設定状況
+- sitemap.xml の存在と品質
+- llms.txt の実装（AI専用サイトマップ）
+- メタタグ（title、description、OGP、Twitter Card）
+- セマンティックHTML
+- モバイル対応
+- パフォーマンス
+
+### AIクローラー対応
+以下の主要AIクローラーの許可状況をチェック：
+- ChatGPT (GPTBot)
+- Claude (Claude-Web)
+- Gemini (Google-Extended)
+- Perplexity (PerplexityBot)
+- Cohere (cohere-ai)
+
+### 出力機能
+- レーダーチャート表示
+- 詳細なスコアリング（0-100点）
+- 改善提案（優先度別）
+- PDF レポート出力
+- 診断履歴の保存と比較
+
+## 使い方
+
+1. トップページでURLを入力
+2. 診断開始ボタンをクリック
+3. 30秒で8項目の診断完了
+4. 結果ページで詳細を確認
+5. 改善ガイドを参照して対策実施
+
+## 技術スタック
+
+- Next.js 15
+- React 18
+- Tailwind CSS
+- Chart.js
+- @react-pdf/renderer
+
+## URL
+
+https://ai-kansoku.com
+
+## サポート
+
+- FAQ: https://ai-kansoku.com/faq
+- 使い方ガイド: https://ai-kansoku.com/how-to-use
+- 改善ガイド: https://ai-kansoku.com/guide
