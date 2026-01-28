@@ -176,9 +176,7 @@ export async function POST(request) {
   }
 }
 
-// この関数だけを route.js の中の該当部分と置き換えてください
-
-// robots.txt チェック
+// robots.txt チェック（修正版）
 async function checkRobotsTxt(baseUrl, results) {
   try {
     const response = await fetch(`${baseUrl}/robots.txt`, {
@@ -187,7 +185,7 @@ async function checkRobotsTxt(baseUrl, results) {
 
     if (response.ok) {
       const content = await response.text();
-      const lines = content.split('\n').filter(line => line.trim());
+      const lines = content.split('\n').map(line => line.trim()).filter(line => line);
       
       const hasUserAgent = lines.some(line => line.toLowerCase().includes('user-agent'));
       const hasDisallow = lines.some(line => line.toLowerCase().includes('disallow'));
@@ -195,50 +193,91 @@ async function checkRobotsTxt(baseUrl, results) {
       
       // AIクローラーの個別チェック
       const crawlers = {
-        chatgpt: { name: 'ChatGPT', agents: ['GPTBot', 'ChatGPT-User'], allowed: false },
-        claude: { name: 'Claude', agents: ['Claude-Web', 'ClaudeBot'], allowed: false },
-        gemini: { name: 'Gemini', agents: ['Google-Extended'], allowed: false },
-        perplexity: { name: 'Perplexity', agents: ['PerplexityBot'], allowed: false },
-        cohere: { name: 'Cohere', agents: ['cohere-ai'], allowed: false }
+        chatgpt: { name: 'ChatGPT', agents: ['gptbot', 'chatgpt-user'], allowed: true },
+        claude: { name: 'Claude', agents: ['claude-web', 'claudebot'], allowed: true },
+        gemini: { name: 'Gemini', agents: ['google-extended'], allowed: true },
+        perplexity: { name: 'Perplexity', agents: ['perplexitybot'], allowed: true },
+        cohere: { name: 'Cohere', agents: ['cohere-ai'], allowed: true }
       };
 
-      // 各クローラーの許可状態をチェック
-      for (const [key, crawler] of Object.entries(crawlers)) {
-        let currentUserAgent = '*';
-        let isBlocked = false;
+      // User-agentごとにルールをパース
+      let currentUserAgent = null;
+      let currentRules = [];
+      const agentRules = {}; // User-agent -> { allows: [], disallows: [] }
+
+      for (const line of lines) {
+        const lowerLine = line.toLowerCase();
         
-        for (const line of lines) {
-          const lowerLine = line.toLowerCase().trim();
-          
-          // User-agent行を検出
-          if (lowerLine.startsWith('user-agent:')) {
-            const agent = line.split(':')[1].trim();
-            currentUserAgent = agent;
-          }
-          
-          // 該当するクローラーかチェック
-          const isTargetCrawler = crawler.agents.some(agent => 
-            currentUserAgent.toLowerCase().includes(agent.toLowerCase())
-          );
-          
-          // Disallowルールをチェック
-          if (lowerLine.startsWith('disallow:') && (isTargetCrawler || currentUserAgent === '*')) {
-            const disallowPath = line.split(':')[1].trim();
-            if (disallowPath === '/' || disallowPath === '') {
-              isBlocked = true;
+        if (lowerLine.startsWith('user-agent:')) {
+          // 前のUser-agentのルールを保存
+          if (currentUserAgent) {
+            if (!agentRules[currentUserAgent]) {
+              agentRules[currentUserAgent] = { allows: [], disallows: [] };
             }
+            agentRules[currentUserAgent].allows.push(...currentRules.filter(r => r.type === 'allow').map(r => r.path));
+            agentRules[currentUserAgent].disallows.push(...currentRules.filter(r => r.type === 'disallow').map(r => r.path));
           }
           
-          // Allowルールをチェック（Disallowより優先）
-          if (lowerLine.startsWith('allow:') && isTargetCrawler) {
-            const allowPath = line.split(':')[1].trim();
-            if (allowPath === '/' || allowPath === '') {
-              isBlocked = false;
+          // 新しいUser-agentを設定
+          currentUserAgent = line.split(':')[1].trim().toLowerCase();
+          currentRules = [];
+        } 
+        else if (lowerLine.startsWith('allow:')) {
+          const path = line.split(':')[1].trim();
+          currentRules.push({ type: 'allow', path });
+        }
+        else if (lowerLine.startsWith('disallow:')) {
+          const path = line.split(':')[1].trim();
+          currentRules.push({ type: 'disallow', path });
+        }
+      }
+      
+      // 最後のUser-agentのルールを保存
+      if (currentUserAgent) {
+        if (!agentRules[currentUserAgent]) {
+          agentRules[currentUserAgent] = { allows: [], disallows: [] };
+        }
+        agentRules[currentUserAgent].allows.push(...currentRules.filter(r => r.type === 'allow').map(r => r.path));
+        agentRules[currentUserAgent].disallows.push(...currentRules.filter(r => r.type === 'disallow').map(r => r.path));
+      }
+
+      // 各クローラーの許可状態を判定
+      for (const [key, crawler] of Object.entries(crawlers)) {
+        let isAllowed = true; // デフォルトは許可
+        
+        // まず * (全体) のルールをチェック
+        if (agentRules['*']) {
+          const wildcardRules = agentRules['*'];
+          
+          // Disallow: / があればブロック
+          if (wildcardRules.disallows.includes('/') || wildcardRules.disallows.includes('')) {
+            isAllowed = false;
+          }
+          
+          // Allow: / があれば許可（Disallowより優先）
+          if (wildcardRules.allows.includes('/') || wildcardRules.allows.includes('')) {
+            isAllowed = true;
+          }
+        }
+        
+        // 次に特定のクローラーのルールをチェック（こちらが優先）
+        for (const agent of crawler.agents) {
+          if (agentRules[agent]) {
+            const specificRules = agentRules[agent];
+            
+            // Disallow: / があればブロック
+            if (specificRules.disallows.includes('/') || specificRules.disallows.includes('')) {
+              isAllowed = false;
+            }
+            
+            // Allow: / があれば許可（最優先）
+            if (specificRules.allows.includes('/') || specificRules.allows.includes('')) {
+              isAllowed = true;
             }
           }
         }
         
-        crawler.allowed = !isBlocked;
+        crawler.allowed = isAllowed;
       }
 
       // スコア計算
