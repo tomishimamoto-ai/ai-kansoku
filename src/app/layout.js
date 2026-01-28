@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,19 +26,19 @@ export const metadata = {
   
   // OGP (Open Graph Protocol)
   openGraph: {
-  type: "website",
-  locale: "ja_JP",
-  url: "https://ai-kansoku.com",
-  siteName: "AI観測ラボ",
-  title: "AI観測ラボ | AIクロール診断ツール",
-  description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
-},
+    type: "website",
+    locale: "ja_JP",
+    url: "https://ai-kansoku.com",
+    siteName: "AI観測ラボ",
+    title: "AI観測ラボ | AIクロール診断ツール",
+    description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
+  },
   
   twitter: {
-  card: "summary_large_image",
-  title: "AI観測ラボ | AIクロール診断ツール",
-  description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
-},
+    card: "summary_large_image",
+    title: "AI観測ラボ | AIクロール診断ツール",
+    description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
+  },
   
   // Favicon
   icons: {
@@ -87,24 +88,6 @@ export const metadata = {
   },
 };
 
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata = {
-  // ... (既存のメタデータ)
-};
-
 export default function RootLayout({ children }) {
   return (
     <html lang="ja">
@@ -146,10 +129,10 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-  <GoogleAnalytics />
-  {children}
-</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <GoogleAnalytics />
+        {children}
+      </body>
     </html>
   );
 }
