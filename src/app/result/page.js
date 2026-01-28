@@ -106,9 +106,12 @@ function ResultContent() {
     allowed: analyzedData.details.robotsTxt.allowedCount,
     total: analyzedData.details.robotsTxt.totalCrawlers,
     bots: [
-     { name: 'Gemini', agent: 'Google-Extended', allowed: analyzedData.details.robotsTxt.crawlers.gemini },
-     { name: 'Cohere', agent: 'cohere-ai', allowed: analyzedData.details.robotsTxt.crawlers.cohere } ,
-  ]
+  { name: 'ChatGPT', agent: 'GPTBot', allowed: analyzedData.details.robotsTxt.crawlers.chatgpt },
+  { name: 'Claude', agent: 'ClaudeBot', allowed: analyzedData.details.robotsTxt.crawlers.claude },
+  { name: 'Gemini', agent: 'Google-Extended', allowed: analyzedData.details.robotsTxt.crawlers.gemini },
+  { name: 'Perplexity', agent: 'PerplexityBot', allowed: analyzedData.details.robotsTxt.crawlers.perplexity },
+  { name: 'Cohere', agent: 'cohere-ai', allowed: analyzedData.details.robotsTxt.crawlers.cohere }
+]
      } : {
      allowed: 3,
      total: 5,
