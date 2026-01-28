@@ -176,6 +176,8 @@ export async function POST(request) {
   }
 }
 
+// この関数だけを route.js の中の該当部分と置き換えてください
+
 // robots.txt チェック
 async function checkRobotsTxt(baseUrl, results) {
   try {
@@ -191,18 +193,79 @@ async function checkRobotsTxt(baseUrl, results) {
       const hasDisallow = lines.some(line => line.toLowerCase().includes('disallow'));
       const hasSitemap = lines.some(line => line.toLowerCase().includes('sitemap'));
       
-      let score = 50;
-      if (hasUserAgent) score += 20;
-      if (hasDisallow) score += 15;
-      if (hasSitemap) score += 15;
+      // AIクローラーの個別チェック
+      const crawlers = {
+        chatgpt: { name: 'ChatGPT', agents: ['GPTBot', 'ChatGPT-User'], allowed: false },
+        claude: { name: 'Claude', agents: ['Claude-Web', 'ClaudeBot'], allowed: false },
+        gemini: { name: 'Gemini', agents: ['Google-Extended'], allowed: false },
+        perplexity: { name: 'Perplexity', agents: ['PerplexityBot'], allowed: false },
+        cohere: { name: 'Cohere', agents: ['cohere-ai'], allowed: false }
+      };
 
-      results.scores.robotsTxt = score;
+      // 各クローラーの許可状態をチェック
+      for (const [key, crawler] of Object.entries(crawlers)) {
+        let currentUserAgent = '*';
+        let isBlocked = false;
+        
+        for (const line of lines) {
+          const lowerLine = line.toLowerCase().trim();
+          
+          // User-agent行を検出
+          if (lowerLine.startsWith('user-agent:')) {
+            const agent = line.split(':')[1].trim();
+            currentUserAgent = agent;
+          }
+          
+          // 該当するクローラーかチェック
+          const isTargetCrawler = crawler.agents.some(agent => 
+            currentUserAgent.toLowerCase().includes(agent.toLowerCase())
+          );
+          
+          // Disallowルールをチェック
+          if (lowerLine.startsWith('disallow:') && (isTargetCrawler || currentUserAgent === '*')) {
+            const disallowPath = line.split(':')[1].trim();
+            if (disallowPath === '/' || disallowPath === '') {
+              isBlocked = true;
+            }
+          }
+          
+          // Allowルールをチェック（Disallowより優先）
+          if (lowerLine.startsWith('allow:') && isTargetCrawler) {
+            const allowPath = line.split(':')[1].trim();
+            if (allowPath === '/' || allowPath === '') {
+              isBlocked = false;
+            }
+          }
+        }
+        
+        crawler.allowed = !isBlocked;
+      }
+
+      // スコア計算
+      let score = 30; // 基本点
+      if (hasUserAgent) score += 10;
+      if (hasSitemap) score += 10;
+      
+      // AIクローラーの許可数に応じて加点
+      const allowedCount = Object.values(crawlers).filter(c => c.allowed).length;
+      score += allowedCount * 10; // 1クローラーあたり10点
+
+      results.scores.robotsTxt = Math.min(score, 100);
       results.details.robotsTxt = {
         exists: true,
         hasUserAgent,
         hasDisallow,
         hasSitemap,
-        lineCount: lines.length
+        lineCount: lines.length,
+        crawlers: {
+          chatgpt: crawlers.chatgpt.allowed,
+          claude: crawlers.claude.allowed,
+          gemini: crawlers.gemini.allowed,
+          perplexity: crawlers.perplexity.allowed,
+          cohere: crawlers.cohere.allowed
+        },
+        allowedCount,
+        totalCrawlers: 5
       };
     } else {
       results.scores.robotsTxt = 0;
