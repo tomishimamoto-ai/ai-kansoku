@@ -109,7 +109,7 @@ function ResultContent() {
      { name: 'Gemini', agent: 'Google-Extended', allowed: analyzedData.details.robotsTxt.crawlers.gemini },
      { name: 'Cohere', agent: 'cohere-ai', allowed: analyzedData.details.robotsTxt.crawlers.cohere } 
   ]
-}
+},
     scores: [
       { 
         icon: '📊', 
