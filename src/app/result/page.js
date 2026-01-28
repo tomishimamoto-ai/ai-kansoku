@@ -107,9 +107,14 @@ function ResultContent() {
     total: analyzedData.details.robotsTxt.totalCrawlers,
     bots: [
      { name: 'Gemini', agent: 'Google-Extended', allowed: analyzedData.details.robotsTxt.crawlers.gemini },
-     { name: 'Cohere', agent: 'cohere-ai', allowed: analyzedData.details.robotsTxt.crawlers.cohere } 
+     { name: 'Cohere', agent: 'cohere-ai', allowed: analyzedData.details.robotsTxt.crawlers.cohere } ,
   ]
-},
+     } : {
+     allowed: 3,
+     total: 5,
+     bots: []
+     },
+
     scores: [
       { 
         icon: '📊', 
