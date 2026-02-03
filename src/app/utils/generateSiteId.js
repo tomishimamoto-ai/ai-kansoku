@@ -11,12 +11,7 @@ export function generateSiteId(url) {
     hash = hash & hash; // 32bit整数に変換
   }
   
-  // 正の数に変換してBase36エンコード
-  const hashStr = Math.abs(hash).toString(36);
-  
-  // タイムスタンプの下6桁を追加（重複防止）
-  const timestamp = Date.now().toString(36).slice(-6);
-  
-  // 組み合わせて12文字のIDを生成
-  return (hashStr + timestamp).slice(0, 12);
+  // 正の数に変換してBase36エンコード（10文字固定）
+  const base36 = Math.abs(hash).toString(36);
+  return base36.substring(0, 10).padStart(10, '0');
 }
