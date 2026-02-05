@@ -17,8 +17,7 @@ const PDFDownloadLink = dynamic(
 function ResultContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get('url') || 'https://example.com';
-  // const siteId = generateSiteId(url); // ← コメントアウト
-  const siteId = '00003zvhJ';
+  const siteId = searchParams.get('siteId') || generateSiteId(url);
 
   const [displayScore, setDisplayScore] = useState(0);
   const [PDFReport, setPDFReport] = useState(null);
