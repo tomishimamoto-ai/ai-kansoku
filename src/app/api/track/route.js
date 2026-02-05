@@ -7,37 +7,52 @@ export async function POST(request) {
     const data = await request.json();
     console.log('Received:', data);
     
-    // Neon接続
     const sql = neon(process.env.DATABASE_URL);
     
-    // テーブルが存在するか確認（初回のみ作成）
+    // テーブル作成（ai_crawler_visits に統一）
     await sql`
-      CREATE TABLE IF NOT EXISTS ai_visits (
+      CREATE TABLE IF NOT EXISTS ai_crawler_visits (
         id SERIAL PRIMARY KEY,
         site_id VARCHAR(50) NOT NULL,
-        crawler VARCHAR(50) NOT NULL,
-        path VARCHAR(255),
         user_agent VARCHAR(500),
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ip_address VARCHAR(50),
+        referrer VARCHAR(500),
+        page_url VARCHAR(500),
+        visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        session_id VARCHAR(100)
       )
     `;
     
     console.log('Table ready');
     
     // AIクローラー判定
-    const crawler = detectAICrawler(data.ua);
+    const crawlerName = detectAICrawler(data.ua);
     
-    if (!crawler) {
+    if (!crawlerName) {
       return new Response('OK - Not AI', { status: 200 });
     }
     
-    // データ保存
+    // データ保存（カラム名を統一）
     await sql`
-      INSERT INTO ai_visits (site_id, crawler, path, user_agent)
-      VALUES (${data.site}, ${crawler}, ${data.path}, ${data.ua})
+      INSERT INTO ai_crawler_visits (
+        site_id, 
+        user_agent, 
+        ip_address,
+        referrer,
+        page_url,
+        session_id
+      )
+      VALUES (
+        ${data.site}, 
+        ${data.ua},
+        ${data.ip || 'unknown'},
+        ${data.referrer || ''},
+        ${data.path || '/'},
+        ${data.session || generateSessionId()}
+      )
     `;
     
-    console.log('Data saved:', crawler);
+    console.log('Data saved:', crawlerName);
     
     return new Response('OK - Saved', { status: 200 });
     
@@ -59,4 +74,8 @@ function detectAICrawler(ua) {
   if (/Google-Extended/i.test(ua)) return 'Google AI';
   if (/CCBot/i.test(ua)) return 'CommonCrawl';
   return null;
+}
+
+function generateSessionId() {
+  return `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }

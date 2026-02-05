@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { generateSiteId } from './utils/generateSiteId';
 
 export default function Home() {
   const [url, setUrl] = useState('');
@@ -75,6 +76,10 @@ export default function Home() {
       return;
     }
 
+    const normalizedUrl = validation.url;
+    const siteId = generateSiteId(normalizedUrl);
+    console.log('🆔 Generated siteId:', siteId);
+
     setLoading(true);
     setLoadingStep('準備中...');
 
@@ -91,7 +96,7 @@ export default function Home() {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: validation.url })
+        body: JSON.stringify({ url: normalizedUrl, siteId })
       });
 
       clearTimeout(timeoutId);
@@ -105,7 +110,8 @@ export default function Home() {
         const params = new URLSearchParams({
           url: validation.url,
           score: data.totalScore,
-          data: JSON.stringify(data)
+          data: JSON.stringify(data),
+          siteId: siteId // ✅ ここに追加：siteId をURLに含める
         });
         window.location.href = `/result?${params.toString()}`;
       } else {
