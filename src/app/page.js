@@ -60,14 +60,15 @@ export default function Home() {
   // 履歴から再診断
   const diagnoseFromHistory = (historyUrl) => {
     setUrl(historyUrl);
-    setTimeout(() => {
-      handleAnalyze();
-    }, 100);
+    handleAnalyze(historyUrl);
   };
-
-  const handleAnalyze = async () => {
-    // エラーをリセット
-    setError(null);
+  
+  const handleAnalyze = async (targetUrl) => {
+  // 引数がなければstateから取得
+  const urlToAnalyze = targetUrl || url;
+  
+  // エラーをリセット
+  setError(null);
 
     // URLバリデーション
     const validation = validateUrl(url);
