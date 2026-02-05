@@ -5,7 +5,8 @@ import Link from 'next/link';
 import RadarChart from './RadarChart';
 import dynamic from 'next/dynamic';
 import { generateSiteId } from '../utils/generateSiteId';
-import VisitHistory from '../components/VisitHistory'; // ← 追加
+import VisitHistory from '../components/VisitHistory';
+import ShareDropdown from '../components/ShareDropdown';
 
 // PDF生成は動的インポート（クライアントサイドのみ）
 const PDFDownloadLink = dynamic(
@@ -22,7 +23,6 @@ function ResultContent() {
   const [displayScore, setDisplayScore] = useState(0);
   const [PDFReport, setPDFReport] = useState(null);
   const [isClient, setIsClient] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
   const [activeTab, setActiveTab] = useState('results'); // ← 追加: タブ状態管理
 
   const apiData = searchParams.get('data');
@@ -67,41 +67,6 @@ function ResultContent() {
     } catch (error) {
       console.error('履歴の保存に失敗:', error);
     }
-  };
-
-  // リンクをコピー
-  const copyLink = async () => {
-    if (typeof window === 'undefined') return;
-    
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopySuccess(true);
-      setTimeout(() => {
-        setCopySuccess(false);
-      }, 2000);
-    } catch (error) {
-      console.error('コピーに失敗:', error);
-      alert('リンクのコピーに失敗しました');
-    }
-  };
-
-  // メールで送信
-  const shareByEmail = () => {
-    const subject = encodeURIComponent(`AI可視性診断結果 - ${url}`);
-    const body = encodeURIComponent(
-      `AI観測ラボで診断した結果です。\n\n` +
-      `診断URL: ${url}\n` +
-      `総合スコア: ${result.totalScore}点\n\n` +
-      `詳細はこちら:\n${window.location.href}`
-    );
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  };
-
-  // Twitterでシェア
-  const shareOnTwitter = () => {
-    const shareText = `私のサイトのAI可視性スコアは${result.totalScore}点でした！ #AI観測ラボ`;
-    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(window.location.href)}`;
-    window.open(shareUrl, '_blank');
   };
 
   const result = analyzedData ? {
@@ -859,55 +824,25 @@ function ResultContent() {
               </div>
 
               {/* アクションボタン */}
-              <div className="flex flex-col gap-4 justify-center px-4">
-                {/* 上段: メインアクション */}
-                <div className="flex flex-col md:flex-row gap-4">
-                  <Link 
-                    href="/"
-                    className="w-full md:flex-1 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold transition-all hover:scale-105 text-center"
-                  >
-                    🔄 再診断する
-                  </Link>
-                  
-                  {/* PDF出力ボタン */}
-                  {isClient && PDFReport && (
-                    <PDFDownloadLink
-                      document={<PDFReport data={pdfData} />}
-                      fileName={`AI可視性診断レポート_${url.replace(/https?:\/\//, '')}_${new Date().toISOString().split('T')[0]}.pdf`}
-                      className="w-full md:flex-1 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-semibold transition-all hover:scale-105 active:scale-95 text-center"
-                    >
-                      {({ loading }) => (loading ? '📄 PDF生成中...' : '📄 PDF出力')}
-                    </PDFDownloadLink>
-                  )}
-                </div>
-
-                {/* 下段: 共有オプション */}
-                <div className="flex flex-col md:flex-row gap-3">
-                  <button
-                    onClick={shareOnTwitter}
-                    className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition-all hover:scale-105 active:scale-95 text-sm flex items-center justify-center gap-2"
-                  >
-                    <span>🐦</span>
-                    <span>Twitterで共有</span>
-                  </button>
-                  
-                  <button
-                    onClick={copyLink}
-                    className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition-all hover:scale-105 active:scale-95 text-sm flex items-center justify-center gap-2"
-                  >
-                    <span>{copySuccess ? '✅' : '📋'}</span>
-                    <span>{copySuccess ? 'コピーしました！' : 'リンクをコピー'}</span>
-                  </button>
-                  
-                  <button
-                    onClick={shareByEmail}
-                    className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition-all hover:scale-105 active:scale-95 text-sm flex items-center justify-center gap-2"
-                  >
-                    <span>📧</span>
-                    <span>メールで送信</span>
-                  </button>
-                </div>
-              </div>
+<div className="flex flex-col md:flex-row gap-4 justify-center px-4">
+  {/* 再診断ボタン */}
+  <Link 
+    href="/"
+    className="w-full md:flex-1 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold transition-all hover:scale-105 text-center"
+  >
+    🔄 再診断する
+  </Link>
+  
+  {/* 共有ドロップダウン */}
+  <ShareDropdown
+    url={url}
+    totalScore={result.totalScore}
+    PDFDownloadLink={PDFDownloadLink}
+    PDFReport={PDFReport}
+    pdfData={pdfData}
+    isClient={isClient}
+  />
+</div>
             </>
           ) : (
             // ========== 訪問履歴タブ ========== 

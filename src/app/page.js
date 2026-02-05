@@ -183,6 +183,7 @@ export default function Home() {
                 <a href="/how-to-use" className="text-gray-400 hover:text-white transition-colors">使い方</a>
                 <a href="/guide" className="text-gray-400 hover:text-white transition-colors">改善ガイド</a>
                 <a href="/faq" className="text-gray-400 hover:text-white transition-colors">FAQ</a>
+                <a href="https://blog.ai-kansoku.com" target="_blank">ブログ</a>
               </div>
             </div>
           </div>

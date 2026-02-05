@@ -120,14 +120,17 @@ export default function VisitHistory({ siteId }) {
           <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-white/10 rounded-xl p-6">
             <div className="text-gray-400 text-sm mb-2">総訪問数</div>
             <div className="text-3xl font-bold text-white">{stats.total_visits}</div>
+            <div className="text-xs text-gray-500 mt-2">過去7日間</div>
           </div>
           <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-white/10 rounded-xl p-6">
             <div className="text-gray-400 text-sm mb-2">ユニークセッション</div>
             <div className="text-3xl font-bold text-white">{stats.unique_sessions}</div>
+            <div className="text-xs text-gray-500 mt-2">過去7日間</div>
           </div>
           <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-white/10 rounded-xl p-6">
             <div className="text-gray-400 text-sm mb-2">ユニークIP</div>
             <div className="text-3xl font-bold text-white">{stats.unique_ips}</div>
+            <div className="text-xs text-gray-500 mt-2">過去7日間</div>
           </div>
           <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-white/10 rounded-xl p-6">
             <div className="text-gray-400 text-sm mb-2">初回訪問</div>
@@ -142,7 +145,7 @@ export default function VisitHistory({ siteId }) {
       {crawlerStats.length > 0 && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-6">
           <h3 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-            クローラー別訪問数
+            クローラー別訪問数（過去7日間）
           </h3>
           <div className="space-y-3">
             {crawlerStats.map((stat, index) => (
@@ -167,8 +170,41 @@ export default function VisitHistory({ siteId }) {
         </div>
       )}
 
+      {/* アップグレードCTA */}
+      <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-xl p-6 md:p-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
+          <div className="flex-1">
+            <h3 className="text-lg md:text-xl font-bold mb-2">
+              ✨ アップグレードで30日間の訪問履歴を解放
+            </h3>
+            <p className="text-sm text-gray-400 mb-3">
+              より長期間のデータで、AIクローラーの訪問傾向を詳しく分析できます
+            </p>
+            <ul className="space-y-1 text-sm text-gray-400">
+              <li>• 📅 過去30日分の訪問履歴</li>
+              <li>• 📊 時系列グラフで推移を可視化</li>
+              <li>• 📈 クローラー別の詳細分析</li>
+              <li>• 📥 CSVエクスポート機能</li>
+            </ul>
+          </div>
+          <div className="w-full md:w-auto">
+            <button
+              disabled
+              className="group relative w-full md:w-auto px-8 py-4 bg-white/5 border border-white/20 rounded-xl font-semibold text-gray-400 cursor-not-allowed transition-all"
+            >
+              🚧 準備中 - 近日公開
+              
+              {/* ホバー時のツールチップ */}
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-black border border-white/20 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                Coming Soon 🎉
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* コントロール */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h3 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
           最新の訪問履歴
         </h3>
@@ -262,7 +298,7 @@ export default function VisitHistory({ siteId }) {
 
       {/* フッター */}
       <div className="text-center text-sm text-gray-500">
-        最大20件の訪問履歴を表示しています
+        最大20件の訪問履歴を表示しています（過去7日間）
         {autoRefresh && ' • 30秒ごとに自動更新'}
       </div>
     </div>

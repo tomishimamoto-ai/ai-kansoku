@@ -14,7 +14,11 @@ export async function GET(request) {
 
     const sql = neon(process.env.DATABASE_URL);
 
-    // 訪問履歴を取得（最新20件、日時降順）
+    // 7日前の日時を計算
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // 訪問履歴を取得（最新20件、過去7日間、日時降順）
     const visits = await sql`
       SELECT 
         id,
@@ -27,11 +31,12 @@ export async function GET(request) {
         session_id
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
       ORDER BY visited_at DESC
       LIMIT 20
     `;
 
-    // 統計情報も取得
+    // 統計情報も取得（過去7日間）
     const stats = await sql`
       SELECT 
         COUNT(*) as total_visits,
@@ -41,9 +46,10 @@ export async function GET(request) {
         MAX(visited_at) as last_visit
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
     `;
 
-    // AIクローラーの訪問数を集計
+    // AIクローラーの訪問数を集計（過去7日間）
     const crawlerStats = await sql`
       SELECT 
         CASE
@@ -58,6 +64,7 @@ export async function GET(request) {
         COUNT(*) as visit_count
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
       GROUP BY crawler_type
       ORDER BY visit_count DESC
     `;
@@ -73,6 +80,7 @@ export async function GET(request) {
         last_visit: null
       },
       crawlerStats: crawlerStats,
+      period: '7days',
       timestamp: new Date().toISOString()
     });
 
