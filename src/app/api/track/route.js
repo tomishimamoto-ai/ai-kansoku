@@ -1,6 +1,21 @@
 import { neon } from '@neondatabase/serverless';
 
 // ========================================
+// OPTIONS リクエスト対応（CORS Preflight）
+// ========================================
+export async function OPTIONS(request) {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, User-Agent',
+      'Access-Control-Max-Age': '86400',
+    }
+  });
+}
+
+// ========================================
 // GET リクエスト対応（画像ピクセル用）
 // ========================================
 export async function GET(request) {
@@ -96,7 +111,8 @@ export async function GET(request) {
       'Content-Type': 'image/gif',
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       'Pragma': 'no-cache',
-      'Expires': '0'
+      'Expires': '0',
+      'Access-Control-Allow-Origin': '*',
     }
   });
 }
@@ -137,7 +153,12 @@ export async function POST(request) {
     
     if (!crawlerName) {
       console.log('Not AI crawler');
-      return new Response('OK - Not AI', { status: 200 });
+      return new Response('OK - Not AI', { 
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        }
+      });
     }
     
     // データ保存
@@ -164,13 +185,21 @@ export async function POST(request) {
     
     console.log('Data saved:', crawlerName);
     
-    return new Response('OK - Saved', { status: 200 });
+    return new Response('OK - Saved', { 
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
     
   } catch (error) {
     console.error('Error:', error);
     return new Response(JSON.stringify({ error: error.message }), { 
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      }
     });
   }
 }
