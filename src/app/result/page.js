@@ -795,11 +795,13 @@ function ResultContent() {
                     
                     <div className="relative">
                       <pre className="p-4 rounded-lg bg-black/50 border border-white/10 overflow-x-auto text-xs md:text-sm">
-                        <code className="text-green-400">{`<script src="https://ai-kansoku.com/tracker.js" data-site-id="${siteId}"></script>`}</code>
+                        <code className="text-green-400 text-xs break-all">
+                         {`<img src="https://ai-kansoku.com/api/track?site=${siteId}" width="1" height="1" style="position:absolute;left:-9999px" alt="">`}
+                        </code>
                       </pre>
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(`<script src="https://ai-kansoku.com/tracker.js" data-site-id="${siteId}"></script>`);
+                          navigator.clipboard.writeText(`<img src="https://ai-kansoku.com/api/track?site=${siteId}" width="1" height="1" style="position:absolute;left:-9999px" alt="">`)
                           alert('コピーしました！');
                         }}
                         className="absolute top-2 right-2 px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded text-xs font-medium transition-all"
