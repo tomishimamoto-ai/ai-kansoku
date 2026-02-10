@@ -311,11 +311,7 @@ function ResultContent() {
                     </span>
                     <span className="text-3xl md:text-4xl text-gray-600">/100</span>
                   </div>
-                  <p className="text-sm md:text-base text-gray-400 px-4">
-                    同業他社平均: {result.industryAverage}点 • あなたは 
-                    <span className="text-green-400 font-bold"> +{result.totalScore - result.industryAverage}点 </span>
-                    上回っています
-                  </p>
+
                 </div>
               </div>
 
