@@ -342,10 +342,59 @@ export async function OPTIONS(request) {
 }
 
 // ========================================
-// GET リクエスト対応（画像ピクセル用）
+// GET リクエスト対応（パス別分岐）
 // ========================================
 export async function GET(request) {
   const url = new URL(request.url);
+  const pathname = url.pathname;
+  
+  // ========================================
+  // Phase 2: JS実行検出エンドポイント
+  // ========================================
+  if (pathname.includes('/js-active')) {
+    console.log('=== JS Active Detection ===');
+    
+    // 1x1透明GIF画像を返す（レスポンスとして）
+    const gif = Buffer.from(
+      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      'base64'
+    );
+    
+    return new Response(gif, {
+      status: 200,
+      headers: {
+        'Content-Type': 'image/gif',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
+  }
+  
+  // ========================================
+  // Phase 2: 画像リクエスト検出エンドポイント
+  // ========================================
+  if (pathname.includes('/img-check')) {
+    console.log('=== Image Check Detection ===');
+    
+    // 1x1透明GIF画像を返す
+    const gif = Buffer.from(
+      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      'base64'
+    );
+    
+    return new Response(gif, {
+      status: 200,
+      headers: {
+        'Content-Type': 'image/gif',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
+  }
+  
+  // ========================================
+  // Phase 1: 通常のトラッキングピクセル
+  // ========================================
   const siteId = url.searchParams.get('site');
   const path = url.searchParams.get('path') || '/';
   
