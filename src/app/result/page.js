@@ -780,32 +780,39 @@ function ResultContent() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <span>📊</span>
-                      <span>トラッキングコードを設置</span>
-                    </h4>
-                    <p className="text-sm text-gray-400 mb-4">
-                      以下のコードをサイトの <code className="px-2 py-1 bg-black/30 rounded text-blue-400">&lt;head&gt;</code> タグ内に追加してください
-                    </p>
-                    
-                    <div className="relative">
-                      <pre className="p-4 rounded-lg bg-black/50 border border-white/10 overflow-x-auto text-xs md:text-sm">
-                        <code className="text-green-400 text-xs break-all">
-                         {`<img src="https://ai-kansoku.com/api/track?site=${siteId}" width="1" height="1" style="position:absolute;left:-9999px" alt="">`}
-                        </code>
-                      </pre>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(`<img src="https://ai-kansoku.com/api/track?site=${siteId}" width="1" height="1" style="position:absolute;left:-9999px" alt="">`)
-                          alert('コピーしました！');
-                        }}
-                        className="absolute top-2 right-2 px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded text-xs font-medium transition-all"
-                      >
-                        📋 コピー
-                      </button>
-                    </div>
-                  </div>
+  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+    <h4 className="font-semibold mb-3 flex items-center gap-2">
+      <span>📊</span>
+      <span>トラッキングコードを設置</span>
+    </h4>
+    <p className="text-sm text-gray-400 mb-4">
+      以下のコードをサイトの <code className="px-2 py-1 bg-black/30 rounded text-blue-400">&lt;head&gt;</code> タグ内に追加してください
+    </p>
+    
+    <div className="relative">
+      <pre className="p-4 rounded-lg bg-black/50 border border-white/10 overflow-x-auto text-xs md:text-sm">
+        <code className="text-green-400 text-xs break-all">
+          {`<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>`}
+        </code>
+      </pre>
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(`<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>`)
+          alert('コピーしました！');
+        }}
+        className="absolute top-2 right-2 px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded text-xs font-medium transition-all"
+      >
+        📋 コピー
+      </button>
+    </div>
+    
+    {/* Phase 1+2の説明を追加 */}
+    <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+      <p className="text-xs text-blue-300">
+        ✨ <strong>Phase 1+2統合版</strong> - 200種類以上のAIクローラーを高精度検出
+      </p>
+    </div>
+  </div>
 
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10">
                     <h4 className="font-semibold mb-2 flex items-center gap-2">
