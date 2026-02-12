@@ -91,6 +91,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ja">
       <head>
+          {/* Google Search Console 所有権確認 */}
+  <meta name="google-site-verification" content="ziqmb14N0-99w0COc_sqVhQNeStU1qdGrv5COcNmD_s" />
         {/* JSON-LD構造化データ */}
         <script
           type="application/ld+json"
