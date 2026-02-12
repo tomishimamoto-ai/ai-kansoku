@@ -805,13 +805,7 @@ function ResultContent() {
         📋 コピー
       </button>
     </div>
-    
-    {/* Phase 1+2の説明を追加 */}
-    <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-      <p className="text-xs text-blue-300">
-        ✨ <strong>Phase 1+2統合版</strong> - 200種類以上のAIクローラーを高精度検出
-      </p>
-    </div>
+
   </div>
 
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10">
