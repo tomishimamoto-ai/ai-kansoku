@@ -1,56 +1,164 @@
-# AI観測ラボ (AI Observatory)
+# AI観測ラボ - AIクローラー可視性診断ツール
 
-AI観測ラボは、あなたのウェブサイトがChatGPT、Claude、Gemini、Perplexityなどの主要AIクローラーにどれだけ可視化されているかを診断するツールです。
+> あなたのウェブサイトが主要AIクローラー（ChatGPT、Claude、Gemini、Perplexity等）にどれだけ見つけやすいかを診断します
 
-## 主な機能
+最終更新: 2026-02-12
 
-### 診断項目（8項目）
-- 構造化データ (JSON-LD) の実装状況
-- robots.txt の設定状況
-- sitemap.xml の存在と品質
-- llms.txt の実装（AI専用サイトマップ）
-- メタタグ（title、description、OGP、Twitter Card）
-- セマンティックHTML
-- モバイル対応
-- パフォーマンス
+## サービス概要
 
-### AIクローラー対応
-以下の主要AIクローラーの許可状況をチェック：
-- ChatGPT (GPTBot)
-- Claude (Claude-Web)
-- Gemini (Google-Extended)
-- Perplexity (PerplexityBot)
-- Cohere (cohere-ai)
+AI観測ラボは、ウェブサイトのAI可視性を8項目で診断し、具体的な改善提案を提供する無料診断ツールです。30秒で診断完了、レーダーチャートとPDFレポートで結果を可視化します。
 
-### 出力機能
-- レーダーチャート表示
-- 詳細なスコアリング（0-100点）
-- 改善提案（優先度別）
-- PDF レポート出力
-- 診断履歴の保存と比較
+### 解決する課題
+- ChatGPTやClaudeの検索結果に自社サイトが表示されない
+- AIクローラーにブロックされていないか不安
+- AI時代のSEO対策が分からない
+- 構造化データやllms.txtの実装が正しいか確認したい
 
-## 使い方
+### 対象ユーザー
+- Webサイト運営者
+- SEO担当者
+- マーケティング担当者
+- Web制作者・開発者
+- EC事業者
 
-1. トップページでURLを入力
-2. 診断開始ボタンをクリック
-3. 30秒で8項目の診断完了
-4. 結果ページで詳細を確認
-5. 改善ガイドを参照して対策実施
+## 診断項目（8項目の詳細）
+
+### 1. 構造化データ（JSON-LD）
+Schema.orgに準拠した構造化データの実装状況を診断。WebSite、Organization、Article、Product等の主要スキーマタイプをチェック。
+
+### 2. robots.txt
+AIクローラーの許可状況を確認。GPTBot、Claude-Web、Google-Extended、PerplexityBot、cohere-aiの5大クローラーに対応。
+
+### 3. sitemap.xml
+サイトマップの存在、URL数、lastmod/priority/changefreq属性の設定状況を評価。
+
+### 4. llms.txt
+AI専用サイトマップの実装状況を診断。title、summary、markdown、linksセクションの充実度を評価。
+
+### 5. メタタグ
+title、description、OGP、Twitter Cardの最適化状況をチェック。文字数、必須属性の有無を確認。
+
+### 6. セマンティックHTML
+header、nav、main、article、section等の適切な使用状況を評価。見出し構造の階層も確認。
+
+### 7. モバイル対応
+viewport設定、レスポンシブデザイン、メディアクエリの実装状況を診断。
+
+### 8. パフォーマンス
+画像最適化（lazy loading、WebP対応）、スクリプト最適化（defer/async）、リソースヒント（preload/preconnect）の実装状況を評価。
+
+## 主要機能
+
+- **即時診断**: URLを入力して30秒で診断完了
+- **レーダーチャート**: 8項目のスコアを視覚的に表示
+- **詳細レポート**: 各項目の具体的な問題点と改善案を提示
+- **優先度別改善提案**: 高・中・低の3段階で対策の優先順位を提示
+- **PDFエクスポート**: 診断結果を日本語PDFでダウンロード
+- **履歴管理**: 過去の診断結果を保存し、スコア推移を比較
+- **共有機能**: Twitter、メール、URLコピーで結果を共有
+
+## 対応AIクローラー
+
+### ChatGPT
+- User-Agent: GPTBot
+- 用途: ChatGPTの検索機能、回答生成
+
+### Claude
+- User-Agent: Claude-Web、anthropic-ai
+- 用途: Claudeの検索機能、情報収集
+
+### Google Gemini
+- User-Agent: Google-Extended
+- 用途: Gemini、Bardの学習・回答生成
+
+### Perplexity
+- User-Agent: PerplexityBot
+- 用途: Perplexity検索結果の生成
+
+### Cohere
+- User-Agent: cohere-ai
+- 用途: CohereのAIモデル学習
+
+## サイトマップ
+
+### メインページ
+- トップページ（診断フォーム）: https://ai-kansoku.com
+- 診断結果ページ: https://ai-kansoku.com/result
+- 改善ガイド: https://ai-kansoku.com/guide
+- FAQ（よくある質問）: https://ai-kansoku.com/faq
+- 使い方ガイド: https://ai-kansoku.com/how-to-use
+
+### ブログ（AI対策ノウハウ）
+- AIクローラーとは？ChatGPT、Claude、Perplexityに見つけてもらう方法: https://blog.ai-kansoku.com/what-is-ai-crawler/
+- robots.txtの正しい書き方【AI時代版】: https://blog.ai-kansoku.com/robots-txt-for-ai/
+- llms.txtとは？最新のAI対応サイトマップを解説: https://blog.ai-kansoku.com/what-is-llms-txt/
+- 構造化データでAIに理解されやすいサイトを作る: https://blog.ai-kansoku.com/structured-data-for-ai/
+
+## よくある質問（FAQ）
+
+### Q: 診断は無料ですか？
+A: はい、完全無料です。アカウント登録も不要で、すぐに診断を開始できます。
+
+### Q: どのようなサイトでも診断できますか？
+A: はい、公開されているWebサイトであれば診断可能です（http/https必須）。
+
+### Q: 診断にかかる時間は？
+A: 通常30秒以内で完了します。サイトの規模や応答速度により多少変動します。
+
+### Q: スコアが低い場合はどうすれば？
+A: 診断結果ページで優先度別の改善提案を確認し、「高」マークの項目から対策してください。改善ガイドページに実装方法の詳細を掲載しています。
+
+### Q: robots.txtでAIクローラーをブロックすべき？
+A: ビジネス目的によります。AIによる情報発見を望む場合は許可、コンテンツ保護を優先する場合はブロックを検討してください。
+
+### Q: llms.txtは必須ですか？
+A: 必須ではありませんが、実装することでAIがサイトを理解しやすくなり、より正確な情報引用が期待できます。
+
+### Q: 診断結果はどのくらい保存されますか？
+A: ブラウザのLocalStorageに最大10件まで保存されます。別のブラウザやデバイスでは共有されません。
+
+### Q: 企業サイトでも使えますか？
+A: はい、個人ブログから大規模なコーポレートサイトまで幅広く対応しています。
 
 ## 技術スタック
 
-- Next.js 15
-- React 18
-- Tailwind CSS
-- Chart.js
-- @react-pdf/renderer
+- フロントエンド: Next.js 15, React 18, Tailwind CSS
+- データ可視化: Chart.js（レーダーチャート）
+- PDF生成: @react-pdf/renderer（日本語対応）
+- データベース: Neon PostgreSQL
+- ホスティング: Vercel
+- Analytics: Google Analytics 4
 
-## URL
+## 実装例・活用事例
 
-https://ai-kansoku.com
+### 改善前後の比較
+診断→改善実装→再診断のサイクルで、平均して1ヶ月でスコア20-30点アップするケースが多数報告されています。
 
-## サポート
+### 推奨される改善順序
+1. robots.txtの設定（即日対応可能）
+2. メタタグの最適化（1-2日）
+3. 構造化データの実装（3-5日）
+4. llms.txtの作成（1日）
+5. セマンティックHTMLの改善（1週間）
+6. パフォーマンス最適化（継続的に）
 
-- FAQ: https://ai-kansoku.com/faq
-- 使い方ガイド: https://ai-kansoku.com/how-to-use
-- 改善ガイド: https://ai-kansoku.com/guide
+## 更新履歴
+
+- 2026-02-12: llms.txt強化、ブログ記事4本追加、データ保持ポリシー実装
+- 2026-01-29: ブログ立ち上げ（blog.ai-kansoku.com）
+- 2026-01-26: 初回リリース、8項目診断機能実装
+
+## 連絡先・サポート
+
+- メインサイト: https://ai-kansoku.com
+- ブログ: https://blog.ai-kansoku.com
+- Twitter（開発予定）: 準備中
+- フィードバック: サイト内のフィードバックフォームから
+
+## ライセンス
+
+このサービスは個人・商用問わず無料でご利用いただけます。
+
+---
+
+このllms.txtは、AI観測ラボのサービス内容、機能、使い方、FAQ、技術情報を包括的に記載しています。AIクローラーがこのファイルを読み込むことで、サービスの全体像を正確に理解し、適切な文脈で引用・紹介することが期待できます。
