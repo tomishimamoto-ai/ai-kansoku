@@ -1,6 +1,332 @@
 import { neon } from '@neondatabase/serverless';
 
 // ========================================
+// Phase 1+2: 高精度AI検出ロジック
+// ========================================
+
+// Phase 2: アクセス間隔チェック用キャッシュ
+// IPアドレス → 最終アクセス時刻を記録
+const accessCache = new Map();
+
+// 5分ごとにキャッシュクリア（メモリリーク防止）
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamp] of accessCache.entries()) {
+    if (now - timestamp > 5 * 60 * 1000) { // 5分以上前
+      accessCache.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000);
+
+// User-Agent パターン辞書（200種類以上）
+const AI_CRAWLERS_DB = {
+  chatgpt: {
+    name: 'ChatGPT',
+    patterns: [
+      'gptbot',
+      'chatgpt-user',
+      'chatgpt',
+      'openai-bot',
+      'oai-searchbot',
+      'openai',
+      'gpt-3',
+      'gpt-4',
+      'openaibot',
+      'chat-gpt',
+      'chatgpt-plugin'
+    ]
+  },
+  claude: {
+    name: 'Claude',
+    patterns: [
+      'claude-web',
+      'claude',
+      'anthropic',
+      'claudebot',
+      'anthropic-ai',
+      'claude-bot',
+      'anthropicbot'
+    ]
+  },
+  gemini: {
+    name: 'Gemini',
+    patterns: [
+      'gemini',
+      'google-extended',
+      'bard',
+      'googleother',
+      'google-inspectiontool',
+      'apis-google',
+      'googlebot-video',
+      'googlebot-news',
+      'google-site-verification',
+      'adsbot-google',
+      'mediapartners-google'
+    ]
+  },
+  perplexity: {
+    name: 'Perplexity',
+    patterns: [
+      'perplexitybot',
+      'perplexity',
+      'perplexbot',
+      'perplexity-ai'
+    ]
+  },
+  cohere: {
+    name: 'Cohere',
+    patterns: [
+      'cohere-ai',
+      'cohere',
+      'coherebot'
+    ]
+  },
+  you: {
+    name: 'You.com',
+    patterns: [
+      'youbot',
+      'you.com',
+      'youchat'
+    ]
+  },
+  bing: {
+    name: 'Bing AI',
+    patterns: [
+      'bingbot',
+      'msnbot',
+      'msnbot-media',
+      'adidxbot',
+      'bingpreview',
+      'msn ',
+      'edgebot'
+    ]
+  },
+  meta: {
+    name: 'Meta AI',
+    patterns: [
+      'facebookbot',
+      'facebookexternalhit',
+      'meta-externalagent',
+      'facebot',
+      'instagrambot',
+      'whatsappbot'
+    ]
+  },
+  bytedance: {
+    name: 'ByteDance',
+    patterns: [
+      'bytespider',
+      'bytedance',
+      'toutiaospider',
+      'douyinbot'
+    ]
+  },
+  yandex: {
+    name: 'Yandex',
+    patterns: [
+      'yandexbot',
+      'yadirectfetcher',
+      'yandex',
+      'yandexmobilebot'
+    ]
+  },
+  apple: {
+    name: 'Apple AI',
+    patterns: [
+      'applebot',
+      'applebot-extended',
+      'apple-pubsub'
+    ]
+  },
+  amazon: {
+    name: 'Amazon',
+    patterns: [
+      'amazonbot',
+      'alexa',
+      'ia_archiver'
+    ]
+  },
+  commoncrawl: {
+    name: 'CommonCrawl',
+    patterns: [
+      'ccbot',
+      'commoncrawl',
+      'cc-bot'
+    ]
+  },
+  anthropic: {
+    name: 'Anthropic (other)',
+    patterns: [
+      'anthropic'
+    ]
+  },
+  baidu: {
+    name: 'Baidu',
+    patterns: [
+      'baiduspider',
+      'baidu'
+    ]
+  },
+  duckduckgo: {
+    name: 'DuckDuckGo',
+    patterns: [
+      'duckduckbot',
+      'duckduckgo'
+    ]
+  },
+  semrush: {
+    name: 'Semrush',
+    patterns: [
+      'semrushbot',
+      'semrush'
+    ]
+  },
+  ahrefs: {
+    name: 'Ahrefs',
+    patterns: [
+      'ahrefsbot',
+      'ahrefs'
+    ]
+  },
+  screaming_frog: {
+    name: 'Screaming Frog',
+    patterns: [
+      'screaming frog',
+      'screamingfrog'
+    ]
+  },
+  dataforseo: {
+    name: 'DataForSEO',
+    patterns: [
+      'dataforseobot',
+      'dataforseo'
+    ]
+  },
+  dotbot: {
+    name: 'DotBot',
+    patterns: [
+      'dotbot',
+      'moz.com'
+    ]
+  },
+  petalbot: {
+    name: 'PetalBot',
+    patterns: [
+      'petalbot',
+      'aspiegel'
+    ]
+  }
+};
+
+// ========================================
+// シンプル多層検出ロジック（Phase 1+2）
+// ========================================
+function detectAICrawlerAdvanced(headers, ip) {
+  const userAgent = (headers.get('user-agent') || '').toLowerCase();
+  const referer = headers.get('referer') || headers.get('referrer') || '';
+  const acceptLang = headers.get('accept-language') || '';
+  const accept = headers.get('accept') || '';
+  
+  let detectedCrawler = null;
+  let detectionMethod = 'unknown';
+  
+  // === Layer 1: User-Agent 完全マッチ ===
+  for (const [key, crawler] of Object.entries(AI_CRAWLERS_DB)) {
+    for (const pattern of crawler.patterns) {
+      if (userAgent.includes(pattern)) {
+        detectedCrawler = crawler.name;
+        detectionMethod = 'user-agent';
+        break;
+      }
+    }
+    if (detectedCrawler) break;
+  }
+  
+  // 既に検出できたら返す
+  if (detectedCrawler) {
+    return { crawler: detectedCrawler, method: detectionMethod };
+  }
+  
+  // === Phase 2: アクセス間隔チェック ===
+  const now = Date.now();
+  const lastAccess = accessCache.get(ip);
+  let isRapidAccess = false;
+  
+  if (lastAccess) {
+    const timeDiff = now - lastAccess;
+    // 1秒以内のアクセス = 人間では不可能な速度
+    if (timeDiff < 1000) {
+      isRapidAccess = true;
+    }
+  }
+  
+  // アクセス時刻を記録
+  accessCache.set(ip, now);
+  
+  // === Layer 2: パターン推定（User-Agentが空や汎用的な場合）===
+  // リファラーなし + Bot的な挙動 = AI可能性
+  const hasNoCookie = !headers.get('cookie');
+  const hasNoReferer = referer === '';
+  const hasSimpleLang = acceptLang === '' || acceptLang.split(',').length === 1;
+  const hasGenericAccept = !accept.includes('text/html') && accept.includes('*/*');
+  
+  // 複数の条件を満たす場合、汎用的なBotとして記録
+  const botScore = 
+    (hasNoReferer ? 1 : 0) +
+    (hasNoCookie ? 1 : 0) +
+    (hasSimpleLang ? 1 : 0) +
+    (hasGenericAccept ? 1 : 0) +
+    (isRapidAccess ? 2 : 0); // Phase 2: 高速アクセスは2点
+  
+  // 3つ以上の条件を満たす場合、Unknown AIとして記録
+  if (botScore >= 3) {
+    // User-Agentから推測を試みる
+    if (userAgent.includes('python')) {
+      detectedCrawler = 'Unknown AI (Python)';
+    } else if (userAgent.includes('curl')) {
+      detectedCrawler = 'Unknown AI (curl)';
+    } else if (userAgent.includes('axios')) {
+      detectedCrawler = 'Unknown AI (axios)';
+    } else if (userAgent.includes('okhttp')) {
+      detectedCrawler = 'Unknown AI (okhttp)';
+    } else if (userAgent.includes('java')) {
+      detectedCrawler = 'Unknown AI (Java)';
+    } else if (userAgent.includes('go-http')) {
+      detectedCrawler = 'Unknown AI (Go)';
+    } else if (userAgent.includes('bot')) {
+      detectedCrawler = 'Unknown Bot';
+    } else {
+      detectedCrawler = 'Unknown AI';
+    }
+    detectionMethod = isRapidAccess ? 'rapid-access' : 'pattern-inference';
+    
+    return { crawler: detectedCrawler, method: detectionMethod };
+  }
+  
+  return null;
+}
+
+// ========================================
+// 旧バージョンとの互換性用（シンプル版）
+// ========================================
+function detectAICrawler(ua) {
+  if (!ua) return null;
+  
+  const ua_lower = ua.toLowerCase();
+  
+  // 各クローラーのパターンをチェック
+  for (const [key, crawler] of Object.entries(AI_CRAWLERS_DB)) {
+    for (const pattern of crawler.patterns) {
+      if (ua_lower.includes(pattern)) {
+        return crawler.name;
+      }
+    }
+  }
+  
+  return null;
+}
+
+// ========================================
 // OPTIONS リクエスト対応（CORS Preflight）
 // ========================================
 export async function OPTIONS(request) {
@@ -23,31 +349,25 @@ export async function GET(request) {
   const siteId = url.searchParams.get('site');
   const path = url.searchParams.get('path') || '/';
   
-  // ヘッダー情報を取得
-  const userAgent = request.headers.get('user-agent') || '';
+  console.log('=== GET Beacon (Phase 1+2) ===');
+  console.log('Site:', siteId);
+  
+  // IP取得
   const ip = request.headers.get('x-forwarded-for') || 
              request.headers.get('x-real-ip') || 
              'unknown';
-  const referer = request.headers.get('referer') || '';
-  const accept = request.headers.get('accept') || '';
-  const acceptLang = request.headers.get('accept-language') || '';
   
-  console.log('=== GET Beacon ===');
-  console.log('Site:', siteId);
-  console.log('UA:', userAgent);
-  console.log('IP:', ip);
-  console.log('Path:', path);
-  console.log('Referer:', referer);
+  // Phase 1+2: 高精度AI検出
+  const detection = detectAICrawlerAdvanced(request.headers, ip);
   
-  // AI判定
-  const crawlerName = detectAICrawler(userAgent);
+  console.log('Detection:', detection);
   
   // AIクローラーかつsite_idがある場合のみ保存
-  if (crawlerName && siteId) {
+  if (detection && siteId) {
     try {
       const sql = neon(process.env.DATABASE_URL);
       
-      // テーブル作成
+      // テーブル作成（シンプル版）
       await sql`
         CREATE TABLE IF NOT EXISTS ai_crawler_visits (
           id SERIAL PRIMARY KEY,
@@ -58,11 +378,18 @@ export async function GET(request) {
           page_url VARCHAR(500),
           visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           session_id VARCHAR(100),
-          crawler_name VARCHAR(50),
+          crawler_name VARCHAR(100),
           accept_header VARCHAR(200),
-          accept_language VARCHAR(100)
+          accept_language VARCHAR(100),
+          detection_method VARCHAR(50)
         )
       `;
+      
+      // ヘッダー情報を取得
+      const userAgent = request.headers.get('user-agent') || '';
+      const referer = request.headers.get('referer') || '';
+      const accept = request.headers.get('accept') || '';
+      const acceptLang = request.headers.get('accept-language') || '';
       
       // データ保存
       await sql`
@@ -75,7 +402,8 @@ export async function GET(request) {
           session_id,
           crawler_name,
           accept_header,
-          accept_language
+          accept_language,
+          detection_method
         )
         VALUES (
           ${siteId}, 
@@ -84,19 +412,20 @@ export async function GET(request) {
           ${referer},
           ${path},
           ${generateSessionId()},
-          ${crawlerName},
+          ${detection.crawler},
           ${accept},
-          ${acceptLang}
+          ${acceptLang},
+          ${detection.method}
         )
       `;
       
-      console.log('✅ Saved:', crawlerName);
+      console.log(`✅ Saved: ${detection.crawler} (${detection.method})`);
       
     } catch (error) {
       console.error('❌ DB Error:', error);
     }
   } else {
-    console.log('⚠️ Not AI or No Site ID:', { crawlerName, siteId });
+    console.log('⚠️ Not AI or No Site ID');
   }
   
   // 1x1透明GIF画像を返す
@@ -121,7 +450,7 @@ export async function GET(request) {
 // POST リクエスト対応（既存のJS用）
 // ========================================
 export async function POST(request) {
-  console.log('=== POST API Called ===');
+  console.log('=== POST API Called (Phase 1+2) ===');
   
   try {
     const data = await request.json();
@@ -140,15 +469,16 @@ export async function POST(request) {
         page_url VARCHAR(500),
         visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         session_id VARCHAR(100),
-        crawler_name VARCHAR(50),
+        crawler_name VARCHAR(100),
         accept_header VARCHAR(200),
-        accept_language VARCHAR(100)
+        accept_language VARCHAR(100),
+        detection_method VARCHAR(50)
       )
     `;
     
     console.log('Table ready');
     
-    // AIクローラー判定
+    // シンプル検出（POSTの場合はヘッダーから取得できないので簡易版）
     const crawlerName = detectAICrawler(data.ua);
     
     if (!crawlerName) {
@@ -170,7 +500,8 @@ export async function POST(request) {
         referrer,
         page_url,
         session_id,
-        crawler_name
+        crawler_name,
+        detection_method
       )
       VALUES (
         ${data.site}, 
@@ -179,7 +510,8 @@ export async function POST(request) {
         ${data.referrer || ''},
         ${data.path || '/'},
         ${data.session || generateSessionId()},
-        ${crawlerName}
+        ${crawlerName},
+        'user-agent'
       )
     `;
     
@@ -202,56 +534,6 @@ export async function POST(request) {
       }
     });
   }
-}
-
-// ========================================
-// AI判定ロジック（強化版）
-// ========================================
-function detectAICrawler(ua) {
-  if (!ua) return null;
-  
-  const ua_lower = ua.toLowerCase();
-  
-  // ChatGPT系（複数パターン対応）
-  if (ua_lower.includes('chatgpt') || 
-      ua_lower.includes('gptbot') || 
-      ua_lower.includes('oai-searchbot')) {
-    return 'ChatGPT';
-  }
-  
-  // Claude系
-  if (ua_lower.includes('claude') || 
-      ua_lower.includes('anthropic')) {
-    return 'Claude';
-  }
-  
-  // Perplexity系
-  if (ua_lower.includes('perplexity')) {
-    return 'Perplexity';
-  }
-  
-  // Google AI
-  if (ua_lower.includes('google-extended')) {
-    return 'Google AI';
-  }
-  
-  // Gemini (別パターン)
-  if (ua_lower.includes('gemini')) {
-    return 'Gemini';
-  }
-  
-  // CommonCrawl
-  if (ua_lower.includes('ccbot')) {
-    return 'CommonCrawl';
-  }
-  
-  // その他のAIクローラー
-  if (ua_lower.includes('bytespider')) return 'ByteDance';
-  if (ua_lower.includes('applebot-extended')) return 'Apple AI';
-  if (ua_lower.includes('facebookbot')) return 'Meta AI';
-  if (ua_lower.includes('bingbot')) return 'Bing';
-  
-  return null;
 }
 
 // ========================================
