@@ -14,6 +14,21 @@ export async function GET(request) {
 
     const sql = neon(process.env.DATABASE_URL);
 
+    // ========================================
+    // データ削除ロジック: 無料ユーザーの7日以上古いデータを削除
+    // ========================================
+    try {
+      await sql`
+        DELETE FROM ai_crawler_visits 
+        WHERE plan_type = 'free' 
+        AND visited_at < NOW() - INTERVAL '7 days'
+      `;
+      console.log('Old free plan data cleaned up');
+    } catch (deleteError) {
+      console.error('Error deleting old data:', deleteError);
+      // 削除エラーは無視して処理を続行
+    }
+
     // 7日前の日時を計算
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
