@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { initDB } from '@/lib/db-init';
 
 // ========================================
 // Phase 1+2: 高精度AI検出ロジック
@@ -263,20 +264,27 @@ function detectAICrawlerAdvanced(headers, ip) {
   // アクセス時刻を記録
   accessCache.set(ip, now);
   
-  // === Layer 2: パターン推定（User-Agentが空や汎用的な場合）===
-  // リファラーなし + Bot的な挙動 = AI可能性
-  const hasNoCookie = !headers.get('cookie');
-  const hasNoReferer = referer === '';
-  const hasSimpleLang = acceptLang === '' || acceptLang.split(',').length === 1;
-  const hasGenericAccept = !accept.includes('text/html') && accept.includes('*/*');
-  
-  // 複数の条件を満たす場合、汎用的なBotとして記録
-  const botScore = 
-    (hasNoReferer ? 1 : 0) +
-    (hasNoCookie ? 1 : 0) +
-    (hasSimpleLang ? 1 : 0) +
-    (hasGenericAccept ? 1 : 0) +
-    (isRapidAccess ? 2 : 0); // Phase 2: 高速アクセスは2点
+// === 修正後 ===
+const hasNoCookie = !headers.get('cookie');
+const hasNoReferer = referer === '';
+const hasSimpleLang = acceptLang === '' || acceptLang.split(',').length === 1;
+const hasGenericAccept = !accept.includes('text/html') && accept.includes('*/*');
+
+// 【NEW】sec-fetch系ヘッダーの確認（ブラウザっぽさの判定）
+const hasSecFetch = 
+  headers.get('sec-fetch-site') ||
+  headers.get('sec-fetch-mode') ||
+  headers.get('sec-fetch-dest') ||
+  headers.get('sec-ch-ua');
+
+// スコア計算（修正版）
+const botScore = 
+  (hasNoReferer ? 1 : 0) +
+  (hasNoCookie ? 1 : 0) +
+  (hasSimpleLang ? 1 : 0) +
+  (hasGenericAccept && !hasSecFetch ? 1 : 0) + // 【修正】sec-fetchと組み合わせ
+  (!hasSecFetch ? 2 : 0) + // 【NEW】sec-fetchが全部ない = botっぽい
+  (isRapidAccess ? 2 : 0);
   
   // 3つ以上の条件を満たす場合、Unknown AIとして記録
   if (botScore >= 3) {
@@ -345,6 +353,8 @@ export async function OPTIONS(request) {
 // GET リクエスト対応（パス別分岐）
 // ========================================
 export async function GET(request) {
+  await initDB();
+
   const url = new URL(request.url);
   const pathname = url.pathname;
   
@@ -402,9 +412,10 @@ export async function GET(request) {
   console.log('Site:', siteId);
   
   // IP取得
-  const ip = request.headers.get('x-forwarded-for') || 
-             request.headers.get('x-real-ip') || 
-             'unknown';
+  const xff = request.headers.get('x-forwarded-for') || '';
+  const ip = xff.split(',')[0].trim() || 
+           request.headers.get('x-real-ip') || 
+           'unknown';
   
   // Phase 1+2: 高精度AI検出
   const detection = detectAICrawlerAdvanced(request.headers, ip);
@@ -417,22 +428,6 @@ export async function GET(request) {
       const sql = neon(process.env.DATABASE_URL);
       
       // テーブル作成（シンプル版）
-      await sql`
-        CREATE TABLE IF NOT EXISTS ai_crawler_visits (
-          id SERIAL PRIMARY KEY,
-          site_id VARCHAR(50) NOT NULL,
-          user_agent VARCHAR(500),
-          ip_address VARCHAR(50),
-          referrer VARCHAR(500),
-          page_url VARCHAR(500),
-          visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          session_id VARCHAR(100),
-          crawler_name VARCHAR(100),
-          accept_header VARCHAR(200),
-          accept_language VARCHAR(100),
-          detection_method VARCHAR(50)
-        )
-      `;
       
       // ヘッダー情報を取得
       const userAgent = request.headers.get('user-agent') || '';
@@ -499,32 +494,14 @@ export async function GET(request) {
 // POST リクエスト対応（既存のJS用）
 // ========================================
 export async function POST(request) {
+  await initDB();
   console.log('=== POST API Called (Phase 1+2) ===');
   
   try {
     const data = await request.json();
     console.log('Received:', data);
     
-    const sql = neon(process.env.DATABASE_URL);
-    
-    // テーブル作成
-    await sql`
-      CREATE TABLE IF NOT EXISTS ai_crawler_visits (
-        id SERIAL PRIMARY KEY,
-        site_id VARCHAR(50) NOT NULL,
-        user_agent VARCHAR(500),
-        ip_address VARCHAR(50),
-        referrer VARCHAR(500),
-        page_url VARCHAR(500),
-        visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        session_id VARCHAR(100),
-        crawler_name VARCHAR(100),
-        accept_header VARCHAR(200),
-        accept_language VARCHAR(100),
-        detection_method VARCHAR(50)
-      )
-    `;
-    
+    const sql = neon(process.env.DATABASE_URL);    
     console.log('Table ready');
     
     // シンプル検出（POSTの場合はヘッダーから取得できないので簡易版）
