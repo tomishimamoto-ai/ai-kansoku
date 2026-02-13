@@ -256,7 +256,7 @@ function detectAICrawlerAdvanced(headers, ip) {
   if (lastAccess) {
     const timeDiff = now - lastAccess;
     // 1秒以内のアクセス = 人間では不可能な速度
-    if (timeDiff < 1000) {
+    if (timeDiff < 300) {
       isRapidAccess = true;
     }
   }
@@ -283,7 +283,9 @@ const isSafari =
   !userAgent.includes('crios') && 
   !userAgent.includes('edg');
 
-// スコア計算（修正版）
+const looksLikeProgram =
+  /(python|curl|axios|okhttp|java|go-http|bot)/.test(userAgent);
+
 const botScore = 
   (hasNoReferer ? 1 : 0) +
   (hasNoCookie ? 1 : 0) +
@@ -293,7 +295,7 @@ const botScore =
   (isRapidAccess ? 2 : 0);
   
   // 3つ以上の条件を満たす場合、Unknown AIとして記録
-  if (botScore >= 5) {
+  if (botScore >= 5 && (isRapidAccess || looksLikeProgram)) {
     // User-Agentから推測を試みる
     if (userAgent.includes('python')) {
       detectedCrawler = 'Unknown AI (Python)';
