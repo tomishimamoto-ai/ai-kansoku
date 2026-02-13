@@ -277,17 +277,23 @@ const hasSecFetch =
   headers.get('sec-fetch-dest') ||
   headers.get('sec-ch-ua');
 
+const isSafari = 
+   userAgent.includes('safari') && 
+  !userAgent.includes('chrome') && 
+  !userAgent.includes('crios') && 
+  !userAgent.includes('edg');
+
 // スコア計算（修正版）
 const botScore = 
   (hasNoReferer ? 1 : 0) +
   (hasNoCookie ? 1 : 0) +
   (hasSimpleLang ? 1 : 0) +
   (hasGenericAccept && !hasSecFetch ? 1 : 0) + // 【修正】sec-fetchと組み合わせ
-  (!hasSecFetch ? 2 : 0) + // 【NEW】sec-fetchが全部ない = botっぽい
+  (!hasSecFetch && !isSafari ? 2 : 0)
   (isRapidAccess ? 2 : 0);
   
   // 3つ以上の条件を満たす場合、Unknown AIとして記録
-  if (botScore >= 3) {
+  if (botScore >= 5) {
     // User-Agentから推測を試みる
     if (userAgent.includes('python')) {
       detectedCrawler = 'Unknown AI (Python)';
