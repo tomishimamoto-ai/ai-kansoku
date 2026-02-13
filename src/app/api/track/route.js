@@ -286,12 +286,12 @@ const isSafari =
 const looksLikeProgram =
   /(python|curl|axios|okhttp|java|go-http|bot)/.test(userAgent);
 
-const botScore = 
+const botScore =
   (hasNoReferer ? 1 : 0) +
   (hasNoCookie ? 1 : 0) +
   (hasSimpleLang ? 1 : 0) +
-  (hasGenericAccept && !hasSecFetch ? 1 : 0) + // 【修正】sec-fetchと組み合わせ
-  (!hasSecFetch && !isSafari ? 2 : 0)
+  (hasGenericAccept && !hasSecFetch && !isSafari ? 1 : 0) +
+  (!hasSecFetch && !isSafari ? 2 : 0) +
   (isRapidAccess ? 2 : 0);
   
   // 3つ以上の条件を満たす場合、Unknown AIとして記録
