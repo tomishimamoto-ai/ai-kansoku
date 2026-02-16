@@ -136,12 +136,12 @@ function DashboardContent() {
               </Link>
               <p className="text-sm text-gray-400 mt-1">ダッシュボード</p>
             </div>
-            <Link 
-              href={`/result?siteId=${siteId}`}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition"
-            >
-              診断結果に戻る
-            </Link>
+            <button 
+  onClick={() => window.history.back()}
+  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition"
+>
+  ← 戻る
+</button>
           </div>
         </div>
       </header>
