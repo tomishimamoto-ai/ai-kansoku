@@ -1,10 +1,12 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function DashboardPage() {
+// DashboardContent に名前変更
+function DashboardContent() {
   const searchParams = useSearchParams();
   const siteId = searchParams.get('siteId');
   
@@ -434,4 +436,20 @@ export default function DashboardPage() {
       </footer>
     </div>
   );
-}    
+}
+
+// Suspenseでラップ
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>読み込み中...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
+  );
+}

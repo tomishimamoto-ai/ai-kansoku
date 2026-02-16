@@ -1,5 +1,5 @@
 import { neon } from '@neondatabase/serverless';
-import { initDB } from '@/lib/db-init';
+import { initDB } from '../../../lib/db-init.js';
 
 
 // ========================================
