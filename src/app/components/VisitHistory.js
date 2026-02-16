@@ -1,28 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function VisitHistory({ siteId }) {
-  const [visits, setVisits] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [crawlerStats, setCrawlerStats] = useState([]);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   const fetchVisits = async () => {
     try {
-      setLoading(true);
       const response = await fetch(`/api/visits?siteId=${siteId}`);
-      const data = await response.json();
+      const json = await response.json();
 
-      if (data.success) {
-        setVisits(data.visits || []);
-        setStats(data.stats);
-        setCrawlerStats(data.crawlerStats || []);
+      if (json.success) {
+        setData(json);
         setError(null);
       } else {
-        setError(data.error || 'データの取得に失敗しました');
+        setError(json.error || 'データの取得に失敗しました');
       }
     } catch (err) {
       setError('訪問履歴の取得に失敗しました');
@@ -48,19 +44,6 @@ export default function VisitHistory({ siteId }) {
 
     return () => clearInterval(interval);
   }, [autoRefresh, siteId]);
-
-  // User-Agentからクローラー名を抽出
-  const getCrawlerName = (userAgent) => {
-    if (!userAgent) return 'Unknown';
-    if (userAgent.includes('GPTBot')) return '🤖 GPTBot (ChatGPT)';
-    if (userAgent.includes('Claude-Web')) return '🤖 Claude-Web';
-    if (userAgent.includes('PerplexityBot')) return '🤖 PerplexityBot';
-    if (userAgent.includes('Googlebot')) return '🔍 Googlebot';
-    if (userAgent.includes('Bingbot')) return '🔍 Bingbot';
-    if (userAgent.includes('anthropic-ai')) return '🤖 Anthropic AI';
-    if (userAgent.includes('bot') || userAgent.includes('Bot')) return '🤖 Bot';
-    return '👤 Browser';
-  };
 
   // 日時フォーマット
   const formatDate = (dateString) => {
@@ -89,7 +72,7 @@ export default function VisitHistory({ siteId }) {
     );
   }
 
-  if (loading && visits.length === 0) {
+  if (loading && !data) {
     return (
       <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
@@ -112,94 +95,87 @@ export default function VisitHistory({ siteId }) {
     );
   }
 
+  if (!data) return null;
+
+  const { ai_stats, recent_visits } = data;
+  const totalAI = ai_stats?.total || 0;
+  const change = ai_stats?.change_percent || 0;
+
   return (
     <div className="space-y-6">
-      {/* 統計サマリー */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-white/10 rounded-xl p-6">
-            <div className="text-gray-400 text-sm mb-2">総訪問数</div>
-            <div className="text-3xl font-bold text-white">{stats.total_visits}</div>
-            <div className="text-xs text-gray-500 mt-2">過去7日間</div>
-          </div>
-          <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-white/10 rounded-xl p-6">
-            <div className="text-gray-400 text-sm mb-2">ユニークセッション</div>
-            <div className="text-3xl font-bold text-white">{stats.unique_sessions}</div>
-            <div className="text-xs text-gray-500 mt-2">過去7日間</div>
-          </div>
-          <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-white/10 rounded-xl p-6">
-            <div className="text-gray-400 text-sm mb-2">ユニークIP</div>
-            <div className="text-3xl font-bold text-white">{stats.unique_ips}</div>
-            <div className="text-xs text-gray-500 mt-2">過去7日間</div>
-          </div>
-          <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-white/10 rounded-xl p-6">
-            <div className="text-gray-400 text-sm mb-2">初回訪問</div>
-            <div className="text-lg font-bold text-white">
-              {stats.first_visit ? formatDate(stats.first_visit) : '-'}
+      {/* AI訪問サマリー */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold">AI訪問サマリー（過去7日間）</h2>
+          <Link
+            href={`/dashboard?siteId=${siteId}`}
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-bold transition"
+          >
+            詳細ダッシュボード →
+          </Link>
+        </div>
+
+        {/* 総訪問数 */}
+        <div className="mb-6 pb-6 border-b border-white/10">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-400 mb-1">AI訪問総数</p>
+              <p className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                {totalAI.toLocaleString()}
+              </p>
+            </div>
+            <div className="text-right">
+              <span className={`text-2xl font-bold ${
+                change > 0 ? 'text-green-400' :
+                change < 0 ? 'text-red-400' :
+                'text-gray-400'
+              }`}>
+                {change > 0 ? '📈 +' : change < 0 ? '📉 ' : '━ '}
+                {change}%
+              </span>
+              <p className="text-xs text-gray-500 mt-1">先週比</p>
             </div>
           </div>
         </div>
-      )}
 
-      {/* クローラー統計 */}
-      {crawlerStats.length > 0 && (
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-          <h3 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-            クローラー別訪問数（過去7日間）
-          </h3>
-          <div className="space-y-3">
-            {crawlerStats.map((stat, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span className="text-gray-300">{stat.crawler_type}</span>
-                <div className="flex items-center gap-4">
-                  <div className="w-32 bg-white/5 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 h-full"
-                      style={{
-                        width: `${(stat.visit_count / stats.total_visits) * 100}%`
-                      }}
-                    ></div>
+        {/* AI別詳細 */}
+        <div className="space-y-3">
+          <h3 className="font-bold text-lg mb-3">AI別内訳</h3>
+          {!ai_stats?.by_crawler || ai_stats.by_crawler.length === 0 ? (
+            <p className="text-gray-400 text-center py-8">まだAI訪問がありません</p>
+          ) : (
+            ai_stats.by_crawler.map((crawler, idx) => (
+              <div key={idx} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">
+                      {crawler.crawler_name.includes('GPT') ? '🤖' :
+                       crawler.crawler_name.includes('Claude') ? '🧠' :
+                       crawler.crawler_name.includes('Perplexity') ? '🔍' :
+                       crawler.crawler_name.includes('Gemini') ? '💎' :
+                       '🌐'}
+                    </span>
+                    <div>
+                      <h4 className="font-bold text-lg">{crawler.crawler_name}</h4>
+                      <p className="text-sm text-gray-400">
+                        {crawler.visit_count.toLocaleString()}回訪問
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-white font-bold w-12 text-right">
-                    {stat.visit_count}
-                  </span>
+                  <div className="text-right">
+                    <span className={`text-lg font-bold ${
+                      crawler.change_percent > 0 ? 'text-green-400' :
+                      crawler.change_percent < 0 ? 'text-red-400' :
+                      'text-gray-400'
+                    }`}>
+                      {crawler.change_percent > 0 ? '+' : ''}{crawler.change_percent}%
+                    </span>
+                    <p className="text-xs text-gray-500">先週比</p>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* アップグレードCTA */}
-      <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-xl p-6 md:p-8">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
-          <div className="flex-1">
-            <h3 className="text-lg md:text-xl font-bold mb-2">
-              ✨ アップグレードで30日間の訪問履歴を解放
-            </h3>
-            <p className="text-sm text-gray-400 mb-3">
-              より長期間のデータで、AIクローラーの訪問傾向を詳しく分析できます
-            </p>
-            <ul className="space-y-1 text-sm text-gray-400">
-              <li>• 📅 過去30日分の訪問履歴</li>
-              <li>• 📊 時系列グラフで推移を可視化</li>
-              <li>• 📈 クローラー別の詳細分析</li>
-              <li>• 📥 CSVエクスポート機能</li>
-            </ul>
-          </div>
-          <div className="w-full md:w-auto">
-            <button
-              disabled
-              className="group relative w-full md:w-auto px-8 py-4 bg-white/5 border border-white/20 rounded-xl font-semibold text-gray-400 cursor-not-allowed transition-all"
-            >
-              🚧 準備中 - 近日公開
-              
-              {/* ホバー時のツールチップ */}
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-black border border-white/20 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                Coming Soon 🎉
-              </span>
-            </button>
-          </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -238,7 +214,7 @@ export default function VisitHistory({ siteId }) {
       </div>
 
       {/* 訪問履歴リスト */}
-      {visits.length === 0 ? (
+      {!recent_visits || recent_visits.length === 0 ? (
         <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
           <p className="text-gray-400">まだ訪問履歴がありません</p>
           <p className="text-sm text-gray-500 mt-2">
@@ -251,14 +227,14 @@ export default function VisitHistory({ siteId }) {
             <table className="w-full">
               <thead className="bg-white/5 border-b border-white/10">
                 <tr>
-                  <th className="text-left p-4 text-gray-400 font-medium">訪問者</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">AI</th>
                   <th className="text-left p-4 text-gray-400 font-medium">ページ</th>
-                  <th className="text-left p-4 text-gray-400 font-medium">リファラー</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">検出方法</th>
                   <th className="text-left p-4 text-gray-400 font-medium">日時</th>
                 </tr>
               </thead>
               <tbody>
-                {visits.map((visit, index) => (
+                {recent_visits.map((visit, index) => (
                   <tr
                     key={visit.id}
                     className={`border-b border-white/5 hover:bg-white/5 transition ${
@@ -267,20 +243,17 @@ export default function VisitHistory({ siteId }) {
                   >
                     <td className="p-4">
                       <div className="text-white font-medium">
-                        {getCrawlerName(visit.user_agent)}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1 max-w-xs truncate">
-                        {visit.user_agent}
+                        {visit.crawler_name}
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="text-gray-300 text-sm max-w-xs truncate">
-                        {visit.page_url || '-'}
+                      <div className="text-gray-300 text-sm max-w-xs truncate font-mono">
+                        {visit.page_url || '/'}
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="text-gray-400 text-sm max-w-xs truncate">
-                        {visit.referrer || 'Direct'}
+                      <div className="text-gray-400 text-sm">
+                        {visit.detection_method}
                       </div>
                     </td>
                     <td className="p-4">
@@ -295,6 +268,20 @@ export default function VisitHistory({ siteId }) {
           </div>
         </div>
       )}
+
+      {/* ダッシュボードへの誘導 */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm text-center">
+        <h3 className="text-xl font-bold mb-3">📊 もっと詳しく分析したい？</h3>
+        <p className="text-gray-300 mb-6">
+          ダッシュボードでは、時間帯別分析・よく読まれるページ・検出方法の内訳などを確認できます
+        </p>
+        <Link
+          href={`/dashboard?siteId=${siteId}`}
+          className="inline-block px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg font-bold text-lg transition shadow-lg hover:shadow-xl"
+        >
+          ダッシュボードを開く →
+        </Link>
+      </div>
 
       {/* フッター */}
       <div className="text-center text-sm text-gray-500">
