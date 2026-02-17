@@ -15,7 +15,7 @@ export async function initDB() {
     console.log('🔧 Initializing database...');
 
     // ========================================
-    // ai_crawler_visits テーブル作成（Phase 1+2+3）
+    // ai_crawler_visits テーブル作成（Phase 1+2+3 + Phase 3.5）
     // ========================================
     await sql`
       CREATE TABLE IF NOT EXISTS ai_crawler_visits (
@@ -31,9 +31,22 @@ export async function initDB() {
         accept_header VARCHAR(200),
         accept_language VARCHAR(100),
         detection_method VARCHAR(50),
-        plan_type VARCHAR(20) DEFAULT 'free'
+        plan_type VARCHAR(20) DEFAULT 'free',
+        is_human BOOLEAN DEFAULT FALSE
       )
     `;
+
+    // is_human カラムを既存テーブルに追加（すでにある場合はスキップ）
+    try {
+      await sql`
+        ALTER TABLE ai_crawler_visits 
+        ADD COLUMN IF NOT EXISTS is_human BOOLEAN DEFAULT FALSE
+      `;
+      console.log('✅ Column is_human added/verified');
+    } catch (e) {
+      // カラムが既に存在する場合はエラーを無視
+      console.log('ℹ️ Column is_human already exists or error:', e.message);
+    }
 
     // インデックス作成（個別に実行）
     await sql`CREATE INDEX IF NOT EXISTS idx_site_visited ON ai_crawler_visits(site_id, visited_at)`;

@@ -190,13 +190,29 @@ export async function GET(request) {
     // ========================================
     // 7日間の日別推移データ（グラフ用）
     // ========================================
-    const dailyTrend = await sql`
+
+    // AI訪問（is_human = false）
+    const dailyAI = await sql`
       SELECT 
         TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD') as date,
         COUNT(*) as ai_visits
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
+      GROUP BY TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD')
+      ORDER BY date ASC
+    `;
+
+    // 人間訪問（is_human = true）
+    const dailyHuman = await sql`
+      SELECT 
+        TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD') as date,
+        COUNT(*) as human_visits
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = true
       GROUP BY TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD')
       ORDER BY date ASC
     `;
@@ -208,11 +224,13 @@ export async function GET(request) {
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       
-      const found = dailyTrend.find(d => d.date === dateStr);
+      const foundAI = dailyAI.find(d => d.date === dateStr);
+      const foundHuman = dailyHuman.find(d => d.date === dateStr);
+
       dailyTrendFull.push({
         date: dateStr,
-        ai_visits: found ? parseInt(found.ai_visits) : 0,
-        human_visits: 0 // 今後、手動入力データと連携可能
+        ai_visits: foundAI ? parseInt(foundAI.ai_visits) : 0,
+        human_visits: foundHuman ? parseInt(foundHuman.human_visits) : 0
       });
     }
 
