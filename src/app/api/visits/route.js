@@ -19,17 +19,18 @@ export async function GET(request) {
 
     // ========================================
     // データ削除ロジック: 無料ユーザーの7日以上古いデータを削除
+    // Phase 3で有効化（現在は無料版のみなのでコメントアウト）
     // ========================================
-    try {
-      await sql`
-        DELETE FROM ai_crawler_visits 
-        WHERE plan_type = 'free' 
-        AND visited_at < NOW() - INTERVAL '7 days'
-      `;
-      console.log('✅ Old free plan data cleaned up');
-    } catch (deleteError) {
-      console.error('⚠️ Error deleting old data:', deleteError);
-    }
+    // try {
+    //   await sql`
+    //     DELETE FROM ai_crawler_visits 
+    //     WHERE plan_type = 'free' 
+    //     AND visited_at < NOW() - INTERVAL '7 days'
+    //   `;
+    //   console.log('✅ Old free plan data cleaned up');
+    // } catch (deleteError) {
+    //   console.error('⚠️ Error deleting old data:', deleteError);
+    // }
 
     // ========================================
     // 期間設定（過去7日間）
@@ -187,6 +188,35 @@ export async function GET(request) {
     `;
 
     // ========================================
+    // 7日間の日別推移データ（グラフ用）
+    // ========================================
+    const dailyTrend = await sql`
+      SELECT 
+        TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD') as date,
+        COUNT(*) as ai_visits
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
+      GROUP BY TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD')
+      ORDER BY date ASC
+    `;
+
+    // 7日間すべての日付を生成（データがない日も0で表示）
+    const dailyTrendFull = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const found = dailyTrend.find(d => d.date === dateStr);
+      dailyTrendFull.push({
+        date: dateStr,
+        ai_visits: found ? parseInt(found.ai_visits) : 0,
+        human_visits: 0 // 今後、手動入力データと連携可能
+      });
+    }
+
+    // ========================================
     // 最新20件の訪問履歴（詳細表示用）
     // ========================================
     const recentVisits = await sql`
@@ -243,6 +273,9 @@ export async function GET(request) {
       
       // 手動入力データ
       manual_data: manualData[0] || null,
+      
+      // 7日間推移データ（★ 追加）
+      daily_trend: dailyTrendFull,
       
       // 最新訪問履歴
       recent_visits: recentVisits,
