@@ -105,11 +105,13 @@ export default function VisitHistory({ siteId }) {
     <div className="space-y-6">
       {/* AI訪問サマリー */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-6">
+        
+        {/* ヘッダー: タイトル + ボタン（SP対応） */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <h2 className="text-xl font-bold">AI訪問サマリー（過去7日間）</h2>
           <Link
             href={`/dashboard?siteId=${siteId}`}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-bold transition"
+            className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg text-sm font-bold transition whitespace-nowrap"
           >
             詳細ダッシュボード →
           </Link>
@@ -119,7 +121,7 @@ export default function VisitHistory({ siteId }) {
         <div className="mb-6 pb-6 border-b border-white/10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400 mb-1">AI訪問総数</p>
+              <p className="text-sm text-white mb-1">AI訪問総数</p>
               <p className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
                 {totalAI.toLocaleString()}
               </p>
@@ -133,7 +135,7 @@ export default function VisitHistory({ siteId }) {
                 {change > 0 ? '📈 +' : change < 0 ? '📉 ' : '━ '}
                 {change}%
               </span>
-              <p className="text-xs text-gray-500 mt-1">先週比</p>
+              <p className="text-xs text-white mt-1">先週比</p>
             </div>
           </div>
         </div>
@@ -157,7 +159,7 @@ export default function VisitHistory({ siteId }) {
                     </span>
                     <div>
                       <h4 className="font-bold text-lg">{crawler.crawler_name}</h4>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-white">
                         {crawler.visit_count.toLocaleString()}回訪問
                       </p>
                     </div>
@@ -170,7 +172,7 @@ export default function VisitHistory({ siteId }) {
                     }`}>
                       {crawler.change_percent > 0 ? '+' : ''}{crawler.change_percent}%
                     </span>
-                    <p className="text-xs text-gray-500">先週比</p>
+                    <p className="text-xs text-white">先週比</p>
                   </div>
                 </div>
               </div>
@@ -185,7 +187,7 @@ export default function VisitHistory({ siteId }) {
           最新の訪問履歴
         </h3>
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-gray-400">
+          <label className="flex items-center gap-2 text-sm text-white">
             <input
               type="checkbox"
               checked={autoRefresh}
@@ -217,7 +219,7 @@ export default function VisitHistory({ siteId }) {
       {!recent_visits || recent_visits.length === 0 ? (
         <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
           <p className="text-gray-400">まだ訪問履歴がありません</p>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-white mt-2">
             トラッキングコードを設置すると、AIクローラーの訪問が記録されます
           </p>
         </div>
@@ -227,10 +229,10 @@ export default function VisitHistory({ siteId }) {
             <table className="w-full">
               <thead className="bg-white/5 border-b border-white/10">
                 <tr>
-                  <th className="text-left p-4 text-gray-400 font-medium">AI</th>
-                  <th className="text-left p-4 text-gray-400 font-medium">ページ</th>
-                  <th className="text-left p-4 text-gray-400 font-medium">検出方法</th>
-                  <th className="text-left p-4 text-gray-400 font-medium">日時</th>
+                  <th className="text-left p-4 text-white font-medium">AI</th>
+                  <th className="text-left p-4 text-white font-medium">ページ</th>
+                  <th className="text-left p-4 text-white font-medium">検出方法</th>
+                  <th className="text-left p-4 text-white font-medium">日時</th>
                 </tr>
               </thead>
               <tbody>
@@ -252,7 +254,7 @@ export default function VisitHistory({ siteId }) {
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="text-gray-400 text-sm">
+                      <div className="text-gray-300 text-sm">
                         {visit.detection_method}
                       </div>
                     </td>
@@ -272,7 +274,7 @@ export default function VisitHistory({ siteId }) {
       {/* ダッシュボードへの誘導 */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm text-center">
         <h3 className="text-xl font-bold mb-3">📊 もっと詳しく分析したい？</h3>
-        <p className="text-gray-300 mb-6">
+        <p className="text-white mb-6">
           ダッシュボードでは、時間帯別分析・よく読まれるページ・検出方法の内訳などを確認できます
         </p>
         <Link
@@ -284,7 +286,7 @@ export default function VisitHistory({ siteId }) {
       </div>
 
       {/* フッター */}
-      <div className="text-center text-sm text-gray-500">
+      <div className="text-center text-sm text-white">
         最大20件の訪問履歴を表示しています（過去7日間）
         {autoRefresh && ' • 30秒ごとに自動更新'}
       </div>
