@@ -376,8 +376,10 @@ function DashboardContent() {
       <main className="container mx-auto px-4 py-8 relative z-10">
         {/* タイトル */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff] bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-5xl font-bold mb-2">
+           <span className="bg-gradient-to-r from-white via-[#4a9eff] to-[#c084fc] bg-clip-text text-transparent">
             観測ダッシュボード
+           </span>
           </h1>
           <p className="text-gray-400 text-sm">
             Site ID: <span className="font-mono text-[#4a9eff]">{siteId}</span>
@@ -865,20 +867,113 @@ function DashboardContent() {
   );
 }
 
-// Suspenseでラップ
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// スケルトンコンポーネント（DashboardPageの直前に追加）
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function DashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#0a0e27] text-white">
+      {/* ヘッダー骨格 */}
+      <header className="border-b border-[#1a1e47] bg-[#0f1229]/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#1a1e47] animate-pulse" />
+            <div className="space-y-1">
+              <div className="w-24 h-4 bg-[#1a1e47] rounded animate-pulse" />
+              <div className="w-36 h-3 bg-[#1a1e47] rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="w-16 h-8 bg-[#1a1e47] rounded-lg animate-pulse" />
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        {/* タイトル骨格 */}
+        <div className="mb-8 text-center space-y-2">
+          <div className="w-64 h-10 bg-[#1a1e47] rounded-xl mx-auto animate-pulse" />
+          <div className="w-40 h-4 bg-[#1a1e47] rounded mx-auto animate-pulse" />
+        </div>
+
+        {/* サマリーカード骨格 × 3 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6"
+              style={{ animationDelay: `${i * 0.1}s` }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-[#2a2f57] rounded-full animate-pulse" />
+                  <div className="w-24 h-3 bg-[#2a2f57] rounded animate-pulse" />
+                </div>
+                <div className="w-14 h-6 bg-[#2a2f57] rounded-full animate-pulse" />
+              </div>
+              <div className="w-20 h-12 bg-[#2a2f57] rounded-lg animate-pulse mb-2" />
+              <div className="w-28 h-3 bg-[#2a2f57] rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+
+        {/* グラフ骨格 */}
+        <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 mb-8">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-8 h-8 bg-[#2a2f57] rounded animate-pulse" />
+            <div className="w-40 h-5 bg-[#2a2f57] rounded animate-pulse" />
+          </div>
+          {/* グラフエリア */}
+          <div className="h-80 bg-[#1a1e47]/50 rounded-xl animate-pulse flex items-end gap-1 px-4 pb-4">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex-1 bg-[#2a2f57] rounded-t"
+                style={{ height: `${30 + Math.sin(i) * 20 + 20}%`, opacity: 0.5 + i * 0.07 }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* AI別レポート骨格 */}
+        <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 mb-8">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-8 h-8 bg-[#2a2f57] rounded animate-pulse" />
+            <div className="w-36 h-5 bg-[#2a2f57] rounded animate-pulse" />
+          </div>
+          <div className="space-y-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="bg-[#1a1e47]/50 rounded-xl p-5 border border-[#2a2f57]">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-[#2a2f57] animate-pulse" />
+                    <div className="space-y-2">
+                      <div className="w-24 h-4 bg-[#2a2f57] rounded animate-pulse" />
+                      <div className="w-32 h-3 bg-[#2a2f57] rounded animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="w-16 h-6 bg-[#2a2f57] rounded-full animate-pulse" />
+                </div>
+                <div className="grid grid-cols-2 gap-4 bg-[#0a0e27]/50 rounded-lg p-3">
+                  <div className="space-y-1">
+                    <div className="w-16 h-3 bg-[#2a2f57] rounded animate-pulse" />
+                    <div className="w-10 h-5 bg-[#2a2f57] rounded animate-pulse" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="w-16 h-3 bg-[#2a2f57] rounded animate-pulse" />
+                    <div className="w-10 h-5 bg-[#2a2f57] rounded animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0e27] text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative w-16 h-16 mx-auto mb-4">
-            <div className="w-16 h-16 border-4 border-[#1a1e47] border-t-[#4a9eff] rounded-full animate-spin" />
-            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-[#4a9eff]/30 rounded-full animate-ping" />
-          </div>
-          <p className="text-gray-400">観測データ読み込み中...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<DashboardSkeleton />}>
       <DashboardContent />
     </Suspense>
   );
