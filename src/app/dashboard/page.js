@@ -639,15 +639,26 @@ function DashboardContent() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="font-bold text-[#4a9eff]">
-                        {method.method === 'user-agent' ? '🎯 User-Agent分析' :
-                         method.method === 'rapid-access' ? '⚡ 高速アクセス検出' :
+                        {method.method === 'user-agent'      ? '🎯 User-Agent分析' :
+                         method.method === 'rapid-access'    ? '⚡ 高速アクセス検出' :
                          method.method === 'pattern-inference' ? '🧩 パターン推論' :
-                         method.method}
+                         method.method === 'ip-range'        ? '🌐 IPレンジ照合' :
+                         method.method === 'dns-reverse'     ? '🔎 DNS逆引き検証' :
+                         method.method === 'head-method'     ? '📡 HEADメソッド検出' :
+                         method.method === 'javascript'      ? '⚙️ JavaScript検出' :
+                         method.method === 'image-request'   ? '🖼️ 画像リクエスト検出' :
+                         `🔬 ${method.method}`}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {method.method === 'user-agent' ? 'UA文字列から判定' :
-                         method.method === 'rapid-access' ? '1秒以内の連続アクセス' :
-                         method.method === 'pattern-inference' ? 'ヘッダー情報から推測' : ''}
+                        {method.method === 'user-agent'      ? 'UA文字列から判定' :
+                         method.method === 'rapid-access'    ? '1秒以内の連続アクセス' :
+                         method.method === 'pattern-inference' ? 'ヘッダー情報から推測' :
+                         method.method === 'ip-range'        ? '公式公開CIDRリストと照合' :
+                         method.method === 'dns-reverse'     ? 'IPから逆引きしたホスト名で確認' :
+                         method.method === 'head-method'     ? 'HEADリクエストを送信するクローラー' :
+                         method.method === 'javascript'      ? 'JSトラッキングコードで検出' :
+                         method.method === 'image-request'   ? '画像リクエストパターンで検出' :
+                         ''}
                       </p>
                     </div>
                     <div className="text-right ml-4">
