@@ -1,7 +1,7 @@
-export const runtime = 'nodejs';
 import { neon } from '@neondatabase/serverless';
 import { initDB } from '../../../lib/db-init.js';
 import { promises as dns } from 'dns';
+import { checkIpRangeDynamic } from '../../../lib/ip-ranges.js';
 
 // ========================================
 // Phase 1+2+3: 高精度AI検出ロジック
@@ -18,50 +18,6 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
-
-// ========================================
-// Phase 3 NEW: 既知AIクローラーのIPレンジ
-// ========================================
-// 各社が公式に公開しているCIDRリスト（定期的に更新推奨）
-const AI_IP_RANGES = [
-  // OpenAI / ChatGPT
-  { cidr: '23.102.140.112/28', name: 'ChatGPT' },
-  { cidr: '13.65.240.240/28', name: 'ChatGPT' },
-  { cidr: '52.230.152.0/24', name: 'ChatGPT' },
-  { cidr: '40.83.2.64/28',   name: 'ChatGPT' },
-  // Anthropic / Claude
-  { cidr: '160.79.104.0/23', name: 'Claude' },
-  // Google (Gemini / GoogleBot)
-  { cidr: '66.249.64.0/19',  name: 'Gemini' },
-  { cidr: '66.249.80.0/20',  name: 'Gemini' },
-  // Perplexity
-  { cidr: '52.7.25.0/24',    name: 'Perplexity' },
-  // Common Crawl
-  { cidr: '66.80.224.0/21',  name: 'CommonCrawl' },
-];
-
-// CIDRマッチング（IPv4のみ）
-function ipToInt(ip) {
-  return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
-}
-
-function isIpInCidr(ip, cidr) {
-  try {
-    const [range, bits] = cidr.split('/');
-    const mask = ~(0xffffffff >>> parseInt(bits)) >>> 0;
-    return (ipToInt(ip) & mask) === (ipToInt(range) & mask);
-  } catch {
-    return false;
-  }
-}
-
-function checkIpRange(ip) {
-  if (!ip || ip === 'unknown' || ip.includes(':')) return null; // IPv6はスキップ
-  for (const { cidr, name } of AI_IP_RANGES) {
-    if (isIpInCidr(ip, cidr)) return name;
-  }
-  return null;
-}
 
 // ========================================
 // Phase 3 NEW: DNS逆引き検証
@@ -295,8 +251,8 @@ async function detectAICrawlerAdvanced(headers, ip, method) {
   }
   if (detectedCrawler) return { crawler: detectedCrawler, method: detectionMethod };
 
-  // === Layer 2 NEW: IPレンジチェック ===
-  const ipRangeMatch = checkIpRange(ip);
+  // === Layer 2: IPレンジチェック（公式JSONから動的取得）===
+  const ipRangeMatch = await checkIpRangeDynamic(ip);
   if (ipRangeMatch) {
     return { crawler: ipRangeMatch, method: 'ip-range' };
   }
