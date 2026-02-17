@@ -273,29 +273,29 @@ function ResultContent() {
 
           {/* ========== ここから追加: タブナビゲーション ========== */}
           <div className="mb-8">
-            <div className="flex gap-2 border-b border-white/10">
-              <button
-                onClick={() => setActiveTab('results')}
-                className={`px-6 py-3 font-medium transition border-b-2 ${
-                  activeTab === 'results'
-                    ? 'border-blue-500 text-white'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                📊 診断結果
-              </button>
-              <button
-                onClick={() => setActiveTab('visits')}
-                className={`px-6 py-3 font-medium transition border-b-2 ${
-                  activeTab === 'visits'
-                    ? 'border-blue-500 text-white'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                👁️ 訪問履歴
-              </button>
-            </div>
-          </div>
+  <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/10 w-fit">
+    <button
+      onClick={() => setActiveTab('results')}
+      className={`px-6 py-2.5 font-medium rounded-lg transition-all duration-200 ${
+        activeTab === 'results'
+          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30'
+          : 'text-gray-400 hover:text-white hover:bg-white/5'
+      }`}
+    >
+      📊 診断結果
+    </button>
+    <button
+      onClick={() => setActiveTab('visits')}
+      className={`px-6 py-2.5 font-medium rounded-lg transition-all duration-200 ${
+        activeTab === 'visits'
+          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30'
+          : 'text-gray-400 hover:text-white hover:bg-white/5'
+      }`}
+    >
+      🛸 AI訪問ログ
+    </button>
+  </div>
+</div>
           {/* ========== タブナビゲーションここまで ========== */}
 
           {/* ========== タブコンテンツの条件分岐 ========== */}
