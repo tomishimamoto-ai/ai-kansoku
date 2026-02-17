@@ -131,20 +131,6 @@ function DashboardContent() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0e27] text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative w-16 h-16 mx-auto mb-4">
-            <div className="w-16 h-16 border-4 border-[#1a1e47] border-t-[#4a9eff] rounded-full animate-spin"></div>
-            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-[#4a9eff]/30 rounded-full animate-ping"></div>
-          </div>
-          <p className="text-gray-400">観測データ読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!data || !data.success) {
     return (
       <div className="min-h-screen bg-[#0a0e27] text-white flex items-center justify-center">
