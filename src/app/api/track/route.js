@@ -3,6 +3,8 @@ import { initDB } from '../../../lib/db-init.js';
 import { promises as dns } from 'dns';
 import { checkIpRangeDynamic } from '../../../lib/ip-ranges.js';
 
+export const runtime = 'nodejs';
+
 // ========================================
 // Phase 1+2+3: 高精度AI検出ロジック
 // ========================================
@@ -22,19 +24,21 @@ setInterval(() => {
 // ========================================
 // Phase 3 NEW: DNS逆引き検証
 // ========================================
-// 既知のAIクローラーホスト名パターン
 const AI_HOSTNAMES = [
-  { pattern: 'googlebot.com',      name: 'Gemini' },
-  { pattern: 'google.com',         name: 'Gemini' },
-  { pattern: 'crawl.baidu.com',    name: 'Baidu' },
-  { pattern: 'openai.com',         name: 'ChatGPT' },
-  { pattern: 'anthropic.com',      name: 'Claude' },
-  { pattern: 'perplexity.ai',      name: 'Perplexity' },
-  { pattern: 'commoncrawl.org',    name: 'CommonCrawl' },
-  { pattern: 'bytedance.com',      name: 'ByteDance' },
-  { pattern: 'applebot.apple.com', name: 'Apple AI' },
-  { pattern: 'bingbot.msn.com',    name: 'Bing AI' },
-  { pattern: 'cohere.com',         name: 'Cohere' },
+  { pattern: 'googlebot.com',       name: 'Gemini'      },
+  { pattern: 'google.com',          name: 'Gemini'      },
+  { pattern: 'crawl.baidu.com',     name: 'Baidu'       },
+  { pattern: 'openai.com',          name: 'ChatGPT'     },
+  { pattern: 'anthropic.com',       name: 'Claude'      },
+  { pattern: 'perplexity.ai',       name: 'Perplexity'  },
+  { pattern: 'commoncrawl.org',     name: 'CommonCrawl' },
+  { pattern: 'bytedance.com',       name: 'ByteDance'   },
+  { pattern: 'applebot.apple.com',  name: 'Apple AI'    },
+  { pattern: 'bingbot.msn.com',     name: 'Bing AI'     },
+  { pattern: 'cohere.com',          name: 'Cohere'      },
+  { pattern: 'xai.com',             name: 'Grok'        }, // xAI (Grok)
+  { pattern: 'deepseek.com',        name: 'DeepSeek'    },
+  { pattern: 'mistral.ai',          name: 'Mistral'     },
 ];
 
 async function dnsReverseLookup(ip) {
@@ -42,7 +46,7 @@ async function dnsReverseLookup(ip) {
   try {
     const hostnames = await Promise.race([
       dns.reverse(ip),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
     ]);
     for (const hostname of hostnames) {
       for (const { pattern, name } of AI_HOSTNAMES) {
@@ -51,28 +55,30 @@ async function dnsReverseLookup(ip) {
     }
     return null;
   } catch {
-    return null; // タイムアウトやエラーは無視
+    return null;
   }
 }
 
 // ========================================
-// User-Agent パターン辞書（200種類以上）
+// User-Agent パターン辞書（拡充版 250種類以上）
 // ========================================
 const AI_CRAWLERS_DB = {
+  // ── 主要AIサービス ─────────────────────────────────────────
   chatgpt: {
     name: 'ChatGPT',
     patterns: [
       'gptbot', 'chatgpt-user', 'chatgpt', 'openai-bot',
-      'oai-searchbot', 'openai', 'gpt-3', 'gpt-4',
-      'openaibot', 'chat-gpt', 'chatgpt-plugin'
-    ]
+      'oai-searchbot', 'openai', 'gpt-3', 'gpt-4', 'gpt-4o',
+      'openaibot', 'chat-gpt', 'chatgpt-plugin',
+    ],
   },
   claude: {
     name: 'Claude',
     patterns: [
       'claude-web', 'claude', 'anthropic', 'claudebot',
-      'anthropic-ai', 'claude-bot', 'anthropicbot'
-    ]
+      'anthropic-ai', 'claude-bot', 'anthropicbot',
+      'claude-crawl', 'claude-crawler',
+    ],
   },
   gemini: {
     name: 'Gemini',
@@ -80,97 +86,210 @@ const AI_CRAWLERS_DB = {
       'gemini', 'google-extended', 'bard', 'googleother',
       'google-inspectiontool', 'apis-google', 'googlebot-video',
       'googlebot-news', 'google-site-verification',
-      'adsbot-google', 'mediapartners-google'
-    ]
+      'adsbot-google', 'mediapartners-google',
+    ],
   },
   perplexity: {
     name: 'Perplexity',
-    patterns: ['perplexitybot', 'perplexity', 'perplexbot', 'perplexity-ai']
+    patterns: [
+      'perplexitybot', 'perplexity', 'perplexbot', 'perplexity-ai',
+    ],
   },
+
+  // ── 新興 LLM / AI サービス ──────────────────────────────────
+  // xAI（Grok）
+  grok: {
+    name: 'Grok',
+    patterns: [
+      'grok', 'xai', 'x-ai', 'twitterbot', // Grok はまだ専用 UA が流動的
+      'grokbot', 'xaibot',
+    ],
+  },
+  // DeepSeek
+  deepseek: {
+    name: 'DeepSeek',
+    patterns: [
+      'deepseek', 'deepseekbot', 'deepseek-crawler',
+      'deepseek-ai', 'deepseekai',
+    ],
+  },
+  // Mistral AI
+  mistral: {
+    name: 'Mistral',
+    patterns: [
+      'mistral', 'mistralbot', 'mistral-ai', 'mistralai',
+      'le-chat', 'lechat',
+    ],
+  },
+  // Meta LLaMA / Meta AI
+  meta_llama: {
+    name: 'Meta AI',
+    patterns: [
+      'facebookbot', 'facebookexternalhit', 'meta-externalagent',
+      'facebot', 'instagrambot', 'whatsappbot',
+      'llama', 'llamabot', 'meta-llm', 'metaai',
+    ],
+  },
+  // Cohere
   cohere: {
     name: 'Cohere',
-    patterns: ['cohere-ai', 'cohere', 'coherebot']
+    patterns: ['cohere-ai', 'cohere', 'coherebot'],
   },
+  // You.com
   you: {
     name: 'You.com',
-    patterns: ['youbot', 'you.com', 'youchat']
+    patterns: ['youbot', 'you.com', 'youchat'],
   },
+  // Inflection AI (Pi)
+  inflection: {
+    name: 'Inflection AI',
+    patterns: ['inflection', 'pi-bot', 'pibot', 'inflection-ai'],
+  },
+  // Character.AI
+  character_ai: {
+    name: 'Character.AI',
+    patterns: ['characterai', 'character.ai', 'character-ai'],
+  },
+  // Phind
+  phind: {
+    name: 'Phind',
+    patterns: ['phindbot', 'phind'],
+  },
+  // Stability AI
+  stability: {
+    name: 'Stability AI',
+    patterns: ['stabilityai', 'stability-ai', 'stability'],
+  },
+  // Hugging Face
+  huggingface: {
+    name: 'Hugging Face',
+    patterns: ['huggingfacebot', 'huggingface', 'hf-crawler'],
+  },
+  // Replicate
+  replicate: {
+    name: 'Replicate',
+    patterns: ['replicate', 'replicatebot'],
+  },
+
+  // ── 検索エンジン系AI ────────────────────────────────────────
   bing: {
     name: 'Bing AI',
-    patterns: ['bingbot', 'msnbot', 'msnbot-media', 'adidxbot', 'bingpreview', 'msn ', 'edgebot']
-  },
-  meta: {
-    name: 'Meta AI',
-    patterns: ['facebookbot', 'facebookexternalhit', 'meta-externalagent', 'facebot', 'instagrambot', 'whatsappbot']
-  },
-  bytedance: {
-    name: 'ByteDance',
-    patterns: ['bytespider', 'bytedance', 'toutiaospider', 'douyinbot']
-  },
-  yandex: {
-    name: 'Yandex',
-    patterns: ['yandexbot', 'yadirectfetcher', 'yandex', 'yandexmobilebot']
-  },
-  apple: {
-    name: 'Apple AI',
-    patterns: ['applebot', 'applebot-extended', 'apple-pubsub']
-  },
-  amazon: {
-    name: 'Amazon',
-    patterns: ['amazonbot', 'alexa', 'ia_archiver']
-  },
-  commoncrawl: {
-    name: 'CommonCrawl',
-    patterns: ['ccbot', 'commoncrawl', 'cc-bot']
-  },
-  anthropic: {
-    name: 'Anthropic (other)',
-    patterns: ['anthropic']
-  },
-  baidu: {
-    name: 'Baidu',
-    patterns: ['baiduspider', 'baidu']
+    patterns: [
+      'bingbot', 'msnbot', 'msnbot-media', 'adidxbot',
+      'bingpreview', 'msn ', 'edgebot',
+    ],
   },
   duckduckgo: {
     name: 'DuckDuckGo',
-    patterns: ['duckduckbot', 'duckduckgo']
+    patterns: ['duckduckbot', 'duckduckgo'],
+  },
+  yandex: {
+    name: 'Yandex',
+    patterns: ['yandexbot', 'yadirectfetcher', 'yandex', 'yandexmobilebot'],
+  },
+  baidu: {
+    name: 'Baidu',
+    patterns: ['baiduspider', 'baidu'],
+  },
+  naver: {
+    name: 'Naver',
+    patterns: ['naverbot', 'yeti', 'navercorp'],
+  },
+
+  // ── 大企業のAI/クローラー ────────────────────────────────────
+  apple: {
+    name: 'Apple AI',
+    patterns: ['applebot', 'applebot-extended', 'apple-pubsub'],
+  },
+  amazon: {
+    name: 'Amazon',
+    patterns: ['amazonbot', 'alexa', 'ia_archiver'],
+  },
+  bytedance: {
+    name: 'ByteDance',
+    patterns: ['bytespider', 'bytedance', 'toutiaospider', 'douyinbot'],
+  },
+
+  // ── SEO/クロールツール ──────────────────────────────────────
+  commoncrawl: {
+    name: 'CommonCrawl',
+    patterns: ['ccbot', 'commoncrawl', 'cc-bot'],
   },
   semrush: {
     name: 'Semrush',
-    patterns: ['semrushbot', 'semrush']
+    patterns: ['semrushbot', 'semrush'],
   },
   ahrefs: {
     name: 'Ahrefs',
-    patterns: ['ahrefsbot', 'ahrefs']
+    patterns: ['ahrefsbot', 'ahrefs'],
   },
   screaming_frog: {
     name: 'Screaming Frog',
-    patterns: ['screaming frog', 'screamingfrog']
+    patterns: ['screaming frog', 'screamingfrog'],
   },
   dataforseo: {
     name: 'DataForSEO',
-    patterns: ['dataforseobot', 'dataforseo']
+    patterns: ['dataforseobot', 'dataforseo'],
   },
   dotbot: {
     name: 'DotBot',
-    patterns: ['dotbot', 'moz.com']
+    patterns: ['dotbot', 'moz.com'],
   },
   petalbot: {
     name: 'PetalBot',
-    patterns: ['petalbot', 'aspiegel']
-  }
+    patterns: ['petalbot', 'aspiegel'],
+  },
 };
 
 // ========================================
 // Phase 3 NEW: HEADメソッド検出
 // ========================================
-// ブラウザはほぼHEADを使わない → クローラーの強いシグナル
 function checkHeadMethod(method) {
   return method === 'HEAD';
 }
 
 // ========================================
-// Phase 3 NEW: ヘッダーパターン精度向上
+// Phase 3 NEW: Accept-Encoding パターン検知
+// ========================================
+// ブラウザとクローラーの Accept-Encoding の違いを活用
+//
+// ブラウザ (Chrome/Firefox/Edge/Safari) の典型例:
+//   "gzip, deflate, br, zstd"  ← zstd を含む (Chrome 121+)
+//   "gzip, deflate, br"
+//
+// クローラー / プログラムの典型例:
+//   "" (空)  → curl のデフォルト / 古い HTTP クライアント
+//   "gzip"   → Python requests, axios デフォルト
+//   "identity" → 圧縮なし明示
+//   "gzip, deflate" → axios, fetch polyfill
+//
+// ポイント:
+//   - "br" (Brotli) を含まない → 古い or 非ブラウザ環境
+//   - 空文字 or "identity" → 強いクローラーシグナル
+function analyzeAcceptEncoding(headers) {
+  const ae = (headers.get('accept-encoding') || '').toLowerCase().trim();
+
+  // 空 or "identity" のみ → 強いクローラーシグナル (スコア+3)
+  if (ae === '' || ae === 'identity') {
+    return { signal: 'no-encoding', score: 3 };
+  }
+
+  // "gzip" だけ → Python requests, axios など (スコア+2)
+  if (/^gzip$/.test(ae) || ae === 'gzip, deflate') {
+    return { signal: 'minimal-encoding', score: 2 };
+  }
+
+  // "br" を含まない (かつ "zstd" もない) → モダンブラウザ以外 (スコア+1)
+  if (!ae.includes('br') && !ae.includes('zstd')) {
+    return { signal: 'no-brotli', score: 1 };
+  }
+
+  // ブラウザらしい (br または zstd を含む) → クローラーシグナルなし
+  return { signal: 'browser-like', score: 0 };
+}
+
+// ========================================
+// Phase 3 ENHANCED: ヘッダーパターン精度向上
 // ========================================
 function analyzeHeaders(headers) {
   const signals = {
@@ -199,35 +318,38 @@ function analyzeHeaders(headers) {
     })(),
 
     // Refererなし
-    noReferer:
-      !headers.get('referer') && !headers.get('referrer'),
+    noReferer: !headers.get('referer') && !headers.get('referrer'),
 
     // Cookieなし
     noCookie: !headers.get('cookie'),
 
-    // Connection: close（クローラーは永続接続を維持しない傾向）
+    // Connection: close
     connectionClose:
       (headers.get('connection') || '').toLowerCase() === 'close',
 
-    // DNT（Do Not Track）なし かつ Sec-Fetchもない（ブラウザ系の特徴がゼロ）
+    // ブラウザシグナル完全ゼロ
     noBrowserSignals:
       !headers.get('dnt') &&
       !headers.get('sec-fetch-site') &&
       !headers.get('upgrade-insecure-requests'),
   };
 
+  // Accept-Encoding シグナル（新規追加）
+  const aeAnalysis = analyzeAcceptEncoding(headers);
+
   // スコア計算
   const score =
-    (signals.noSecFetch ? 3 : 0) +       // 最も信頼度高い
-    (signals.noClientHints ? 2 : 0) +    // 信頼度高い
-    (signals.genericAccept ? 1 : 0) +
-    (signals.simpleLang ? 1 : 0) +
-    (signals.noReferer ? 1 : 0) +
-    (signals.noCookie ? 1 : 0) +
-    (signals.connectionClose ? 1 : 0) +
+    (signals.noSecFetch     ? 3 : 0) + // 最も信頼度高い
+    (signals.noClientHints  ? 2 : 0) + // 信頼度高い
+    aeAnalysis.score +                   // Accept-Encoding シグナル（0〜3点）
+    (signals.genericAccept  ? 1 : 0) +
+    (signals.simpleLang     ? 1 : 0) +
+    (signals.noReferer      ? 1 : 0) +
+    (signals.noCookie       ? 1 : 0) +
+    (signals.connectionClose? 1 : 0) +
     (signals.noBrowserSignals ? 1 : 0);
 
-  return { signals, score };
+  return { signals, aeSignal: aeAnalysis.signal, score };
 }
 
 // ========================================
@@ -257,33 +379,33 @@ async function detectAICrawlerAdvanced(headers, ip, method) {
     return { crawler: ipRangeMatch, method: 'ip-range' };
   }
 
-  // === Layer 3 NEW: DNS逆引き（非同期・2秒タイムアウト） ===
+  // === Layer 3: DNS逆引き（非同期・2秒タイムアウト） ===
   const dnsMatch = await dnsReverseLookup(ip);
   if (dnsMatch) {
     return { crawler: dnsMatch, method: 'dns-reverse' };
   }
 
-  // === Layer 4 NEW: HEADメソッド検出 ===
+  // === Layer 4: HEADメソッド検出 ===
   if (checkHeadMethod(method)) {
     const looksLikeBot = /bot|crawler|spider|scraper/.test(userAgent);
     return {
       crawler: looksLikeBot ? 'Unknown Bot (HEAD)' : 'Unknown Crawler (HEAD)',
-      method: 'head-method'
+      method: 'head-method',
     };
   }
 
-  // === Layer 5: アクセス間隔チェック（既存Phase2） ===
+  // === Layer 5: アクセス間隔チェック（Phase2） ===
   const now = Date.now();
   const lastAccess = accessCache.get(ip);
   let isRapidAccess = false;
-  if (lastAccess && (now - lastAccess) < 300) {
+  if (lastAccess && now - lastAccess < 300) {
     isRapidAccess = true;
   }
   accessCache.set(ip, now);
 
-  // === Layer 6 NEW: ヘッダー精度向上スコアリング ===
-  const { signals, score: headerScore } = analyzeHeaders(headers);
-  const looksLikeProgram = /(python|curl|axios|okhttp|java|go-http|bot)/.test(userAgent);
+  // === Layer 6: ヘッダー精度向上スコアリング（Accept-Encoding含む）===
+  const { signals, aeSignal, score: headerScore } = analyzeHeaders(headers);
+  const looksLikeProgram = /(python|curl|axios|okhttp|java|go-http|bot|wget|scrapy|playwright|puppeteer)/.test(userAgent);
 
   const isSafari =
     userAgent.includes('safari') &&
@@ -294,16 +416,27 @@ async function detectAICrawlerAdvanced(headers, ip, method) {
   // Safari誤検知を防ぐため除外
   const adjustedScore = isSafari ? 0 : headerScore;
 
-  // しきい値: Sec-Fetch完全なし(3点) + Client Hints完全なし(2点) = 5点以上で疑わしい
+  // しきい値: 5点以上で疑わしい
+  // （Sec-Fetch完全なし:3点 + Client Hints完全なし:2点 が基本ライン）
   if (adjustedScore >= 5 && (isRapidAccess || looksLikeProgram || signals.noSecFetch)) {
-    if (userAgent.includes('python'))      detectedCrawler = 'Unknown AI (Python)';
-    else if (userAgent.includes('curl'))   detectedCrawler = 'Unknown AI (curl)';
-    else if (userAgent.includes('axios'))  detectedCrawler = 'Unknown AI (axios)';
-    else if (userAgent.includes('okhttp')) detectedCrawler = 'Unknown AI (okhttp)';
-    else if (userAgent.includes('java'))   detectedCrawler = 'Unknown AI (Java)';
-    else if (userAgent.includes('go-http'))detectedCrawler = 'Unknown AI (Go)';
+    // Accept-Encoding が "no-encoding" なら より確実にクローラー
+    const prefix =
+      aeSignal === 'no-encoding' || aeSignal === 'minimal-encoding'
+        ? 'Unknown AI'
+        : 'Unknown Crawler';
+
+    if (userAgent.includes('python'))      detectedCrawler = `${prefix} (Python)`;
+    else if (userAgent.includes('curl'))   detectedCrawler = `${prefix} (curl)`;
+    else if (userAgent.includes('wget'))   detectedCrawler = `${prefix} (wget)`;
+    else if (userAgent.includes('axios'))  detectedCrawler = `${prefix} (axios)`;
+    else if (userAgent.includes('scrapy')) detectedCrawler = `${prefix} (Scrapy)`;
+    else if (userAgent.includes('playwright')) detectedCrawler = `${prefix} (Playwright)`;
+    else if (userAgent.includes('puppeteer'))  detectedCrawler = `${prefix} (Puppeteer)`;
+    else if (userAgent.includes('okhttp')) detectedCrawler = `${prefix} (okhttp)`;
+    else if (userAgent.includes('java'))   detectedCrawler = `${prefix} (Java)`;
+    else if (userAgent.includes('go-http')) detectedCrawler = `${prefix} (Go)`;
     else if (userAgent.includes('bot'))    detectedCrawler = 'Unknown Bot';
-    else                                   detectedCrawler = 'Unknown AI';
+    else                                   detectedCrawler = prefix;
 
     detectionMethod = isRapidAccess ? 'rapid-access' : 'pattern-inference';
     return { crawler: detectedCrawler, method: detectionMethod };
@@ -337,7 +470,7 @@ export async function OPTIONS() {
       'Access-Control-Allow-Methods': 'GET, POST, HEAD, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, User-Agent',
       'Access-Control-Max-Age': '86400',
-    }
+    },
   });
 }
 
@@ -353,7 +486,8 @@ export async function GET(request) {
   // Phase 2: JS実行検出
   if (pathname.includes('/js-active')) {
     const gif = Buffer.from(
-      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'
+      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      'base64'
     );
     return new Response(gif, {
       status: 200,
@@ -361,14 +495,15 @@ export async function GET(request) {
         'Content-Type': 'image/gif',
         'Cache-Control': 'no-store, no-cache, must-revalidate',
         'Access-Control-Allow-Origin': '*',
-      }
+      },
     });
   }
 
   // Phase 2: 画像リクエスト検出
   if (pathname.includes('/img-check')) {
     const gif = Buffer.from(
-      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'
+      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      'base64'
     );
     return new Response(gif, {
       status: 200,
@@ -376,7 +511,7 @@ export async function GET(request) {
         'Content-Type': 'image/gif',
         'Cache-Control': 'no-store, no-cache, must-revalidate',
         'Access-Control-Allow-Origin': '*',
-      }
+      },
     });
   }
 
@@ -385,11 +520,11 @@ export async function GET(request) {
   const path = url.searchParams.get('path') || '/';
 
   const xff = request.headers.get('x-forwarded-for') || '';
-  const ip = xff.split(',')[0].trim() ||
-             request.headers.get('x-real-ip') ||
-             'unknown';
+  const ip =
+    xff.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
 
-  // Phase 1+2+3: 高精度AI検出（非同期 = DNS逆引き対応）
   const detection = await detectAICrawlerAdvanced(request.headers, ip, request.method);
 
   console.log('Detection:', detection);
@@ -397,10 +532,11 @@ export async function GET(request) {
   if (detection && siteId) {
     try {
       const sql = neon(process.env.DATABASE_URL);
-      const userAgent = request.headers.get('user-agent') || '';
-      const referer   = request.headers.get('referer') || '';
-      const accept    = request.headers.get('accept') || '';
-      const acceptLang = request.headers.get('accept-language') || '';
+      const userAgent    = request.headers.get('user-agent')       || '';
+      const referer      = request.headers.get('referer')           || '';
+      const accept       = request.headers.get('accept')            || '';
+      const acceptLang   = request.headers.get('accept-language')   || '';
+      const acceptEnc    = request.headers.get('accept-encoding')   || '';
 
       await sql`
         INSERT INTO ai_crawler_visits (
@@ -413,14 +549,15 @@ export async function GET(request) {
           ${accept}, ${acceptLang}, ${detection.method}
         )
       `;
-      console.log(`✅ Saved: ${detection.crawler} (${detection.method})`);
+      console.log(`✅ Saved: ${detection.crawler} (${detection.method}) ae="${acceptEnc}"`);
     } catch (error) {
       console.error('❌ DB Error:', error);
     }
   }
 
   const gif = Buffer.from(
-    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64'
   );
   return new Response(gif, {
     status: 200,
@@ -430,12 +567,12 @@ export async function GET(request) {
       'Pragma': 'no-cache',
       'Expires': '0',
       'Access-Control-Allow-Origin': '*',
-    }
+    },
   });
 }
 
 // ========================================
-// Phase 3 NEW: HEADメソッド対応
+// Phase 3: HEADメソッド対応
 // ========================================
 export async function HEAD(request) {
   await initDB();
@@ -445,11 +582,11 @@ export async function HEAD(request) {
   const path = url.searchParams.get('path') || '/';
 
   const xff = request.headers.get('x-forwarded-for') || '';
-  const ip = xff.split(',')[0].trim() ||
-             request.headers.get('x-real-ip') ||
-             'unknown';
+  const ip =
+    xff.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
 
-  // HEADメソッドは強いクローラーシグナル → 検出ロジックを通す
   const detection = await detectAICrawlerAdvanced(request.headers, ip, 'HEAD');
 
   if (detection && siteId) {
@@ -474,14 +611,13 @@ export async function HEAD(request) {
     }
   }
 
-  // HEADはボディなしで返す
   return new Response(null, {
     status: 200,
     headers: {
       'Content-Type': 'image/gif',
       'Cache-Control': 'no-store',
       'Access-Control-Allow-Origin': '*',
-    }
+    },
   });
 }
 
@@ -499,7 +635,7 @@ export async function POST(request) {
     if (!crawlerName) {
       return new Response('OK - Not AI', {
         status: 200,
-        headers: { 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Access-Control-Allow-Origin': '*' },
       });
     }
 
@@ -517,7 +653,7 @@ export async function POST(request) {
 
     return new Response('OK - Saved', {
       status: 200,
-      headers: { 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Access-Control-Allow-Origin': '*' },
     });
   } catch (error) {
     console.error('Error:', error);
@@ -526,7 +662,7 @@ export async function POST(request) {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
-      }
+      },
     });
   }
 }
