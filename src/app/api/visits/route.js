@@ -108,15 +108,15 @@ export async function GET(request) {
         AND visited_at >= ${sevenDaysAgo.toISOString()}
     `;
 
-　　// 人間訪問数（is_human = true）
-　　　const humanTotal = await sql`
-       SELECT COUNT(*) as total_visits
-       FROM ai_crawler_visits
-       WHERE site_id = ${siteId}
-    　 AND visited_at >= ${sevenDaysAgo.toISOString()}
-       AND is_human = true
-`                     ;
-      const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');　
+// 人間訪問数（is_human = true）
+const humanTotal = await sql`
+  SELECT COUNT(*) as total_visits
+  FROM ai_crawler_visits
+  WHERE site_id = ${siteId}
+    AND visited_at >= ${sevenDaysAgo.toISOString()}
+    AND is_human = true
+`;
+const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
 
     // 先週の総訪問数
     const lastWeekTotal = await sql`
