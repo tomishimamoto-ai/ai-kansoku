@@ -862,101 +862,107 @@ function DashboardContent() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function DashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-[#0a0e27] text-white">
-      {/* ヘッダー骨格 */}
-      <header className="border-b border-[#1a1e47] bg-[#0f1229]/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#1a1e47] animate-pulse" />
-            <div className="space-y-1">
-              <div className="w-24 h-4 bg-[#1a1e47] rounded animate-pulse" />
-              <div className="w-36 h-3 bg-[#1a1e47] rounded animate-pulse" />
-            </div>
+    <div className="min-h-screen bg-[#0a0e27] text-white flex items-center justify-center">
+      {/* 星屑背景 */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {[
+          { top: '10%', left: '20%', delay: '0s', size: 'w-1 h-1' },
+          { top: '30%', left: '60%', delay: '0.5s', size: 'w-1 h-1' },
+          { top: '50%', left: '80%', delay: '1s', size: 'w-0.5 h-0.5' },
+          { top: '70%', left: '40%', delay: '1.5s', size: 'w-1 h-1' },
+          { top: '20%', left: '90%', delay: '2s', size: 'w-0.5 h-0.5' },
+          { top: '85%', left: '15%', delay: '0.8s', size: 'w-1 h-1' },
+          { top: '60%', left: '5%', delay: '2.3s', size: 'w-0.5 h-0.5' },
+          { top: '40%', left: '35%', delay: '1.2s', size: 'w-0.5 h-0.5' },
+          { top: '15%', left: '55%', delay: '0.3s', size: 'w-1 h-1' },
+          { top: '75%', left: '70%', delay: '1.8s', size: 'w-0.5 h-0.5' },
+        ].map((s, i) => (
+          <div
+            key={i}
+            className={`absolute ${s.size} bg-white rounded-full animate-twinkle`}
+            style={{ top: s.top, left: s.left, animationDelay: s.delay }}
+          />
+        ))}
+      </div>
+
+      {/* メイン: パルス星 */}
+      <div className="relative flex flex-col items-center gap-8">
+        {/* 外側のリング（ゆっくり広がる）*/}
+        <div className="relative flex items-center justify-center">
+          <div
+            className="absolute rounded-full border border-[#4a9eff]/10"
+            style={{ width: 180, height: 180, animation: 'pulseRing 2s ease-out infinite' }}
+          />
+          <div
+            className="absolute rounded-full border border-[#4a9eff]/20"
+            style={{ width: 140, height: 140, animation: 'pulseRing 2s ease-out infinite 0.3s' }}
+          />
+          <div
+            className="absolute rounded-full border border-[#4a9eff]/30"
+            style={{ width: 100, height: 100, animation: 'pulseRing 2s ease-out infinite 0.6s' }}
+          />
+
+          {/* 中央の星 */}
+          <div
+            className="relative w-16 h-16 rounded-full flex items-center justify-center"
+            style={{
+              background: 'radial-gradient(circle, #4a9eff 0%, #0066cc 60%, #001a4d 100%)',
+              boxShadow: '0 0 30px #4a9eff, 0 0 60px #4a9eff40, 0 0 100px #4a9eff20',
+              animation: 'starPulse 2s ease-in-out infinite',
+            }}
+          >
+            <span className="text-2xl">✦</span>
           </div>
-          <div className="w-16 h-8 bg-[#1a1e47] rounded-lg animate-pulse" />
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        {/* タイトル骨格 */}
-        <div className="mb-8 text-center space-y-2">
-          <div className="w-64 h-10 bg-[#1a1e47] rounded-xl mx-auto animate-pulse" />
-          <div className="w-40 h-4 bg-[#1a1e47] rounded mx-auto animate-pulse" />
         </div>
 
-        {/* サマリーカード骨格 × 3 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* テキスト */}
+        <div className="text-center space-y-2">
+          <p
+            className="text-lg font-bold bg-gradient-to-r from-white via-[#4a9eff] to-[#c084fc] bg-clip-text text-transparent"
+            style={{ animation: 'fadeInOut 2s ease-in-out infinite' }}
+          >
+            観測データを受信中...
+          </p>
+          <p className="text-xs text-gray-500">Deep Space Observatory</p>
+        </div>
+
+        {/* ドット3つ */}
+        <div className="flex gap-2">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#2a2f57] rounded-full animate-pulse" />
-                  <div className="w-24 h-3 bg-[#2a2f57] rounded animate-pulse" />
-                </div>
-                <div className="w-14 h-6 bg-[#2a2f57] rounded-full animate-pulse" />
-              </div>
-              <div className="w-20 h-12 bg-[#2a2f57] rounded-lg animate-pulse mb-2" />
-              <div className="w-28 h-3 bg-[#2a2f57] rounded animate-pulse" />
-            </div>
+              className="w-1.5 h-1.5 rounded-full bg-[#4a9eff]"
+              style={{ animation: `dotBounce 1.2s ease-in-out infinite`, animationDelay: `${i * 0.2}s` }}
+            />
           ))}
         </div>
+      </div>
 
-        {/* グラフ骨格 */}
-        <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 mb-8">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-[#2a2f57] rounded animate-pulse" />
-            <div className="w-40 h-5 bg-[#2a2f57] rounded animate-pulse" />
-          </div>
-          {/* グラフエリア */}
-          <div className="h-80 bg-[#1a1e47]/50 rounded-xl animate-pulse flex items-end gap-1 px-4 pb-4">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex-1 bg-[#2a2f57] rounded-t"
-                style={{ height: `${30 + Math.sin(i) * 20 + 20}%`, opacity: 0.5 + i * 0.07 }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* AI別レポート骨格 */}
-        <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 mb-8">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-[#2a2f57] rounded animate-pulse" />
-            <div className="w-36 h-5 bg-[#2a2f57] rounded animate-pulse" />
-          </div>
-          <div className="space-y-4">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="bg-[#1a1e47]/50 rounded-xl p-5 border border-[#2a2f57]">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-[#2a2f57] animate-pulse" />
-                    <div className="space-y-2">
-                      <div className="w-24 h-4 bg-[#2a2f57] rounded animate-pulse" />
-                      <div className="w-32 h-3 bg-[#2a2f57] rounded animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="w-16 h-6 bg-[#2a2f57] rounded-full animate-pulse" />
-                </div>
-                <div className="grid grid-cols-2 gap-4 bg-[#0a0e27]/50 rounded-lg p-3">
-                  <div className="space-y-1">
-                    <div className="w-16 h-3 bg-[#2a2f57] rounded animate-pulse" />
-                    <div className="w-10 h-5 bg-[#2a2f57] rounded animate-pulse" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="w-16 h-3 bg-[#2a2f57] rounded animate-pulse" />
-                    <div className="w-10 h-5 bg-[#2a2f57] rounded animate-pulse" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </main>
+      <style jsx global>{`
+        @keyframes pulseRing {
+          0%   { transform: scale(0.8); opacity: 0.8; }
+          100% { transform: scale(1.4); opacity: 0; }
+        }
+        @keyframes starPulse {
+          0%, 100% { transform: scale(1);    box-shadow: 0 0 30px #4a9eff, 0 0 60px #4a9eff40; }
+          50%       { transform: scale(1.15); box-shadow: 0 0 50px #4a9eff, 0 0 100px #4a9eff60; }
+        }
+        @keyframes fadeInOut {
+          0%, 100% { opacity: 0.6; }
+          50%       { opacity: 1; }
+        }
+        @keyframes dotBounce {
+          0%, 80%, 100% { transform: translateY(0);    opacity: 0.4; }
+          40%            { transform: translateY(-6px); opacity: 1; }
+        }
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50%       { opacity: 1;   transform: scale(1.5); }
+        }
+        .animate-twinkle {
+          animation: twinkle 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }
