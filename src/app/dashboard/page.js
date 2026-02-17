@@ -377,49 +377,54 @@ function DashboardContent() {
         </div>
 
         {/* ─── サマリーカード ─── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl shadow-[#4a9eff]/10 hover:shadow-[#4a9eff]/20 transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">✦</span>
-                <h3 className="text-sm text-gray-400">AI訪問（彗星）</h3>
-              </div>
-              <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                change > 0 ? 'bg-green-500/20 text-green-400' :
-                change < 0 ? 'bg-red-500/20 text-red-400' :
-                'bg-gray-500/20 text-gray-400'
-              }`}>
-                {change > 0 ? '↗ +' : change < 0 ? '↘ ' : '→ '}{change}%
-              </span>
-            </div>
-            <p className="text-5xl font-bold bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff] bg-clip-text text-transparent mb-2">
-              {totalAI.toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500">7日間の観測データ</p>
-          </div>
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  {/* AI訪問数 */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl shadow-[#4a9eff]/10 hover:shadow-[#4a9eff]/20 transition-all">
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
+        <span className="text-3xl">✦</span>
+        <h3 className="text-sm text-gray-400">AI訪問（彗星）</h3>
+      </div>
+      <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+        change > 0 ? 'bg-green-500/20 text-green-400' :
+        change < 0 ? 'bg-red-500/20 text-red-400' :
+        'bg-gray-500/20 text-gray-400'
+      }`}>
+        {change > 0 ? '↗ +' : change < 0 ? '↘ ' : '→ '}{change}%
+      </span>
+    </div>
+    <p className="text-5xl font-bold bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff] bg-clip-text text-transparent mb-2">
+      {totalAI.toLocaleString()}
+    </p>
+    <p className="text-xs text-gray-500">7日間のAIクローラー訪問</p>
+  </div>
 
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-3xl">🌟</span>
-              <h3 className="text-sm text-gray-400">ユニークセッション</h3>
-            </div>
-            <p className="text-5xl font-bold text-[#4a9eff] mb-2">
-              {ai_stats.unique_sessions.toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500">重複を除いた訪問数</p>
-          </div>
+  {/* AI種類数 */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
+    <div className="flex items-center gap-2 mb-4">
+      <span className="text-3xl">🛸</span>
+      <h3 className="text-sm text-gray-400">観測AI種類</h3>
+    </div>
+    <p className="text-5xl font-bold text-[#4a9eff] mb-2">
+      {ai_stats.by_crawler.length}
+    </p>
+    <p className="text-xs text-gray-500">
+      {ai_stats.by_crawler.slice(0, 3).map(c => c.crawler_name).join('・')}
+    </p>
+  </div>
 
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-3xl">🌌</span>
-              <h3 className="text-sm text-gray-400">観測座標（IP）</h3>
-            </div>
-            <p className="text-5xl font-bold text-[#6eb5ff] mb-2">
-              {ai_stats.unique_ips.toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500">異なる発信源の数</p>
-          </div>
-        </div>
+  {/* 人間訪問数 */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
+    <div className="flex items-center gap-2 mb-4">
+      <span className="text-3xl">●</span>
+      <h3 className="text-sm text-gray-400">人間訪問（恒星）</h3>
+    </div>
+    <p className="text-5xl font-bold text-[#ffd700] mb-2">
+      {(ai_stats.human_total ?? 0).toLocaleString()}
+    </p>
+    <p className="text-xs text-gray-500">7日間の人間訪問数</p>
+  </div>
+</div>
 
         {/* ─── 7日間推移グラフ ─── */}
         {daily_trend && daily_trend.length > 0 && (
