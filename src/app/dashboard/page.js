@@ -62,8 +62,6 @@ function DashboardContent() {
   });
   const [saving, setSaving] = useState(false);
   const [manualSaved, setManualSaved] = useState(false);
-  // 人間訪問セクションの表示タブ
-  const [humanTab, setHumanTab] = useState('auto'); // 'auto' | 'manual'
 
   // データ取得
   useEffect(() => {
@@ -328,10 +326,6 @@ function DashboardContent() {
   };
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 人間訪問: 推定値の計算ロジック
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 業界平均的なAI/人間比率を使った推定 (参考値)
-  const estimatedHumanVisits = Math.round(totalAI * 8.5); // AI訪問の約8.5倍が業界平均
   const hasManualData = manualInput.userCount !== '';
   const manualUserCount = hasManualData ? parseInt(manualInput.userCount || '0') : 0;
 
@@ -667,207 +661,134 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* ─── 人間訪問データセクション（整理済み）─── */}
+        {/* ─── 人間訪問データセクション（手動入力のみ）─── */}
         <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl mb-8">
           <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
             <span className="text-2xl">●</span>
             人間訪問データ（恒星）
           </h2>
           <p className="text-sm text-gray-400 mb-5">
-            AI訪問（彗星 ✦）と人間訪問（恒星 ●）を合わせた総観測数を確認できます
+            GA4の数値を入力すると、AI訪問（彗星 ✦）と合わせた総観測数を正確に確認できます
           </p>
 
-          {/* タブ切り替え */}
-          <div className="flex gap-2 mb-6 bg-[#0a0e27] rounded-xl p-1 w-fit">
-            <button
-              onClick={() => setHumanTab('auto')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                humanTab === 'auto'
-                  ? 'bg-[#4a9eff] text-white shadow-lg shadow-[#4a9eff]/30'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              🤖 自動推定値
-            </button>
-            <button
-              onClick={() => setHumanTab('manual')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                humanTab === 'manual'
-                  ? 'bg-[#4a9eff] text-white shadow-lg shadow-[#4a9eff]/30'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              ✏️ 手動入力（正確値）
-            </button>
+          {/* 入力フォーム */}
+          <div className="bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-xl p-4 mb-5 flex gap-3">
+            <span className="text-xl flex-shrink-0">💡</span>
+            <p className="text-sm text-gray-300">
+              GA4 › レポート › 集客 › 概要 から数値をコピーして入力してください。
+              <span className="text-gray-500 ml-1">（入力は任意です）</span>
+            </p>
           </div>
 
-          {/* ── 自動推定タブ ── */}
-          {humanTab === 'auto' && (
-            <div>
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-5 flex gap-3">
-                <span className="text-xl flex-shrink-0">⚠️</span>
-                <div>
-                  <p className="text-sm font-bold text-amber-400 mb-1">これは推定値です</p>
-                  <p className="text-xs text-gray-400">
-                    業界平均のAI/人間訪問比率（1:8.5）をもとに算出した参考値です。
-                    正確な数値を確認するには「手動入力」タブでGA4の値を入力してください。
-                  </p>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+            {[
+              { key: 'userCount', label: 'ユーザー数', placeholder: '例: 5,453' },
+              { key: 'pageViews', label: 'ページビュー', placeholder: '例: 12,345' },
+              { key: 'sessions', label: 'セッション数', placeholder: '例: 7,069' },
+            ].map(({ key, label, placeholder }) => (
+              <div key={key}>
+                <label className="block text-sm text-gray-400 mb-2 font-medium">{label}</label>
+                <input
+                  type="number"
+                  value={manualInput[key]}
+                  onChange={(e) => setManualInput({ ...manualInput, [key]: e.target.value })}
+                  placeholder={placeholder}
+                  className="w-full bg-[#1a1e47] border border-[#2a2f57] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#4a9eff] focus:border-transparent transition-all"
+                />
               </div>
+            ))}
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-                <div className="bg-[#1a1e47]/50 rounded-xl p-4 border border-[#2a2f57] text-center">
-                  <p className="text-xs text-gray-400 mb-2">AI訪問（実測値）✦</p>
-                  <p className="text-4xl font-bold text-[#4a9eff]">{totalAI.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500 mt-1">回</p>
-                </div>
-                <div className="bg-[#1a1e47]/50 rounded-xl p-4 border border-[#2a2f57] text-center">
-                  <p className="text-xs text-gray-400 mb-2">人間訪問（推定値）●</p>
-                  <p className="text-4xl font-bold text-[#ffd700]">{estimatedHumanVisits.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500 mt-1">ユーザー数（概算）</p>
-                </div>
-                <div className="bg-gradient-to-br from-[#4a9eff]/10 to-[#6eb5ff]/10 rounded-xl p-4 border border-[#4a9eff]/30 text-center">
-                  <p className="text-xs text-gray-400 mb-2">🌌 総観測数（推定）</p>
-                  <p className="text-4xl font-bold bg-gradient-to-r from-[#ffd700] to-[#4a9eff] bg-clip-text text-transparent">
-                    {(totalAI + estimatedHumanVisits).toLocaleString()}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">7日間合計</p>
-                </div>
-              </div>
+          <div className="flex items-center gap-4 flex-wrap">
+            <button
+              onClick={handleSaveManualData}
+              disabled={saving}
+              className="px-6 py-3 bg-gradient-to-r from-[#4a9eff] to-[#0066cc] hover:from-[#5aa9ff] hover:to-[#1a76dd] rounded-lg font-bold transition-all disabled:opacity-50 shadow-lg shadow-[#4a9eff]/30"
+            >
+              {saving ? '保存中...' : manualSaved ? '✅ 保存しました！' : '💾 データを保存'}
+            </button>
 
-              <div className="bg-[#1a1e47]/30 border border-[#2a2f57] rounded-xl p-4">
-                <p className="text-xs text-gray-400 mb-3 font-medium">📊 AI訪問の比率</p>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="h-3 rounded-full bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff] flex-shrink-0"
-                    style={{
-                      width: `${Math.round((totalAI / (totalAI + estimatedHumanVisits)) * 100)}%`,
-                      minWidth: '4px'
-                    }}
-                  />
-                  <span className="text-sm font-bold text-[#4a9eff]">
-                    {Math.round((totalAI / (totalAI + estimatedHumanVisits)) * 100)}% がAI訪問
-                  </span>
-                </div>
-                <div className="mt-2 flex gap-4 text-xs text-gray-500">
-                  <span>✦ AI: {totalAI}回</span>
-                  <span>● 人間（推定）: {estimatedHumanVisits}回</span>
-                </div>
-              </div>
+            {/* 有料版への導線 */}
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>🔒</span>
+              <span>
+                <span className="text-[#ffd700] font-medium">プロプラン</span>
+                {' '}でGA4自動連携に対応予定
+              </span>
             </div>
-          )}
+          </div>
 
-          {/* ── 手動入力タブ ── */}
-          {humanTab === 'manual' && (
-            <div>
-              <div className="bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-xl p-4 mb-5 flex gap-3">
-                <span className="text-xl flex-shrink-0">💡</span>
-                <p className="text-sm text-gray-300">
-                  GA4やGoogle Search Consoleから取得した値を入力すると、AI訪問との正確な比較ができます。
-                  入力は任意です。
+          {/* 入力後の比較表示 */}
+          {hasManualData && (
+            <div className="mt-6 bg-gradient-to-br from-[#1a1e47] to-[#252a54] rounded-xl p-6 border border-[#4a9eff]/30 shadow-lg shadow-[#4a9eff]/10">
+              <h3 className="font-bold mb-4 flex items-center gap-2">
+                <span>📊</span> 総観測数の比較
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-[#0a0e27]/50 rounded-lg p-4 border border-[#2a2f57]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">●</span>
+                    <p className="text-sm text-gray-400">人間訪問（恒星）</p>
+                    <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">GA4実測値</span>
+                  </div>
+                  <p className="text-4xl font-bold text-[#ffd700]">
+                    {manualUserCount.toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-[#0a0e27]/50 rounded-lg p-4 border border-[#2a2f57]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">✦</span>
+                    <p className="text-sm text-gray-400">AI訪問（彗星）</p>
+                    <span className="text-xs bg-[#4a9eff]/20 text-[#4a9eff] px-2 py-0.5 rounded">観測実測値</span>
+                  </div>
+                  <p className="text-4xl font-bold text-[#4a9eff]">
+                    {totalAI.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-5 border-t border-[#2a2f57]">
+                <p className="text-sm text-gray-400 mb-2">🌌 総観測数（人間 + AI）</p>
+                <p className="text-5xl font-bold bg-gradient-to-r from-[#ffd700] to-[#4a9eff] bg-clip-text text-transparent">
+                  {(manualUserCount + totalAI).toLocaleString()}
                 </p>
-              </div>
+                <p className="text-xs text-gray-500 mt-2">7日間の全観測データ</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-                {[
-                  { key: 'userCount', label: 'ユーザー数', placeholder: '例: 1,234' },
-                  { key: 'pageViews', label: 'ページビュー', placeholder: '例: 5,678' },
-                  { key: 'sessions', label: 'セッション数', placeholder: '例: 2,345' },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key}>
-                    <label className="block text-sm text-gray-400 mb-2 font-medium">{label}</label>
-                    <input
-                      type="number"
-                      value={manualInput[key]}
-                      onChange={(e) => setManualInput({ ...manualInput, [key]: e.target.value })}
-                      placeholder={placeholder}
-                      className="w-full bg-[#1a1e47] border border-[#2a2f57] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#4a9eff] focus:border-transparent transition-all"
+                {/* AI比率バー */}
+                <div className="mt-4">
+                  <p className="text-xs text-gray-400 mb-2">AI訪問の比率</p>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-3 rounded-full bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff]"
+                      style={{
+                        width: `${Math.max(Math.round((totalAI / (manualUserCount + totalAI)) * 100), 1)}%`,
+                        minWidth: '4px'
+                      }}
                     />
+                    <span className="text-sm font-bold text-[#4a9eff]">
+                      {Math.round((totalAI / (manualUserCount + totalAI)) * 100)}% がAI訪問
+                    </span>
                   </div>
-                ))}
-              </div>
-
-              <button
-                onClick={handleSaveManualData}
-                disabled={saving}
-                className="px-6 py-3 bg-gradient-to-r from-[#4a9eff] to-[#0066cc] hover:from-[#5aa9ff] hover:to-[#1a76dd] rounded-lg font-bold transition-all disabled:opacity-50 shadow-lg shadow-[#4a9eff]/30"
-              >
-                {saving ? '保存中...' : manualSaved ? '✅ 保存しました！' : '💾 データを保存'}
-              </button>
-
-              {/* 手動データ入力後の比較 */}
-              {hasManualData && (
-                <div className="mt-6 bg-gradient-to-br from-[#1a1e47] to-[#252a54] rounded-xl p-6 border border-[#4a9eff]/30 shadow-lg shadow-[#4a9eff]/10">
-                  <h3 className="font-bold mb-4 flex items-center gap-2">
-                    <span>📊</span> 総観測数の比較（正確値）
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="bg-[#0a0e27]/50 rounded-lg p-4 border border-[#2a2f57]">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">●</span>
-                        <p className="text-sm text-gray-400">人間訪問（恒星）</p>
-                        <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">正確値</span>
-                      </div>
-                      <p className="text-4xl font-bold text-[#ffd700]">
-                        {manualUserCount.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="bg-[#0a0e27]/50 rounded-lg p-4 border border-[#2a2f57]">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">✦</span>
-                        <p className="text-sm text-gray-400">AI訪問（彗星）</p>
-                        <span className="text-xs bg-[#4a9eff]/20 text-[#4a9eff] px-2 py-0.5 rounded">実測値</span>
-                      </div>
-                      <p className="text-4xl font-bold text-[#4a9eff]">
-                        {totalAI.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-5 border-t border-[#2a2f57]">
-                    <p className="text-sm text-gray-400 mb-2">🌌 総観測数（人間 + AI）</p>
-                    <p className="text-5xl font-bold bg-gradient-to-r from-[#ffd700] to-[#4a9eff] bg-clip-text text-transparent">
-                      {(manualUserCount + totalAI).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">7日間の全観測データ</p>
-
-                    {/* AI比率バー */}
-                    <div className="mt-4">
-                      <p className="text-xs text-gray-400 mb-2">AI訪問の比率</p>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="h-3 rounded-full bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff]"
-                          style={{
-                            width: `${Math.round((totalAI / (manualUserCount + totalAI)) * 100)}%`,
-                            minWidth: '4px'
-                          }}
-                        />
-                        <span className="text-sm font-bold text-[#4a9eff]">
-                          {Math.round((totalAI / (manualUserCount + totalAI)) * 100)}% がAI訪問
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* GA4比較メッセージ */}
-                    {manualUserCount > 0 && (
-                      <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-xl p-4">
-                        <p className="text-sm text-green-400 font-bold mb-1">
-                          ✅ GA4では見えていない露出が存在します
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          GA4に表示されるユーザー数は {manualUserCount.toLocaleString()} 人ですが、
-                          AIクローラーによる露出が {totalAI.toLocaleString()} 回発生しています。
-                          実際の総露出は GA4の数値より
-                          <span className="text-green-400 font-bold mx-1">
-                            +{Math.round((totalAI / manualUserCount) * 100)}%
-                          </span>
-                          多い可能性があります。
-                        </p>
-                      </div>
-                    )}
+                  <div className="mt-2 flex gap-4 text-xs text-gray-500">
+                    <span>✦ AI: {totalAI}回</span>
+                    <span>● 人間: {manualUserCount.toLocaleString()}人</span>
                   </div>
                 </div>
-              )}
+
+                {/* GA4比較メッセージ */}
+                {manualUserCount > 0 && (
+                  <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+                    <p className="text-sm text-green-400 font-bold mb-1">
+                      ✅ GA4では見えていない露出が存在します
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      GA4のユーザー数は {manualUserCount.toLocaleString()} 人ですが、
+                      AIクローラーによる露出が別途 {totalAI.toLocaleString()} 回発生しています。
+                      施策の効果はGA4の数値だけでは正確に測れません。
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
