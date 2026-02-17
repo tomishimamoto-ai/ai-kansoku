@@ -1,43 +1,86 @@
 // ========================================
-// AI観測ラボ - 統合トラッキングスクリプト
-// Phase 1（画像ピクセル）+ Phase 2（JS検出）を1行で実装
+// /api/track/js-active
+// Phase 3.5: JavaScript実行検出 + 人間訪問記録
 // ========================================
 
-(function() {
-  'use strict';
+import { neon } from '@neondatabase/serverless';
+import { initDB } from '../../../../lib/db-init.js';
+
+export async function GET(request) {
+  await initDB();
   
-  // サイトID取得
-  const script = document.currentScript;
-  const siteId = script?.getAttribute('data-site');
-  
-  if (!siteId) {
-    console.warn('[AI観測ラボ] data-site属性が必要です');
-    return;
+  try {
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('siteId');
+    const path = searchParams.get('path') || '/';
+
+    if (!siteId) {
+      console.log('⚠️ JS-Active: siteId missing');
+      return sendGif();
+    }
+
+    const sql = neon(process.env.DATABASE_URL);
+
+    // リクエスト情報を取得
+    const userAgent = request.headers.get('user-agent') || '';
+    const ip = request.headers.get('x-forwarded-for') || 
+               request.headers.get('x-real-ip') || 
+               'unknown';
+    const referrer = request.headers.get('referer') || '';
+
+    // セッションID生成（簡易版: IP + UA のハッシュ）
+    const sessionId = `${ip.split('.')[0]}_${Date.now()}`;
+
+    // 人間訪問として記録
+    await sql`
+      INSERT INTO ai_crawler_visits (
+        site_id,
+        user_agent,
+        ip_address,
+        referrer,
+        page_url,
+        session_id,
+        crawler_name,
+        detection_method,
+        is_human,
+        visited_at
+      ) VALUES (
+        ${siteId},
+        ${userAgent},
+        ${ip},
+        ${referrer},
+        ${path},
+        ${sessionId},
+        'Human (JS Detected)',
+        'javascript',
+        true,
+        CURRENT_TIMESTAMP
+      )
+    `;
+
+    console.log(`✅ Human visit recorded: ${siteId} ${path}`);
+
+  } catch (error) {
+    console.error('❌ Error recording human visit:', error);
   }
+
+  // 常に1x1透明GIFを返す
+  return sendGif();
+}
+
+// 1x1透明GIF画像を返すヘルパー関数
+function sendGif() {
+  const gif = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64'
+  );
   
-  const currentPath = window.location.pathname;
-  const baseUrl = 'https://ai-kansoku.com/api/track';
-  
-  // Phase 1: 画像ピクセル（AIクローラーも動く）
-  const img = new Image(1, 1);
-  img.src = `${baseUrl}?siteId=${encodeURIComponent(siteId)}&path=${encodeURIComponent(currentPath)}&t=${Date.now()}`;
-  img.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;';
-  img.alt = '';
-  
-  // Phase 2: JS実行検出（人間ブラウザ判定用）
-  if (typeof fetch !== 'undefined') {
-    fetch(`${baseUrl}/js-active?siteId=${encodeURIComponent(siteId)}&path=${encodeURIComponent(currentPath)}&t=${Date.now()}`, {
-      method: 'GET',
-      mode: 'no-cors',
-      cache: 'no-cache'
-    }).catch(() => {});
-  }
-  
-  // DOM準備後に画像を追加
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => document.body.appendChild(img));
-  } else {
-    document.body.appendChild(img);
-  }
-  
-})();
+  return new Response(gif, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/gif',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Access-Control-Allow-Origin': '*',
+    }
+  });
+}
