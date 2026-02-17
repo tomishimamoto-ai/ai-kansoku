@@ -131,6 +131,10 @@ function DashboardContent() {
     );
   }
 
+  if (loading) {
+  return <DashboardSkeleton />;
+}
+
   if (!data || !data.success) {
     return (
       <div className="min-h-screen bg-[#0a0e27] text-white flex items-center justify-center">
