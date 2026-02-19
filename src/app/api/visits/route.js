@@ -18,21 +18,6 @@ export async function GET(request) {
     const sql = neon(process.env.DATABASE_URL);
 
     // ========================================
-    // データ削除ロジック: 無料ユーザーの7日以上古いデータを削除
-    // Phase 3で有効化（現在は無料版のみなのでコメントアウト）
-    // ========================================
-    // try {
-    //   await sql`
-    //     DELETE FROM ai_crawler_visits 
-    //     WHERE plan_type = 'free' 
-    //     AND visited_at < NOW() - INTERVAL '7 days'
-    //   `;
-    //   console.log('✅ Old free plan data cleaned up');
-    // } catch (deleteError) {
-    //   console.error('⚠️ Error deleting old data:', deleteError);
-    // }
-
-    // ========================================
     // 期間設定（過去7日間）
     // ========================================
     const sevenDaysAgo = new Date();
@@ -44,8 +29,6 @@ export async function GET(request) {
     // ========================================
     // AI訪問の詳細統計（今週 vs 先週）
     // ========================================
-    
-    // 今週のAI訪問統計
     const thisWeekStats = await sql`
       SELECT 
         crawler_name,
@@ -60,7 +43,6 @@ export async function GET(request) {
       ORDER BY visit_count DESC
     `;
 
-    // 先週のAI訪問統計（比較用）
     const lastWeekStats = await sql`
       SELECT 
         crawler_name,
@@ -73,7 +55,6 @@ export async function GET(request) {
       GROUP BY crawler_name
     `;
 
-    // 先週との比較を計算
     const lastWeekMap = new Map(
       lastWeekStats.map(row => [row.crawler_name, parseInt(row.visit_count)])
     );
@@ -96,7 +77,7 @@ export async function GET(request) {
     });
 
     // ========================================
-    // 総訪問数の統計
+    // [FIX] AI総訪問数（is_human = false のみ）
     // ========================================
     const totalStats = await sql`
       SELECT 
@@ -108,25 +89,27 @@ export async function GET(request) {
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
     `;
 
-// 人間訪問数（is_human = true）
-const humanTotal = await sql`
-  SELECT COUNT(*) as total_visits
-  FROM ai_crawler_visits
-  WHERE site_id = ${siteId}
-    AND visited_at >= ${sevenDaysAgo.toISOString()}
-    AND is_human = true
-`;
-const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
+    // 人間訪問数（is_human = true）
+    const humanTotal = await sql`
+      SELECT COUNT(*) as total_visits
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = true
+    `;
+    const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
 
-    // 先週の総訪問数
+    // [FIX] 先週のAI総訪問数（is_human = false のみ）
     const lastWeekTotal = await sql`
       SELECT COUNT(*) as total_visits
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
         AND visited_at >= ${fourteenDaysAgo.toISOString()}
         AND visited_at < ${sevenDaysAgo.toISOString()}
+        AND is_human = false
     `;
 
     const thisWeekTotal = parseInt(totalStats[0]?.total_visits || '0');
@@ -136,7 +119,7 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
       : (thisWeekTotal > 0 ? 100 : 0);
 
     // ========================================
-    // よく読まれるページ TOP5
+    // [FIX] よく読まれるページ TOP5（AI訪問のみ）
     // ========================================
     const topPages = await sql`
       SELECT 
@@ -146,6 +129,7 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
         AND page_url IS NOT NULL
         AND page_url != ''
       GROUP BY page_url
@@ -154,7 +138,7 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
     `;
 
     // ========================================
-    // 訪問時間帯分析（24時間）
+    // [FIX] 訪問時間帯分析（AI訪問のみ）
     // ========================================
     const hourlyStats = await sql`
       SELECT 
@@ -163,12 +147,13 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
       GROUP BY hour
       ORDER BY hour
     `;
 
     // ========================================
-    // 検出方法の内訳
+    // [FIX] 検出方法の内訳（AI訪問のみ）
     // ========================================
     const detectionMethods = await sql`
       SELECT 
@@ -177,6 +162,7 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
       GROUP BY detection_method
       ORDER BY count DESC
     `;
@@ -202,8 +188,6 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
     // ========================================
     // 7日間の日別推移データ（グラフ用）
     // ========================================
-
-    // AI訪問（is_human = false）
     const dailyAI = await sql`
       SELECT 
         TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD') as date,
@@ -216,7 +200,6 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
       ORDER BY date ASC
     `;
 
-    // 人間訪問（is_human = true）
     const dailyHuman = await sql`
       SELECT 
         TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD') as date,
@@ -229,7 +212,6 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
       ORDER BY date ASC
     `;
 
-    // 7日間すべての日付を生成（データがない日も0で表示）
     const dailyTrendFull = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
@@ -247,7 +229,7 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
     }
 
     // ========================================
-    // 最新20件の訪問履歴（詳細表示用）
+    // [FIX] 最新20件の訪問履歴（AI訪問のみ）
     // ========================================
     const recentVisits = await sql`
       SELECT 
@@ -260,6 +242,7 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
       ORDER BY visited_at DESC
       LIMIT 20
     `;
@@ -270,7 +253,6 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
     return Response.json({
       success: true,
       
-      // AI訪問統計
       ai_stats: {
         total: thisWeekTotal,
         human_total: humanTotalCount,
@@ -283,35 +265,28 @@ const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
         last_visit: totalStats[0]?.last_visit || null
       },
       
-      // ページ別統計
       top_pages: topPages.map(p => ({
         url: p.page_url,
         visits: parseInt(p.visit_count),
         crawler_variety: parseInt(p.crawler_variety)
       })),
       
-      // 時間帯分析
       hourly_distribution: hourlyStats.map(h => ({
         hour: parseInt(h.hour),
         visits: parseInt(h.visit_count)
       })),
       
-      // 検出方法
       detection_methods: detectionMethods.map(d => ({
         method: d.detection_method,
         count: parseInt(d.count)
       })),
       
-      // 手動入力データ
       manual_data: manualData[0] || null,
       
-      // 7日間推移データ（★ 追加）
       daily_trend: dailyTrendFull,
       
-      // 最新訪問履歴
       recent_visits: recentVisits,
       
-      // メタ情報
       period: '7days',
       period_start: sevenDaysAgo.toISOString(),
       period_end: new Date().toISOString(),
@@ -346,12 +321,10 @@ export async function POST(request) {
 
     const sql = neon(process.env.DATABASE_URL);
 
-    // 今週の期間を計算
     const now = new Date();
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    // データをUPSERT（更新 or 挿入）
     await sql`
       INSERT INTO manual_analytics (
         site_id,
