@@ -399,19 +399,19 @@ function DashboardContent() {
     <p className="text-xs text-gray-500">7日間のAIクローラー訪問</p>
   </div>
 
-  {/* AI種類数 */}
-  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
-    <div className="flex items-center gap-2 mb-4">
-      <span className="text-3xl">🛸</span>
-      <h3 className="text-sm text-gray-400">観測AI種類</h3>
-    </div>
-    <p className="text-5xl font-bold text-[#4a9eff] mb-2">
-      {ai_stats.by_crawler.length}
-    </p>
-    <p className="text-xs text-gray-500">
-      {ai_stats.by_crawler.slice(0, 3).map(c => c.crawler_name).join('・')}
-    </p>
+{/* AIページビュー数 */}
+<div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
+  <div className="flex items-center gap-2 mb-4">
+    <span className="text-3xl">📄</span>
+    <h3 className="text-sm text-gray-400">AIページビュー</h3>
   </div>
+  <p className="text-5xl font-bold text-[#4a9eff] mb-2">
+    {ai_stats.total.toLocaleString()}
+  </p>
+  <p className="text-xs text-gray-500">
+    ユニークIP: {ai_stats.unique_ips} • 種類: {ai_stats.by_crawler.length}
+  </p>
+</div>
 
   {/* 人間訪問数 */}
   <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
