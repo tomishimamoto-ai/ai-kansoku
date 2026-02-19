@@ -36,7 +36,7 @@ const AI_HOSTNAMES = [
   { pattern: 'applebot.apple.com',  name: 'Apple AI'    },
   { pattern: 'bingbot.msn.com',     name: 'Bing AI'     },
   { pattern: 'cohere.com',          name: 'Cohere'      },
-  { pattern: 'xai.com',             name: 'Grok'        }, // xAI (Grok)
+  { pattern: 'xai.com',             name: 'Grok'        },
   { pattern: 'deepseek.com',        name: 'DeepSeek'    },
   { pattern: 'mistral.ai',          name: 'Mistral'     },
 ];
@@ -63,7 +63,6 @@ async function dnsReverseLookup(ip) {
 // User-Agent パターン辞書（拡充版 250種類以上）
 // ========================================
 const AI_CRAWLERS_DB = {
-  // ── 主要AIサービス ─────────────────────────────────────────
   chatgpt: {
     name: 'ChatGPT',
     patterns: [
@@ -95,33 +94,18 @@ const AI_CRAWLERS_DB = {
       'perplexitybot', 'perplexity', 'perplexbot', 'perplexity-ai',
     ],
   },
-
-  // ── 新興 LLM / AI サービス ──────────────────────────────────
-  // xAI（Grok）
   grok: {
     name: 'Grok',
-    patterns: [
-      'grok', 'xai', 'x-ai', 'twitterbot', // Grok はまだ専用 UA が流動的
-      'grokbot', 'xaibot',
-    ],
+    patterns: ['grok', 'xai', 'x-ai', 'twitterbot', 'grokbot', 'xaibot'],
   },
-  // DeepSeek
   deepseek: {
     name: 'DeepSeek',
-    patterns: [
-      'deepseek', 'deepseekbot', 'deepseek-crawler',
-      'deepseek-ai', 'deepseekai',
-    ],
+    patterns: ['deepseek', 'deepseekbot', 'deepseek-crawler', 'deepseek-ai', 'deepseekai'],
   },
-  // Mistral AI
   mistral: {
     name: 'Mistral',
-    patterns: [
-      'mistral', 'mistralbot', 'mistral-ai', 'mistralai',
-      'le-chat', 'lechat',
-    ],
+    patterns: ['mistral', 'mistralbot', 'mistral-ai', 'mistralai', 'le-chat', 'lechat'],
   },
-  // Meta LLaMA / Meta AI
   meta_llama: {
     name: 'Meta AI',
     patterns: [
@@ -130,218 +114,88 @@ const AI_CRAWLERS_DB = {
       'llama', 'llamabot', 'meta-llm', 'metaai',
     ],
   },
-  // Cohere
-  cohere: {
-    name: 'Cohere',
-    patterns: ['cohere-ai', 'cohere', 'coherebot'],
-  },
-  // You.com
-  you: {
-    name: 'You.com',
-    patterns: ['youbot', 'you.com', 'youchat'],
-  },
-  // Inflection AI (Pi)
-  inflection: {
-    name: 'Inflection AI',
-    patterns: ['inflection', 'pi-bot', 'pibot', 'inflection-ai'],
-  },
-  // Character.AI
-  character_ai: {
-    name: 'Character.AI',
-    patterns: ['characterai', 'character.ai', 'character-ai'],
-  },
-  // Phind
-  phind: {
-    name: 'Phind',
-    patterns: ['phindbot', 'phind'],
-  },
-  // Stability AI
-  stability: {
-    name: 'Stability AI',
-    patterns: ['stabilityai', 'stability-ai', 'stability'],
-  },
-  // Hugging Face
-  huggingface: {
-    name: 'Hugging Face',
-    patterns: ['huggingfacebot', 'huggingface', 'hf-crawler'],
-  },
-  // Replicate
-  replicate: {
-    name: 'Replicate',
-    patterns: ['replicate', 'replicatebot'],
-  },
-
-  // ── 検索エンジン系AI ────────────────────────────────────────
+  cohere: { name: 'Cohere', patterns: ['cohere-ai', 'cohere', 'coherebot'] },
+  you: { name: 'You.com', patterns: ['youbot', 'you.com', 'youchat'] },
+  inflection: { name: 'Inflection AI', patterns: ['inflection', 'pi-bot', 'pibot', 'inflection-ai'] },
+  character_ai: { name: 'Character.AI', patterns: ['characterai', 'character.ai', 'character-ai'] },
+  phind: { name: 'Phind', patterns: ['phindbot', 'phind'] },
+  stability: { name: 'Stability AI', patterns: ['stabilityai', 'stability-ai', 'stability'] },
+  huggingface: { name: 'Hugging Face', patterns: ['huggingfacebot', 'huggingface', 'hf-crawler'] },
+  replicate: { name: 'Replicate', patterns: ['replicate', 'replicatebot'] },
   bing: {
     name: 'Bing AI',
-    patterns: [
-      'bingbot', 'msnbot', 'msnbot-media', 'adidxbot',
-      'bingpreview', 'msn ', 'edgebot',
-    ],
+    patterns: ['bingbot', 'msnbot', 'msnbot-media', 'adidxbot', 'bingpreview', 'msn ', 'edgebot'],
   },
-  duckduckgo: {
-    name: 'DuckDuckGo',
-    patterns: ['duckduckbot', 'duckduckgo'],
-  },
-  yandex: {
-    name: 'Yandex',
-    patterns: ['yandexbot', 'yadirectfetcher', 'yandex', 'yandexmobilebot'],
-  },
-  baidu: {
-    name: 'Baidu',
-    patterns: ['baiduspider', 'baidu'],
-  },
-  naver: {
-    name: 'Naver',
-    patterns: ['naverbot', 'yeti', 'navercorp'],
-  },
-
-  // ── 大企業のAI/クローラー ────────────────────────────────────
-  apple: {
-    name: 'Apple AI',
-    patterns: ['applebot', 'applebot-extended', 'apple-pubsub'],
-  },
-  amazon: {
-    name: 'Amazon',
-    patterns: ['amazonbot', 'alexa', 'ia_archiver'],
-  },
-  bytedance: {
-    name: 'ByteDance',
-    patterns: ['bytespider', 'bytedance', 'toutiaospider', 'douyinbot'],
-  },
-
-  // ── SEO/クロールツール ──────────────────────────────────────
-  commoncrawl: {
-    name: 'CommonCrawl',
-    patterns: ['ccbot', 'commoncrawl', 'cc-bot'],
-  },
-  semrush: {
-    name: 'Semrush',
-    patterns: ['semrushbot', 'semrush'],
-  },
-  ahrefs: {
-    name: 'Ahrefs',
-    patterns: ['ahrefsbot', 'ahrefs'],
-  },
-  screaming_frog: {
-    name: 'Screaming Frog',
-    patterns: ['screaming frog', 'screamingfrog'],
-  },
-  dataforseo: {
-    name: 'DataForSEO',
-    patterns: ['dataforseobot', 'dataforseo'],
-  },
-  dotbot: {
-    name: 'DotBot',
-    patterns: ['dotbot', 'moz.com'],
-  },
-  petalbot: {
-    name: 'PetalBot',
-    patterns: ['petalbot', 'aspiegel'],
-  },
+  duckduckgo: { name: 'DuckDuckGo', patterns: ['duckduckbot', 'duckduckgo'] },
+  yandex: { name: 'Yandex', patterns: ['yandexbot', 'yadirectfetcher', 'yandex', 'yandexmobilebot'] },
+  baidu: { name: 'Baidu', patterns: ['baiduspider', 'baidu'] },
+  naver: { name: 'Naver', patterns: ['naverbot', 'yeti', 'navercorp'] },
+  apple: { name: 'Apple AI', patterns: ['applebot', 'applebot-extended', 'apple-pubsub'] },
+  amazon: { name: 'Amazon', patterns: ['amazonbot', 'alexa', 'ia_archiver'] },
+  bytedance: { name: 'ByteDance', patterns: ['bytespider', 'bytedance', 'toutiaospider', 'douyinbot'] },
+  commoncrawl: { name: 'CommonCrawl', patterns: ['ccbot', 'commoncrawl', 'cc-bot'] },
+  semrush: { name: 'Semrush', patterns: ['semrushbot', 'semrush'] },
+  ahrefs: { name: 'Ahrefs', patterns: ['ahrefsbot', 'ahrefs'] },
+  screaming_frog: { name: 'Screaming Frog', patterns: ['screaming frog', 'screamingfrog'] },
+  dataforseo: { name: 'DataForSEO', patterns: ['dataforseobot', 'dataforseo'] },
+  dotbot: { name: 'DotBot', patterns: ['dotbot', 'moz.com'] },
+  petalbot: { name: 'PetalBot', patterns: ['petalbot', 'aspiegel'] },
 };
 
 // ========================================
-// Phase 3 NEW: HEADメソッド検出
+// HEADメソッド検出
 // ========================================
 function checkHeadMethod(method) {
   return method === 'HEAD';
 }
 
 // ========================================
-// Phase 3 NEW: Accept-Encoding パターン検知
+// Accept-Encoding パターン検知
 // ========================================
-// ブラウザとクローラーの Accept-Encoding の違いを活用
-//
-// ブラウザ (Chrome/Firefox/Edge/Safari) の典型例:
-//   "gzip, deflate, br, zstd"  ← zstd を含む (Chrome 121+)
-//   "gzip, deflate, br"
-//
-// クローラー / プログラムの典型例:
-//   "" (空)  → curl のデフォルト / 古い HTTP クライアント
-//   "gzip"   → Python requests, axios デフォルト
-//   "identity" → 圧縮なし明示
-//   "gzip, deflate" → axios, fetch polyfill
-//
-// ポイント:
-//   - "br" (Brotli) を含まない → 古い or 非ブラウザ環境
-//   - 空文字 or "identity" → 強いクローラーシグナル
 function analyzeAcceptEncoding(headers) {
   const ae = (headers.get('accept-encoding') || '').toLowerCase().trim();
-
-  // 空 or "identity" のみ → 強いクローラーシグナル (スコア+3)
-  if (ae === '' || ae === 'identity') {
-    return { signal: 'no-encoding', score: 3 };
-  }
-
-  // "gzip" だけ → Python requests, axios など (スコア+2)
-  if (/^gzip$/.test(ae) || ae === 'gzip, deflate') {
-    return { signal: 'minimal-encoding', score: 2 };
-  }
-
-  // "br" を含まない (かつ "zstd" もない) → モダンブラウザ以外 (スコア+1)
-  if (!ae.includes('br') && !ae.includes('zstd')) {
-    return { signal: 'no-brotli', score: 1 };
-  }
-
-  // ブラウザらしい (br または zstd を含む) → クローラーシグナルなし
+  if (ae === '' || ae === 'identity') return { signal: 'no-encoding', score: 3 };
+  if (/^gzip$/.test(ae) || ae === 'gzip, deflate') return { signal: 'minimal-encoding', score: 2 };
+  if (!ae.includes('br') && !ae.includes('zstd')) return { signal: 'no-brotli', score: 1 };
   return { signal: 'browser-like', score: 0 };
 }
 
 // ========================================
-// Phase 3 ENHANCED: ヘッダーパターン精度向上
+// ヘッダーパターン精度向上スコアリング
 // ========================================
 function analyzeHeaders(headers) {
   const signals = {
-    // Sec-Fetch系（ブラウザは必ず付ける Chrome/Firefox/Edge）
     noSecFetch:
       !headers.get('sec-fetch-site') &&
       !headers.get('sec-fetch-mode') &&
       !headers.get('sec-fetch-dest'),
-
-    // Client Hintsなし（モダンブラウザは必ず付ける）
     noClientHints:
       !headers.get('sec-ch-ua') &&
       !headers.get('sec-ch-ua-mobile') &&
       !headers.get('sec-ch-ua-platform'),
-
-    // Accept-Languageが空 or 単一（ブラウザは複数指定）
     simpleLang: (() => {
       const lang = headers.get('accept-language') || '';
       return lang === '' || lang.split(',').length === 1;
     })(),
-
-    // Accept が */* のみ（ブラウザはtext/html等を含む）
     genericAccept: (() => {
       const accept = headers.get('accept') || '';
       return !accept.includes('text/html') && accept.includes('*/*');
     })(),
-
-    // Refererなし
     noReferer: !headers.get('referer') && !headers.get('referrer'),
-
-    // Cookieなし
     noCookie: !headers.get('cookie'),
-
-    // Connection: close
-    connectionClose:
-      (headers.get('connection') || '').toLowerCase() === 'close',
-
-    // ブラウザシグナル完全ゼロ
+    connectionClose: (headers.get('connection') || '').toLowerCase() === 'close',
     noBrowserSignals:
       !headers.get('dnt') &&
       !headers.get('sec-fetch-site') &&
       !headers.get('upgrade-insecure-requests'),
   };
 
-  // Accept-Encoding シグナル（新規追加）
   const aeAnalysis = analyzeAcceptEncoding(headers);
 
-  // スコア計算
   const score =
-    (signals.noSecFetch     ? 3 : 0) + // 最も信頼度高い
-    (signals.noClientHints  ? 2 : 0) + // 信頼度高い
-    aeAnalysis.score +                   // Accept-Encoding シグナル（0〜3点）
+    (signals.noSecFetch     ? 3 : 0) +
+    (signals.noClientHints  ? 2 : 0) +
+    aeAnalysis.score +
     (signals.genericAccept  ? 1 : 0) +
     (signals.simpleLang     ? 1 : 0) +
     (signals.noReferer      ? 1 : 0) +
@@ -360,7 +214,7 @@ async function detectAICrawlerAdvanced(headers, ip, method) {
   let detectedCrawler = null;
   let detectionMethod = 'unknown';
 
-  // === Layer 1: User-Agent マッチ（最優先・既存） ===
+  // === Layer 1: User-Agent マッチ ===
   for (const [, crawler] of Object.entries(AI_CRAWLERS_DB)) {
     for (const pattern of crawler.patterns) {
       if (userAgent.includes(pattern)) {
@@ -373,17 +227,13 @@ async function detectAICrawlerAdvanced(headers, ip, method) {
   }
   if (detectedCrawler) return { crawler: detectedCrawler, method: detectionMethod };
 
-  // === Layer 2: IPレンジチェック（公式JSONから動的取得）===
+  // === Layer 2: IPレンジチェック ===
   const ipRangeMatch = await checkIpRangeDynamic(ip);
-  if (ipRangeMatch) {
-    return { crawler: ipRangeMatch, method: 'ip-range' };
-  }
+  if (ipRangeMatch) return { crawler: ipRangeMatch, method: 'ip-range' };
 
-  // === Layer 3: DNS逆引き（非同期・2秒タイムアウト） ===
+  // === Layer 3: DNS逆引き ===
   const dnsMatch = await dnsReverseLookup(ip);
-  if (dnsMatch) {
-    return { crawler: dnsMatch, method: 'dns-reverse' };
-  }
+  if (dnsMatch) return { crawler: dnsMatch, method: 'dns-reverse' };
 
   // === Layer 4: HEADメソッド検出 ===
   if (checkHeadMethod(method)) {
@@ -394,7 +244,7 @@ async function detectAICrawlerAdvanced(headers, ip, method) {
     };
   }
 
-  // === Layer 5: アクセス間隔チェック（Phase2） ===
+  // === Layer 5: アクセス間隔チェック ===
   const now = Date.now();
   const lastAccess = accessCache.get(ip);
   let isRapidAccess = false;
@@ -403,7 +253,7 @@ async function detectAICrawlerAdvanced(headers, ip, method) {
   }
   accessCache.set(ip, now);
 
-  // === Layer 6: ヘッダー精度向上スコアリング（Accept-Encoding含む）===
+  // === Layer 6: ヘッダースコアリング ===
   const { signals, aeSignal, score: headerScore } = analyzeHeaders(headers);
   const looksLikeProgram = /(python|curl|axios|okhttp|java|go-http|bot|wget|scrapy|playwright|puppeteer)/.test(userAgent);
 
@@ -413,30 +263,26 @@ async function detectAICrawlerAdvanced(headers, ip, method) {
     !userAgent.includes('crios') &&
     !userAgent.includes('edg');
 
-  // Safari誤検知を防ぐため除外
   const adjustedScore = isSafari ? 0 : headerScore;
 
-  // しきい値: 5点以上で疑わしい
-  // （Sec-Fetch完全なし:3点 + Client Hints完全なし:2点 が基本ライン）
   if (adjustedScore >= 5 && (isRapidAccess || looksLikeProgram || signals.noSecFetch)) {
-    // Accept-Encoding が "no-encoding" なら より確実にクローラー
     const prefix =
       aeSignal === 'no-encoding' || aeSignal === 'minimal-encoding'
         ? 'Unknown AI'
         : 'Unknown Crawler';
 
-    if (userAgent.includes('python'))      detectedCrawler = `${prefix} (Python)`;
-    else if (userAgent.includes('curl'))   detectedCrawler = `${prefix} (curl)`;
-    else if (userAgent.includes('wget'))   detectedCrawler = `${prefix} (wget)`;
-    else if (userAgent.includes('axios'))  detectedCrawler = `${prefix} (axios)`;
-    else if (userAgent.includes('scrapy')) detectedCrawler = `${prefix} (Scrapy)`;
+    if (userAgent.includes('python'))          detectedCrawler = `${prefix} (Python)`;
+    else if (userAgent.includes('curl'))       detectedCrawler = `${prefix} (curl)`;
+    else if (userAgent.includes('wget'))       detectedCrawler = `${prefix} (wget)`;
+    else if (userAgent.includes('axios'))      detectedCrawler = `${prefix} (axios)`;
+    else if (userAgent.includes('scrapy'))     detectedCrawler = `${prefix} (Scrapy)`;
     else if (userAgent.includes('playwright')) detectedCrawler = `${prefix} (Playwright)`;
     else if (userAgent.includes('puppeteer'))  detectedCrawler = `${prefix} (Puppeteer)`;
-    else if (userAgent.includes('okhttp')) detectedCrawler = `${prefix} (okhttp)`;
-    else if (userAgent.includes('java'))   detectedCrawler = `${prefix} (Java)`;
-    else if (userAgent.includes('go-http')) detectedCrawler = `${prefix} (Go)`;
-    else if (userAgent.includes('bot'))    detectedCrawler = 'Unknown Bot';
-    else                                   detectedCrawler = prefix;
+    else if (userAgent.includes('okhttp'))     detectedCrawler = `${prefix} (okhttp)`;
+    else if (userAgent.includes('java'))       detectedCrawler = `${prefix} (Java)`;
+    else if (userAgent.includes('go-http'))    detectedCrawler = `${prefix} (Go)`;
+    else if (userAgent.includes('bot'))        detectedCrawler = 'Unknown Bot';
+    else                                       detectedCrawler = prefix;
 
     detectionMethod = isRapidAccess ? 'rapid-access' : 'pattern-inference';
     return { crawler: detectedCrawler, method: detectionMethod };
@@ -483,8 +329,39 @@ export async function GET(request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
 
-  // Phase 2: JS実行検出
+  // -----------------------------------------------
+  // [FIX] Phase 2: JS実行検出 → is_human = true で保存
+  // -----------------------------------------------
   if (pathname.includes('/js-active')) {
+    const siteId = url.searchParams.get('site');
+    const path   = url.searchParams.get('path') || '/';
+    const xff    = request.headers.get('x-forwarded-for') || '';
+    const ip     = xff.split(',')[0].trim() || request.headers.get('x-real-ip') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || '';
+
+    if (siteId) {
+      try {
+        const sql = neon(process.env.DATABASE_URL);
+        await sql`
+          INSERT INTO ai_crawler_visits (
+            site_id, user_agent, ip_address, referrer,
+            page_url, session_id, crawler_name,
+            accept_header, accept_language, detection_method, is_human
+          ) VALUES (
+            ${siteId}, ${userAgent}, ${ip}, ${request.headers.get('referer') || ''},
+            ${path}, ${generateSessionId()}, ${'Human (JS Detected)'},
+            ${request.headers.get('accept') || ''},
+            ${request.headers.get('accept-language') || ''},
+            ${'js_active'},
+            ${true}
+          )
+        `;
+        console.log(`✅ Human JS detected: ${ip}`);
+      } catch (error) {
+        console.error('❌ DB Error (js-active):', error);
+      }
+    }
+
     const gif = Buffer.from(
       'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
       'base64'
@@ -499,7 +376,7 @@ export async function GET(request) {
     });
   }
 
-  // Phase 2: 画像リクエスト検出
+  // Phase 2: 画像リクエスト検出（is_human の判定なし・保存のみ）
   if (pathname.includes('/img-check')) {
     const gif = Buffer.from(
       'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
@@ -515,7 +392,9 @@ export async function GET(request) {
     });
   }
 
-  // Phase 1+2+3: 通常トラッキングピクセル
+  // -----------------------------------------------
+  // Phase 1+2+3: 通常トラッキングピクセル → is_human = false で保存
+  // -----------------------------------------------
   const siteId = url.searchParams.get('site');
   const path = url.searchParams.get('path') || '/';
 
@@ -532,24 +411,25 @@ export async function GET(request) {
   if (detection && siteId) {
     try {
       const sql = neon(process.env.DATABASE_URL);
-      const userAgent    = request.headers.get('user-agent')       || '';
-      const referer      = request.headers.get('referer')           || '';
-      const accept       = request.headers.get('accept')            || '';
-      const acceptLang   = request.headers.get('accept-language')   || '';
-      const acceptEnc    = request.headers.get('accept-encoding')   || '';
+      const userAgent  = request.headers.get('user-agent')       || '';
+      const referer    = request.headers.get('referer')           || '';
+      const accept     = request.headers.get('accept')            || '';
+      const acceptLang = request.headers.get('accept-language')   || '';
+      const acceptEnc  = request.headers.get('accept-encoding')   || '';
 
       await sql`
         INSERT INTO ai_crawler_visits (
           site_id, user_agent, ip_address, referrer,
           page_url, session_id, crawler_name,
-          accept_header, accept_language, detection_method
+          accept_header, accept_language, detection_method, is_human
         ) VALUES (
           ${siteId}, ${userAgent}, ${ip}, ${referer},
           ${path}, ${generateSessionId()}, ${detection.crawler},
-          ${accept}, ${acceptLang}, ${detection.method}
+          ${accept}, ${acceptLang}, ${detection.method},
+          ${false}
         )
       `;
-      console.log(`✅ Saved: ${detection.crawler} (${detection.method}) ae="${acceptEnc}"`);
+      console.log(`✅ AI Saved: ${detection.crawler} (${detection.method}) ae="${acceptEnc}"`);
     } catch (error) {
       console.error('❌ DB Error:', error);
     }
@@ -572,7 +452,7 @@ export async function GET(request) {
 }
 
 // ========================================
-// Phase 3: HEADメソッド対応
+// Phase 3: HEADメソッド対応 → is_human = false で保存
 // ========================================
 export async function HEAD(request) {
   await initDB();
@@ -598,14 +478,15 @@ export async function HEAD(request) {
         INSERT INTO ai_crawler_visits (
           site_id, user_agent, ip_address, referrer,
           page_url, session_id, crawler_name,
-          accept_header, accept_language, detection_method
+          accept_header, accept_language, detection_method, is_human
         ) VALUES (
           ${siteId}, ${userAgent}, ${ip}, ${''},
           ${path}, ${generateSessionId()}, ${detection.crawler},
-          ${''}, ${''}, ${'head-method'}
+          ${''}, ${''}, ${'head-method'},
+          ${false}
         )
       `;
-      console.log(`✅ HEAD Saved: ${detection.crawler}`);
+      console.log(`✅ HEAD AI Saved: ${detection.crawler}`);
     } catch (error) {
       console.error('❌ DB Error (HEAD):', error);
     }
@@ -622,7 +503,7 @@ export async function HEAD(request) {
 }
 
 // ========================================
-// POST リクエスト（既存のJS用）
+// POST リクエスト（既存のJS用）→ is_human = false で保存
 // ========================================
 export async function POST(request) {
   await initDB();
@@ -642,12 +523,13 @@ export async function POST(request) {
     await sql`
       INSERT INTO ai_crawler_visits (
         site_id, user_agent, ip_address, referrer,
-        page_url, session_id, crawler_name, detection_method
+        page_url, session_id, crawler_name, detection_method, is_human
       ) VALUES (
         ${data.site}, ${data.ua}, ${data.ip || 'unknown'},
         ${data.referrer || ''}, ${data.path || '/'},
         ${data.session || generateSessionId()}, ${crawlerName},
-        'user-agent'
+        ${'user-agent'},
+        ${false}
       )
     `;
 
