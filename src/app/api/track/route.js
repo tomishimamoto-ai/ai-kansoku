@@ -333,7 +333,7 @@ export async function GET(request) {
   // [FIX] Phase 2: JS実行検出 → is_human = true で保存
   // -----------------------------------------------
   if (pathname.includes('/js-active')) {
-    const siteId = url.searchParams.get('site');
+    const siteId = url.searchParams.get('siteId') || url.searchParams.get('site');
     const path   = url.searchParams.get('path') || '/';
     const xff    = request.headers.get('x-forwarded-for') || '';
     const ip     = xff.split(',')[0].trim() || request.headers.get('x-real-ip') || 'unknown';
@@ -395,7 +395,7 @@ export async function GET(request) {
   // -----------------------------------------------
   // Phase 1+2+3: 通常トラッキングピクセル → is_human = false で保存
   // -----------------------------------------------
-  const siteId = url.searchParams.get('site');
+  const siteId = url.searchParams.get('siteId') || url.searchParams.get('site');
   const path = url.searchParams.get('path') || '/';
 
   const xff = request.headers.get('x-forwarded-for') || '';
@@ -458,7 +458,7 @@ export async function HEAD(request) {
   await initDB();
 
   const url = new URL(request.url);
-  const siteId = url.searchParams.get('site');
+  const siteId = url.searchParams.get('siteId') || url.searchParams.get('site');
   const path = url.searchParams.get('path') || '/';
 
   const xff = request.headers.get('x-forwarded-for') || '';
