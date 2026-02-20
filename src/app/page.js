@@ -412,7 +412,7 @@ export default function Home() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '1rem',
               }}>✦</div>
-              <span className={syne.className} style={{ fontSize: '1.05rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
+              <span style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif", fontSize: '1.05rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
                 AI観測ラボ
               </span>
             </div>
@@ -448,7 +448,7 @@ export default function Home() {
           </div>
 
           {/* Headline */}
-          <h1 className={`animate-fadeSlideUp delay-100 ${syne.className}`} style={{
+          <h1 className='animate-fadeSlideUp delay-100' style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",
             fontSize: 'clamp(1.8rem, 4.5vw, 3.6rem)',
             fontWeight: 800,
             lineHeight: 1.15,
@@ -569,17 +569,17 @@ export default function Home() {
               { val: stats.score, suffix: '点', label: '平均観測スコア', color: 'var(--green)' },
             ].map(({ val, suffix, label, color }) => (
               <div key={label} className="glass-card" style={{ padding: '24px 16px', textAlign: 'center' }}>
-                <div className={syne.className} style={{
+                <div style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
                   fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
                   fontWeight: 800,
                   color,
                   letterSpacing: '-0.03em',
                   lineHeight: 1,
                   marginBottom: 6,
+                  fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif",
                   fontVariantNumeric: 'tabular-nums',
-                  fontFeatureSettings: '"tnum"',
                 }}>
-                  {val.toLocaleString()}<span style={{ fontSize: '0.5em' }}>{suffix}</span>
+                  {val.toLocaleString()}<span style={{ fontSize: '0.5em', fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif" }}>{suffix}</span>
                 </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{label}</p>
               </div>
@@ -591,7 +591,7 @@ export default function Home() {
         <section style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto 100px', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <span className="tag tag-purple" style={{ marginBottom: 12, display: 'inline-block' }}>HOW IT WORKS</span>
-            <h2 className={syne.className} style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
+            <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
               4ステップで観測完了
             </h2>
           </div>
@@ -599,7 +599,7 @@ export default function Home() {
             {STEPS.map((step, i) => (
               <div key={step.num} className="glass-card" style={{ padding: '28px 24px', position: 'relative', overflow: 'hidden' }}>
                 {/* BG number */}
-                <div className={syne.className} style={{
+                <div style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
                   position: 'absolute', top: -10, right: 12,
                   fontSize: '5rem', fontWeight: 800,
                   color: 'rgba(255,255,255,0.04)', lineHeight: 1,
@@ -607,7 +607,7 @@ export default function Home() {
                 }}>
                   {step.num}
                 </div>
-                <div className={syne.className} style={{
+                <div style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
                   fontSize: '0.72rem', fontWeight: 700,
                   color: 'var(--blue)', letterSpacing: '0.1em',
                   marginBottom: 8,
@@ -625,7 +625,7 @@ export default function Home() {
         <section style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto 100px', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <span className="tag tag-green" style={{ marginBottom: 12, display: 'inline-block' }}>WHAT WE ANALYZE</span>
-            <h2 className={syne.className} style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
+            <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
               8項目の観測レポート
             </h2>
             <p style={{ color: 'var(--text-muted)', marginTop: 12, fontSize: '0.9rem' }}>
@@ -666,7 +666,7 @@ export default function Home() {
         {history.length > 0 && (
           <section style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto 100px', padding: '0 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-              <h2 className={syne.className} style={{ fontSize: '1.4rem', fontWeight: 700 }}>
+              <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: '1.4rem', fontWeight: 700 }}>
                 🛸 観測履歴
               </h2>
               <button onClick={clearHistory}
@@ -688,7 +688,7 @@ export default function Home() {
                         <span style={{ fontWeight: 700, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {item.url.replace(/https?:\/\//, '')}
                         </span>
-                        <span className={syne.className} style={{ color: scoreColor, fontWeight: 800, fontSize: '1.2rem' }}>
+                        <span style={{ color: scoreColor, fontWeight: 800, fontSize: '1.2rem', fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif" }}>
                           {item.score}点
                         </span>
                         {diff !== null && diff !== 0 && (
@@ -739,7 +739,7 @@ export default function Home() {
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 12 }}>
             <div>
               <span className="tag tag-blue" style={{ marginBottom: 8, display: 'inline-block' }}>LATEST POSTS</span>
-              <h2 className={syne.className} style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
+              <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
                 最新ブログ記事
               </h2>
             </div>
@@ -777,7 +777,7 @@ export default function Home() {
         <section style={{ position: 'relative', zIndex: 1, maxWidth: 680, margin: '0 auto 100px', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
             <span className="tag tag-purple" style={{ marginBottom: 12, display: 'inline-block' }}>FAQ</span>
-            <h2 className={syne.className} style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
+            <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
               よくある質問
             </h2>
           </div>
@@ -844,7 +844,7 @@ export default function Home() {
             }} />
             <div style={{ position: 'relative' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>✦</div>
-              <h2 className={syne.className} style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 800, marginBottom: 12, letterSpacing: '-0.03em' }}>
+              <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 800, marginBottom: 12, letterSpacing: '-0.03em' }}>
                 今すぐ観測をはじめよう
               </h2>
               <p style={{ color: 'var(--text-sub)', fontSize: '0.9rem', marginBottom: 28, lineHeight: 1.7 }}>
@@ -879,7 +879,7 @@ export default function Home() {
                 borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '0.85rem',
               }}>✦</div>
-              <span className={syne.className} style={{ fontSize: '0.9rem', fontWeight: 700 }}>AI観測ラボ</span>
+              <span style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif", fontSize: '0.9rem', fontWeight: 700 }}>AI観測ラボ</span>
             </div>
             <div style={{ display: 'flex', gap: 20 }}>
               {[['改善ガイド', '/guide'], ['FAQ', '/faq'], ['使い方', '/how-to-use'], ['ブログ', 'https://blog.ai-kansoku.com']].map(([l, h]) => (
