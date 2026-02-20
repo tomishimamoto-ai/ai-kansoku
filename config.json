@@ -1,0 +1,237 @@
+/**
+ * AI観測ラボ - クローラー検知ロジック v5
+ *
+ * v4からの変更点:
+ * 1. 統合スコア方式（uaScore + ipScore + behaviorScore + rapidScore）
+ * 2. chatgpt パターンを 'chatgpt/1.' に絞る（過剰検知防止）
+ * 3. confidence を動的計算（50 + behaviorScore*3 + rapid*10）
+ * 4. セッションID導入（IP + UAハッシュ）
+ * 5. robots.txt先行アクセスフラグ
+ * 6. HTML only 比率チェック（補助）
+ *
+ * 統合スコア:
+ *   uaScore      0-40  UA完全一致=40, パターン一致=30
+ *   ipScore      0-30  IP+UA一致=30, IPのみ=20
+ *   behaviorScore 0-20  各フラグの合算
+ *   rapidScore   0-10  連続アクセス=10
+ *
+ *   >= 70 → AI (isAI=true)
+ *   >= 40 → Suspicious (isAI=true, confidence低め)
+ *   <  40 → Human
+ *
+ * NOTE: accessMap / robotsMap は Serverless では
+ *       インスタンス分散により補助的な効果にとどまる。
+ *       本番強化は Redis 推奨（将来対応）。
+ */
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 1. 検索エンジン（AIではない）
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const SEARCH_ENGINE_PATTERNS = [
+  'duckduckbot',
+  'bingbot',
+  'msnbot',
+  'bingpreview',
+  'googlebot',
+  'slurp',
+  'yandexbot',
+  'baiduspider',
+  'ia_archiver',
+  'facebookexternalhit',
+  'twitterbot',
+  'linkedinbot',
+  'discordbot',
+  'whatsapp',
+  'telegrambot',
+  'slackbot',
+];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 2. AIクローラー定義
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const AI_CRAWLERS = [
+
+  // ── OpenAI: 用途別に3分割 ───────────────────────────────
+  {
+    name: 'GPTBot',
+    purpose: 'training',
+    patterns: ['gptbot'],
+    officialDomains: ['openai.com'],
+    ipRanges: [
+      '20.15.240.64/28', '20.15.240.80/28', '20.15.240.96/28',
+      '20.15.240.176/28', '20.15.241.0/28', '20.15.243.128/28',
+    ],
+  },
+  {
+    name: 'ChatGPT-User',
+    purpose: 'realtime',
+    patterns: [
+      'chatgpt-user',
+      'chatgpt/1.',     // ✅ 'chatgpt'から絞る（ChatGPT-Plugin等の誤検知防止）
+    ],
+    officialDomains: ['openai.com'],
+    ipRanges: [],
+  },
+  {
+    name: 'SearchGPT',
+    purpose: 'search-summary',
+    patterns: ['oai-searchbot'],
+    officialDomains: ['openai.com'],
+    ipRanges: [],
+  },
+
+  // ── Anthropic (Claude) ──────────────────────────────────
+  {
+    name: 'Claude',
+    purpose: 'realtime',
+    patterns: ['claudebot', 'claude-web', 'anthropic', 'claude/'],
+    officialDomains: ['anthropic.com'],
+    ipRanges: ['160.79.104.0/23'],
+  },
+
+  // ── Perplexity ──────────────────────────────────────────
+  {
+    name: 'PerplexityBot',
+    purpose: 'search-summary',
+    patterns: ['perplexitybot', 'perplexity'],
+    officialDomains: ['perplexity.ai'],
+    ipRanges: [],
+  },
+
+  // ── Google Gemini / AI ──────────────────────────────────
+  {
+    name: 'Gemini',
+    purpose: 'training',
+    patterns: ['google-extended', 'googleother', 'google-inspectiontool', 'bard', 'gemini'],
+    officialDomains: ['google.com'],
+    ipRanges: [],
+  },
+
+  // ── Microsoft Copilot ───────────────────────────────────
+  {
+    name: 'Microsoft Copilot',
+    purpose: 'search-summary',
+    patterns: ['copilot'],
+    officialDomains: ['microsoft.com'],
+    ipRanges: ['40.77.167.0/24', '207.46.13.0/24'],
+  },
+
+  // ── Meta AI ─────────────────────────────────────────────
+  {
+    name: 'Meta AI',
+    purpose: 'training',
+    patterns: ['meta-externalagent', 'meta-externalachecker', 'facebookai', 'metaai', 'llama'],
+    officialDomains: ['meta.com', 'facebook.com'],
+    ipRanges: [],
+  },
+
+  // ── xAI (Grok) ──────────────────────────────────────────
+  {
+    name: 'Grok',
+    purpose: 'realtime',
+    patterns: ['grok', 'xai', 'grokbot'],
+    officialDomains: ['x.ai'],
+    ipRanges: [],
+  },
+
+  // ── Mistral ─────────────────────────────────────────────
+  {
+    name: 'Mistral',
+    purpose: 'training',
+    patterns: ['mistral', 'mistralbot', 'le-chat'],
+    officialDomains: ['mistral.ai'],
+    ipRanges: [],
+  },
+
+  // ── DeepSeek ────────────────────────────────────────────
+  {
+    name: 'DeepSeek',
+    purpose: 'training',
+    patterns: ['deepseek', 'deepseekbot'],
+    officialDomains: ['deepseek.com'],
+    ipRanges: [],
+  },
+
+  // ── Cohere ──────────────────────────────────────────────
+  {
+    name: 'Cohere',
+    purpose: 'training',
+    patterns: ['cohere', 'coherebot', 'command-r'],
+    officialDomains: ['cohere.com'],
+    ipRanges: [],
+  },
+
+  // ── You.com ─────────────────────────────────────────────
+  {
+    name: 'YouBot',
+    purpose: 'search-summary',
+    patterns: ['youbot'],
+    officialDomains: ['you.com'],
+    ipRanges: [],
+  },
+
+  // ── Phind ───────────────────────────────────────────────
+  {
+    name: 'Phind',
+    purpose: 'search-summary',
+    patterns: ['phindbot', 'phind'],
+    officialDomains: ['phind.com'],
+    ipRanges: [],
+  },
+
+  // ── Hugging Face ────────────────────────────────────────
+  {
+    name: 'HuggingFaceBot',
+    purpose: 'academic',
+    patterns: ['huggingface', 'transformersbot'],
+    officialDomains: ['huggingface.co'],
+    ipRanges: [],
+  },
+
+  // ── Common Crawl ────────────────────────────────────────
+  {
+    name: 'CCBot',
+    purpose: 'academic',
+    patterns: ['ccbot', 'commoncrawl'],
+    officialDomains: ['commoncrawl.org'],
+    ipRanges: [],
+  },
+
+  // ── Apple ───────────────────────────────────────────────
+  {
+    name: 'AppleBot',
+    purpose: 'training',
+    patterns: ['applebot'],
+    officialDomains: ['applebot.apple.com'],
+    ipRanges: [],
+  },
+
+  // ── Amazon ──────────────────────────────────────────────
+  {
+    name: 'AmazonBot',
+    purpose: 'training',
+    patterns: ['amazonbot'],
+    officialDomains: ['amazon.com'],
+    ipRanges: [],
+  },
+
+  // ── Bytedance ───────────────────────────────────────────
+  {
+    name: 'ByteSpider',
+    purpose: 'training',
+    patterns: ['bytespider', 'bytedance'],
+    officialDomains: ['bytedance.com'],
+    ipRanges: [],
+  },
+];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 3. メモリキャッシュ
+//    NOTE: Serverlessでは補助的効果。本番強化はRedis推奨。
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// 連続アクセス検知用
+const accessMap = new Map();
+
+// robots.txt 先行アクセスフラグ
+const 
