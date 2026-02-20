@@ -92,6 +92,7 @@ export default function Home() {
   const [loadingStep, setLoadingStep] = useState('');
   const [history, setHistory] = useState([]);
   const [openFaq, setOpenFaq] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [stats, setStats] = useState({ sites: 0, crawlers: 0, score: 0 });
   const inputRef = useRef(null);
 
@@ -319,6 +320,17 @@ export default function Home() {
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+        /* モバイル */
+        @media (max-width: 640px) {
+          .pc-nav { display: none !important; }
+          .hamburger-btn { display: flex !important; }
+          .hide-mobile { display: none !important; }
+        }
+        @media (min-width: 641px) {
+          .hamburger-btn { display: none !important; }
+          .mobile-drawer { display: none !important; }
+        }
       `}</style>
 
       {/* ── ローディングオーバーレイ ── */}
@@ -416,7 +428,8 @@ export default function Home() {
                 AI観測ラボ
               </span>
             </div>
-            <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
+            {/* PC nav */}
+            <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }} className="pc-nav">
               {[
                 ['使い方', '/how-to-use'],
                 ['改善ガイド', '/guide'],
@@ -430,6 +443,45 @@ export default function Home() {
                 >{label}</a>
               ))}
             </nav>
+            {/* ハンバーガー（モバイルのみ） */}
+            <button
+              className="hamburger-btn"
+              onClick={() => setMenuOpen(!menuOpen)}
+              style={{
+                display: 'none',
+                background: 'none', border: '1px solid var(--border)',
+                borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
+                color: '#fff', flexDirection: 'column', gap: 4, alignItems: 'center', justifyContent: 'center',
+              }}
+              aria-label="メニュー"
+            >
+              <span style={{ display: 'block', width: 18, height: 2, background: menuOpen ? 'var(--blue)' : '#fff', borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(45deg) translate(3px, 3px)' : 'none' }} />
+              <span style={{ display: 'block', width: 18, height: 2, background: menuOpen ? 'transparent' : '#fff', borderRadius: 2, transition: 'all 0.3s' }} />
+              <span style={{ display: 'block', width: 18, height: 2, background: menuOpen ? 'var(--blue)' : '#fff', borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(-45deg) translate(3px, -3px)' : 'none' }} />
+            </button>
+            {/* モバイルドロワー */}
+            {menuOpen && (
+              <div className="mobile-drawer" style={{
+                position: 'fixed', top: 64, left: 0, right: 0,
+                background: 'rgba(3,4,14,0.98)', backdropFilter: 'blur(20px)',
+                borderBottom: '1px solid var(--border)',
+                padding: '16px 24px 24px',
+                zIndex: 200,
+                display: 'flex', flexDirection: 'column', gap: 4,
+              }}>
+                {[
+                  ['使い方', '/how-to-use'],
+                  ['改善ガイド', '/guide'],
+                  ['ブログ', 'https://blog.ai-kansoku.com'],
+                  ['FAQ', '/faq'],
+                ].map(([label, href]) => (
+                  <a key={label} href={href}
+                     onClick={() => setMenuOpen(false)}
+                     style={{ color: '#fff', fontSize: '1.05rem', textDecoration: 'none', padding: '12px 0', borderBottom: '1px solid var(--border)', display: 'block' }}
+                  >{label}</a>
+                ))}
+              </div>
+            )}
           </div>
         </header>
 
@@ -449,15 +501,24 @@ export default function Home() {
 
           {/* Headline */}
           <h1 className='animate-fadeSlideUp delay-100' style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",
-            fontSize: 'clamp(1.8rem, 4.5vw, 3.6rem)',
-            fontWeight: 800,
+            fontSize: 'clamp(2rem, 5vw, 4rem)',
+            fontWeight: 900,
             lineHeight: 1.15,
             letterSpacing: '-0.03em',
             marginBottom: 20,
             wordBreak: 'keep-all',
           }}>
-            <span style={{ color: '#fff', display: 'block' }}>あなたのサイトは</span>
-            <span className="gradient-text">AIに好かれていますか？</span>
+            <span style={{ color: '#fff', display: 'block',
+              textShadow: '0 0 60px rgba(255,255,255,0.2)',
+            }}>あなたのサイトは</span>
+            <span style={{
+              background: 'linear-gradient(135deg, #4a9eff 0%, #9b6dff 50%, #ff6eb4 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              display: 'inline-block',
+              filter: 'drop-shadow(0 0 30px rgba(74,158,255,0.6)) drop-shadow(0 0 60px rgba(155,109,255,0.4))',
+            }}>AIに好かれていますか？</span>
           </h1>
 
           <p className="animate-fadeSlideUp delay-200" style={{
@@ -596,33 +657,64 @@ export default function Home() {
             </h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
-            {STEPS.map((step, i) => (
-              <div key={step.num} className="glass-card" style={{ padding: '28px 24px', position: 'relative', overflow: 'hidden' }}>
-                {/* BG number */}
-                <div style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
-                  position: 'absolute', top: -10, right: 12,
-                  fontSize: '5rem', fontWeight: 800,
-                  color: 'rgba(255,255,255,0.04)', lineHeight: 1,
-                  userSelect: 'none',
-                }}>
-                  {step.num}
+            {STEPS.map((step, i) => {
+              const stepColors = [
+                { from: '#4a9eff', to: '#6eb5ff' },
+                { from: '#9b6dff', to: '#c4a0ff' },
+                { from: '#ff6eb4', to: '#ffb3d9' },
+                { from: '#3dffa0', to: '#80ffcc' },
+              ];
+              const c = stepColors[i];
+              return (
+                <div key={step.num} style={{
+                  padding: '28px 24px', position: 'relative', overflow: 'hidden',
+                  borderRadius: 20,
+                  background: `linear-gradient(135deg, rgba(${i===0?'74,158,255':i===1?'155,109,255':i===2?'255,110,180':'61,255,160'},0.08) 0%, rgba(3,4,14,0.6) 100%)`,
+                  border: `1px solid rgba(${i===0?'74,158,255':i===1?'155,109,255':i===2?'255,110,180':'61,255,160'},0.25)`,
+                  transition: 'transform 0.3s, box-shadow 0.3s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 12px 40px rgba(${i===0?'74,158,255':i===1?'155,109,255':i===2?'255,110,180':'61,255,160'},0.2)`; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  {/* 矢印コネクター（最後以外） */}
+                  {/* BG number */}
+                  <div style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
+                    position: 'absolute', top: -8, right: 12,
+                    fontSize: '5.5rem', fontWeight: 900,
+                    background: `linear-gradient(135deg, ${c.from}22, ${c.to}08)`,
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                    lineHeight: 1, userSelect: 'none',
+                  }}>
+                    {step.num}
+                  </div>
+                  {/* ステップバッジ */}
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    marginBottom: 16,
+                    padding: '4px 12px', borderRadius: 100,
+                    background: `linear-gradient(90deg, ${c.from}22, ${c.to}11)`,
+                    border: `1px solid ${c.from}44`,
+                  }}>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${c.from}, ${c.to})`,
+                      boxShadow: `0 0 8px ${c.from}`,
+                      display: 'inline-block',
+                    }} />
+                    <span style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
+                      fontSize: '0.7rem', fontWeight: 700, color: c.from, letterSpacing: '0.1em',
+                    }}>STEP {step.num}</span>
+                  </div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>{step.title}</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.83rem', lineHeight: 1.7 }}>{step.desc}</p>
                 </div>
-                <div style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
-                  fontSize: '0.72rem', fontWeight: 700,
-                  color: 'var(--blue)', letterSpacing: '0.1em',
-                  marginBottom: 8,
-                }}>
-                  STEP {step.num}
-                </div>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 8 }}>{step.title}</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.7 }}>{step.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
         {/* ── 観測項目8 ── */}
-        <section style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto 100px', padding: '0 24px' }}>
+        <section className="hide-mobile" style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto 100px', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <span className="tag tag-green" style={{ marginBottom: 12, display: 'inline-block' }}>WHAT WE ANALYZE</span>
             <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
@@ -665,6 +757,14 @@ export default function Home() {
         {/* ── 診断履歴 ── */}
         {history.length > 0 && (
           <section style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto 100px', padding: '0 24px' }}>
+            {/* ダッシュボード風ラッパー */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(74,158,255,0.06) 0%, rgba(155,109,255,0.06) 100%)',
+              border: '1px solid rgba(74,158,255,0.15)',
+              borderRadius: 24,
+              padding: '24px',
+            }}>
+            {/* ヘッダー行 */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
               <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: '1.4rem', fontWeight: 700 }}>
                 🛸 観測履歴
@@ -731,6 +831,7 @@ export default function Home() {
                 );
               })}
             </div>
+            </div>{/* /ダッシュボードラッパー */}
           </section>
         )}
 
