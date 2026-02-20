@@ -376,7 +376,7 @@ function DashboardContent() {
           </p>
         </div>
 
-        {/* ─── サマリーカード ─── */}
+       {/* ─── サマリーカード ─── */}
 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
   {/* AI訪問数 */}
   <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl shadow-[#4a9eff]/10 hover:shadow-[#4a9eff]/20 transition-all">
@@ -394,24 +394,22 @@ function DashboardContent() {
       </span>
     </div>
     <p className="text-5xl font-bold bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff] bg-clip-text text-transparent mb-2">
-      {totalAI.toLocaleString()}
+      {ai_stats.unique_ips.toLocaleString()}
     </p>
-    <p className="text-xs text-gray-500">7日間のAIクローラー訪問</p>
+    <p className="text-xs text-gray-500">ユニークAIクローラーIP</p>
   </div>
 
-{/* AIページビュー数 */}
-<div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
-  <div className="flex items-center gap-2 mb-4">
-    <span className="text-3xl">📄</span>
-    <h3 className="text-sm text-gray-400">AIページビュー</h3>
+  {/* AIページビュー数 */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
+    <div className="flex items-center gap-2 mb-4">
+      <span className="text-3xl">📄</span>
+      <h3 className="text-sm text-gray-400">AIページビュー</h3>
+    </div>
+    <p className="text-5xl font-bold text-[#4a9eff] mb-2">
+      {ai_stats.total.toLocaleString()}
+    </p>
+    <p className="text-xs text-gray-500">7日間のAIクローラー訪問数</p>
   </div>
-  <p className="text-5xl font-bold text-[#4a9eff] mb-2">
-    {ai_stats.total.toLocaleString()}
-  </p>
-  <p className="text-xs text-gray-500">
-    ユニークIP: {ai_stats.unique_ips} • 種類: {ai_stats.by_crawler.length}
-  </p>
-</div>
 
   {/* 人間訪問数 */}
   <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
