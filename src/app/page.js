@@ -449,13 +449,14 @@ export default function Home() {
 
           {/* Headline */}
           <h1 className={`animate-fadeSlideUp delay-100 ${syne.className}`} style={{
-            fontSize: 'clamp(2.4rem, 6vw, 5rem)',
+            fontSize: 'clamp(1.8rem, 4.5vw, 3.6rem)',
             fontWeight: 800,
-            lineHeight: 1.1,
+            lineHeight: 1.15,
             letterSpacing: '-0.03em',
             marginBottom: 20,
+            wordBreak: 'keep-all',
           }}>
-            <span style={{ color: '#fff' }}>あなたのサイトは<br /></span>
+            <span style={{ color: '#fff', display: 'block' }}>あなたのサイトは</span>
             <span className="gradient-text">AIに好かれていますか？</span>
           </h1>
 
@@ -569,12 +570,14 @@ export default function Home() {
             ].map(({ val, suffix, label, color }) => (
               <div key={label} className="glass-card" style={{ padding: '24px 16px', textAlign: 'center' }}>
                 <div className={syne.className} style={{
-                  fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
+                  fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
                   fontWeight: 800,
                   color,
                   letterSpacing: '-0.03em',
                   lineHeight: 1,
                   marginBottom: 6,
+                  fontVariantNumeric: 'tabular-nums',
+                  fontFeatureSettings: '"tnum"',
                 }}>
                   {val.toLocaleString()}<span style={{ fontSize: '0.5em' }}>{suffix}</span>
                 </div>
