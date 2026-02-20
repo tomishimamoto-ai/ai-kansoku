@@ -39,6 +39,7 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
+        AND (crawler_type = 'ai' OR crawler_type IS NULL) 
       GROUP BY crawler_name
       ORDER BY visit_count DESC
     `;
@@ -52,6 +53,7 @@ export async function GET(request) {
         AND visited_at >= ${fourteenDaysAgo.toISOString()}
         AND visited_at < ${sevenDaysAgo.toISOString()}
         AND is_human = false
+        AND (crawler_type = 'ai' OR crawler_type IS NULL)
       GROUP BY crawler_name
     `;
 
