@@ -463,23 +463,62 @@ export default function Home() {
             {menuOpen && (
               <div className="mobile-drawer" style={{
                 position: 'fixed', top: 64, left: 0, right: 0,
-                background: 'rgba(3,4,14,0.98)', backdropFilter: 'blur(20px)',
-                borderBottom: '1px solid var(--border)',
-                padding: '16px 24px 24px',
+                background: 'linear-gradient(180deg, rgba(7,9,28,0.99) 0%, rgba(3,4,14,0.99) 100%)',
+                backdropFilter: 'blur(24px)',
+                borderBottom: '1px solid rgba(74,158,255,0.2)',
+                padding: '8px 20px 28px',
                 zIndex: 200,
-                display: 'flex', flexDirection: 'column', gap: 4,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,158,255,0.1)',
               }}>
+                {/* メニューヘッダー */}
+                <div style={{ padding: '12px 0 16px', marginBottom: 4, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', letterSpacing: '0.1em', fontFamily: "'Inter', sans-serif" }}>NAVIGATION</p>
+                </div>
                 {[
-                  ['使い方', '/how-to-use'],
-                  ['改善ガイド', '/guide'],
-                  ['ブログ', 'https://blog.ai-kansoku.com'],
-                  ['FAQ', '/faq'],
-                ].map(([label, href]) => (
+                  { label: '使い方', href: '/how-to-use', icon: '📖', desc: '4ステップで観測完了' },
+                  { label: '改善ガイド', href: '/guide', icon: '🛠️', desc: '6項目の実装ガイド' },
+                  { label: 'ブログ', href: 'https://blog.ai-kansoku.com', icon: '✍️', desc: 'AI SEOの最新情報' },
+                  { label: 'FAQ', href: '/faq', icon: '💬', desc: 'よくある質問' },
+                ].map(({ label, href, icon, desc }) => (
                   <a key={label} href={href}
                      onClick={() => setMenuOpen(false)}
-                     style={{ color: '#fff', fontSize: '1.05rem', textDecoration: 'none', padding: '12px 0', borderBottom: '1px solid var(--border)', display: 'block' }}
-                  >{label}</a>
+                     style={{
+                       display: 'flex', alignItems: 'center', gap: 14,
+                       textDecoration: 'none', padding: '14px 12px',
+                       borderRadius: 12,
+                       transition: 'background 0.2s',
+                       marginBottom: 2,
+                     }}
+                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(74,158,255,0.08)'}
+                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                      background: 'rgba(74,158,255,0.1)',
+                      border: '1px solid rgba(74,158,255,0.2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '1.15rem',
+                    }}>{icon}</div>
+                    <div>
+                      <p style={{ color: '#fff', fontSize: '0.95rem', fontWeight: 600, marginBottom: 2 }}>{label}</p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>{desc}</p>
+                    </div>
+                    <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.8rem' }}>›</span>
+                  </a>
                 ))}
+                {/* 観測CTAボタン */}
+                <div style={{ padding: '12px 12px 0', marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <button
+                    onClick={() => { setMenuOpen(false); inputRef.current?.focus(); inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
+                    style={{
+                      width: '100%', padding: '14px',
+                      background: 'linear-gradient(135deg, var(--blue), var(--purple))',
+                      border: 'none', borderRadius: 12,
+                      color: '#fff', fontSize: '0.95rem', fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >🔭 無料で観測する</button>
+                </div>
               </div>
             )}
           </div>
@@ -546,34 +585,36 @@ export default function Home() {
             }}>
               <div style={{
                 background: '#07091c',
-                borderRadius: 19,
-                padding: '6px 6px 6px 20px',
-                display: 'flex', alignItems: 'center', gap: 8,
+                borderRadius: 16,
+                padding: '16px 20px',
+                display: 'flex', flexDirection: 'column', gap: 10,
               }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>🔭</span>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={url}
-                  onChange={e => { setUrl(e.target.value); setError(null); }}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  onKeyDown={e => e.key === 'Enter' && handleAnalyze()}
-                  placeholder="example.com"
-                  style={{
-                    flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                    color: '#fff', fontSize: '1rem', padding: '10px 0',
-                    fontFamily: notoSansJP.style.fontFamily,
-                  }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '1rem', flexShrink: 0 }}>🔭</span>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={url}
+                    onChange={e => { setUrl(e.target.value); setError(null); }}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    onKeyDown={e => e.key === 'Enter' && handleAnalyze()}
+                    placeholder="example.com"
+                    style={{
+                      flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none',
+                      color: '#fff', fontSize: '1rem', padding: '4px 0',
+                      fontFamily: notoSansJP.style.fontFamily,
+                    }}
+                  />
+                </div>
                 <button
                   onClick={() => handleAnalyze()}
                   disabled={loading || !url.trim()}
                   className="btn-primary"
-                  style={{ padding: '12px 28px', flexShrink: 0, whiteSpace: 'nowrap' }}
+                  style={{ padding: '14px', width: '100%', fontSize: '1rem', borderRadius: 12 }}
                 >
                   {loading
-                    ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                         <span style={{
                           width: 16, height: 16,
                           border: '2px solid rgba(255,255,255,0.3)',
@@ -582,9 +623,9 @@ export default function Home() {
                           display: 'inline-block',
                           animation: 'orbit 1s linear infinite',
                           '--r': '0px',
-                        }} />観測中
+                        }} />観測中...
                       </span>
-                    : '観測する →'
+                    : '🔭 観測する →'
                   }
                 </button>
               </div>
@@ -759,10 +800,11 @@ export default function Home() {
           <section style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto 100px', padding: '0 24px' }}>
             {/* ダッシュボード風ラッパー */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(74,158,255,0.06) 0%, rgba(155,109,255,0.06) 100%)',
-              border: '1px solid rgba(74,158,255,0.15)',
+              background: 'linear-gradient(135deg, rgba(74,158,255,0.12) 0%, rgba(155,109,255,0.14) 50%, rgba(255,110,180,0.08) 100%)',
+              border: '1px solid rgba(74,158,255,0.3)',
               borderRadius: 24,
               padding: '24px',
+              boxShadow: '0 0 60px rgba(74,158,255,0.1), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}>
             {/* ヘッダー行 */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
