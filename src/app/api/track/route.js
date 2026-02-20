@@ -13,7 +13,8 @@ import {
   markRobotsAccess,
   trackHtmlOnly,
 } from '@/lib/crawler-detection';
-import { db } from '@/lib/db';
+import { neon } from '@neondatabase/serverless';
+const db = neon(process.env.DATABASE_URL);
 
 export async function GET(req) {
   return handleTrack(req);
@@ -51,42 +52,43 @@ async function handleTrack(req) {
     const ua = req.headers.get('user-agent') || '';
 
     // ── DB に記録 ───────────────────────────────────────────
-    await db.query(`
-      INSERT INTO ai_crawler_visits (
-        site_id,
-        ip,
-        user_agent,
-        session_id,
-        crawler_name,
-        crawler_type,
-        purpose,
-        is_human,
-        detection_method,
-        confidence,
-        total_score,
-        is_rapid,
-        had_robots_access,
-        is_html_only,
-        page_url,
-        visited_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,NOW())
-    `, [
-      siteId,
-      ip,
-      ua,
-      detection.sessionId,
-      detection.crawlerName,
-      detection.crawlerType,
-      detection.purpose,
-      detection.isHuman,
-      detection.detectionMethod,
-      detection.confidence,
-      detection.totalScore,
-      detection.rapid    ?? false,
-      detection.robots   ?? false,
-      detection.htmlOnly ?? false,
-      path,
-    ]);
+await db`
+  INSERT INTO ai_crawler_visits (
+    site_id,
+    ip_address,
+    user_agent,
+    session_id,
+    crawler_name,
+    crawler_type,
+    purpose,
+    is_human,
+    detection_method,
+    confidence,
+    total_score,
+    is_rapid,
+    had_robots_access,
+    is_html_only,
+    page_url,
+    visited_at
+  ) VALUES (
+    ${siteId},
+    ${ip},
+    ${ua},
+    ${detection.sessionId},
+    ${detection.crawlerName},
+    ${detection.crawlerType},
+    ${detection.purpose},
+    ${detection.isHuman},
+    ${detection.detectionMethod},
+    ${detection.confidence},
+    ${detection.totalScore},
+    ${detection.rapid    ?? false},
+    ${detection.robots   ?? false},
+    ${detection.htmlOnly ?? false},
+    ${path},
+    NOW()
+  )
+`;
 
     // ── 1x1 透明GIFを返す ──────────────────────────────────
     const gif = Buffer.from(
