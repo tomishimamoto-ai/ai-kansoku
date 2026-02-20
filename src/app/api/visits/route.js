@@ -245,6 +245,7 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
+        AND (crawler_type = 'ai' OR crawler_type IS NULL)
       ORDER BY visited_at DESC
       LIMIT 20
     `;
