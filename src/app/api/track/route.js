@@ -12,7 +12,7 @@ import {
   detectCrawler,
   markRobotsAccess,
   trackHtmlOnly,
-} from '@/lib/crawler-detection';
+} from '../../../lib/crawler-detection';
 import { neon } from '@neondatabase/serverless';
 const db = neon(process.env.DATABASE_URL);
 
