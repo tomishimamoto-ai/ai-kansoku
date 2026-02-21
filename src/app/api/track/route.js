@@ -1,11 +1,9 @@
 /**
- * /api/track/route.js  (v5対応)
+ * /api/track/route.js  (v5.1対応)
  *
- * 変更点:
- * - detectCrawler に path を渡す（robots.txt先行/HTML only検知のため）
- * - sessionId をDBに保存
- * - totalScore / robots / htmlOnly をDBに保存
- * - HEAD メソッドも同じロジックで処理
+ * v5からの変更点:
+ * - route.js側の markRobotsAccess / trackHtmlOnly 呼び出しを削除
+ *   （detectCrawler内で既に処理されるため二重登録になっていた）
  */
 
 import {
@@ -34,12 +32,14 @@ async function handleTrack(req) {
       return new Response('missing siteId', { status: 400 });
     }
 
-    // ── robots.txt へのアクセスを記録 ──────────────────────
     const ip = (
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || ''
     );
-    if (path === '/robots.txt') markRobotsAccess(ip);
-    trackHtmlOnly(ip, path);
+
+    // ── ❌ 削除: detectCrawler内で既に処理される ──────────
+    // if (path === '/robots.txt') markRobotsAccess(ip);
+    // trackHtmlOnly(ip, path);
+    // ────────────────────────────────────────────────────────
 
     // ── クローラー検知 ──────────────────────────────────────
     const detection = detectCrawler(req, { path });
@@ -52,43 +52,43 @@ async function handleTrack(req) {
     const ua = req.headers.get('user-agent') || '';
 
     // ── DB に記録 ───────────────────────────────────────────
-await db`
-  INSERT INTO ai_crawler_visits (
-    site_id,
-    ip_address,
-    user_agent,
-    session_id,
-    crawler_name,
-    crawler_type,
-    purpose,
-    is_human,
-    detection_method,
-    confidence,
-    total_score,
-    is_rapid,
-    had_robots_access,
-    is_html_only,
-    page_url,
-    visited_at
-  ) VALUES (
-    ${siteId},
-    ${ip},
-    ${ua},
-    ${detection.sessionId},
-    ${detection.crawlerName},
-    ${detection.crawlerType},
-    ${detection.purpose},
-    ${detection.isHuman},
-    ${detection.detectionMethod},
-    ${detection.confidence},
-    ${detection.totalScore},
-    ${detection.rapid    ?? false},
-    ${detection.robots   ?? false},
-    ${detection.htmlOnly ?? false},
-    ${path},
-    NOW()
-  )
-`;
+    await db`
+      INSERT INTO ai_crawler_visits (
+        site_id,
+        ip_address,
+        user_agent,
+        session_id,
+        crawler_name,
+        crawler_type,
+        purpose,
+        is_human,
+        detection_method,
+        confidence,
+        total_score,
+        is_rapid,
+        had_robots_access,
+        is_html_only,
+        page_url,
+        visited_at
+      ) VALUES (
+        ${siteId},
+        ${ip},
+        ${ua},
+        ${detection.sessionId},
+        ${detection.crawlerName},
+        ${detection.crawlerType},
+        ${detection.purpose},
+        ${detection.isHuman},
+        ${detection.detectionMethod},
+        ${detection.confidence},
+        ${detection.totalScore},
+        ${detection.rapid    ?? false},
+        ${detection.robots   ?? false},
+        ${detection.htmlOnly ?? false},
+        ${path},
+        NOW()
+      )
+    `;
 
     // ── 1x1 透明GIFを返す ──────────────────────────────────
     const gif = Buffer.from(

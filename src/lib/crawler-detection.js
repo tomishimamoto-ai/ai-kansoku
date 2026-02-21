@@ -98,11 +98,20 @@ const AI_CRAWLERS = [
     ipRanges: [],
   },
 
-  // ── Google Gemini / AI ──────────────────────────────────
+    // ── Google Gemini / AI ──────────────────────────────────
   {
     name: 'Gemini',
     purpose: 'training',
-    patterns: ['google-extended', 'googleother', 'google-inspectiontool', 'bard', 'gemini'],
+    patterns: [
+      'google-extended',
+      'googleother',
+      'google-inspectiontool',
+      'apis-google',
+      'adsbot-google',
+      'google-safety',
+      'bard',
+      'gemini',
+    ],
     officialDomains: ['google.com'],
     ipRanges: [],
   },
