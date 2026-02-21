@@ -1,27 +1,15 @@
 /**
- * AI観測ラボ - クローラー検知ロジック v5
+ * AI観測ラボ - クローラー検知ロジック v5.2
  *
- * v4からの変更点:
- * 1. 統合スコア方式（uaScore + ipScore + behaviorScore + rapidScore）
- * 2. chatgpt パターンを 'chatgpt/1.' に絞る（過剰検知防止）
- * 3. confidence を動的計算（50 + behaviorScore*3 + rapid*10）
- * 4. セッションID導入（IP + UAハッシュ）
- * 5. robots.txt先行アクセスフラグ
- * 6. HTML only 比率チェック（補助）
- *
- * 統合スコア:
- *   uaScore      0-40  UA完全一致=40, パターン一致=30
- *   ipScore      0-30  IP+UA一致=30, IPのみ=20
- *   behaviorScore 0-20  各フラグの合算
- *   rapidScore   0-10  連続アクセス=10
- *
- *   >= 70 → AI (isAI=true)
- *   >= 40 → Suspicious (isAI=true, confidence低め)
- *   <  40 → Human
- *
- * NOTE: accessMap / robotsMap は Serverless では
- *       インスタンス分散により補助的な効果にとどまる。
- *       本番強化は Redis 推奨（将来対応）。
+ * v5.1からの変更点:
+ * 1. analyzeBehavior に Accept ヘッダー判定追加（+3）
+ *    ※ !accept は除外（Vercelでヘッダーが削られる場合があるため）
+ * 2. Sec-CH-UA 判定追加（+4）
+ *    ※ Safari誤判定防止のため looksLikeChrome に絞る
+ * 3. Connection: close 判定追加（+2）
+ * 4. detectCrawler が hadRobotsDb を受け取れるよう対応
+ *    → Serverlessのメモリ問題をDB参照で解決（route.js側で実施）
+ * 5. スコア上限 20 → 28 に引き上げ
  */
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -51,7 +39,7 @@ const SEARCH_ENGINE_PATTERNS = [
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const AI_CRAWLERS = [
 
-  // ── OpenAI: 用途別に3分割 ───────────────────────────────
+  // ── OpenAI ──────────────────────────────────────────────
   {
     name: 'GPTBot',
     purpose: 'training',
@@ -65,10 +53,7 @@ const AI_CRAWLERS = [
   {
     name: 'ChatGPT-User',
     purpose: 'realtime',
-    patterns: [
-      'chatgpt-user',
-      'chatgpt/1.',     // ✅ 'chatgpt'から絞る（ChatGPT-Plugin等の誤検知防止）
-    ],
+    patterns: ['chatgpt-user', 'chatgpt/1.'],
     officialDomains: ['openai.com'],
     ipRanges: [],
   },
@@ -98,7 +83,7 @@ const AI_CRAWLERS = [
     ipRanges: [],
   },
 
-    // ── Google Gemini / AI ──────────────────────────────────
+  // ── Google Gemini / AI ──────────────────────────────────
   {
     name: 'Gemini',
     purpose: 'training',
@@ -235,20 +220,12 @@ const AI_CRAWLERS = [
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 3. メモリキャッシュ
-//    NOTE: Serverlessでは補助的効果。本番強化はRedis推奨。
+// 3. メモリキャッシュ（Serverlessでは補助的）
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const accessMap   = new Map();
+const robotsMap   = new Map();
+const htmlOnlyMap = new Map();
 
-// 連続アクセス検知用
-const accessMap = new Map();
-
-// robots.txt 先行アクセスフラグ
-const robotsMap = new Map();
-
-// HTMLのみアクセス比率用
-const htmlOnlyMap = new Map(); // { ip: { html: n, total: n } }
-
-/** 300ms以内の連続アクセスか */
 export function isRapidAccess(ip) {
   if (!ip) return false;
   const now  = Date.now();
@@ -258,7 +235,6 @@ export function isRapidAccess(ip) {
   return last ? (now - last) < 300 : false;
 }
 
-/** robots.txt を先に叩いたIPか（5秒以内） */
 export function markRobotsAccess(ip) {
   if (!ip) return;
   robotsMap.set(ip, Date.now());
@@ -270,17 +246,15 @@ export function hadRobotsAccess(ip) {
   return t ? (Date.now() - t) < 5_000 : false;
 }
 
-/** HTML only 比率を記録（CSS/JS/画像を読まないクローラーの特徴） */
 export function trackHtmlOnly(ip, path) {
   const isHtml = !path.match(/\.(css|js|png|jpg|webp|svg|woff|woff2|ico|gif|mp4|pdf)$/i);
   if (!htmlOnlyMap.has(ip)) htmlOnlyMap.set(ip, { html: 0, total: 0 });
   const entry = htmlOnlyMap.get(ip);
   entry.total++;
   if (isHtml) entry.html++;
-  pruneMap(htmlOnlyMap, 10000, null); // サイズ超過時のみ間引き
+  pruneMap(htmlOnlyMap, 10000, null);
 }
 
-/** HTML比率が 95% 以上か（10回以上アクセスがある場合のみ判定） */
 export function isHtmlOnly(ip) {
   const entry = htmlOnlyMap.get(ip);
   if (!entry || entry.total < 10) return false;
@@ -294,17 +268,16 @@ function pruneMap(map, maxSize, cutoffTime) {
       const t = typeof v === 'number' ? v : v?.updatedAt ?? 0;
       if (t < cutoffTime) map.delete(k);
     } else {
-      map.delete(k); // cutoff不明時は先頭から削除
+      map.delete(k);
       if (map.size <= maxSize * 0.8) break;
     }
   }
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 4. セッションIDの生成（IP + UAハッシュ）
+// 4. セッションID生成
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export function makeSessionId(ip, ua) {
-  // 軽量ハッシュ（crypto不要）
   const raw = `${ip}::${ua}`;
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
@@ -315,14 +288,14 @@ export function makeSessionId(ip, ua) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 5. 統合スコア方式 メイン検知関数
+// 5. メイン検知関数
 //
-//   totalScore = uaScore(0-40) + ipScore(0-30) + behaviorScore(0-20) + rapidScore(0-10)
-//   >= 70 → AI  (confirmed)
-//   >= 40 → AI  (suspicious)
+//   totalScore = uaScore(0-40) + ipScore(0-30) + behaviorScore(0-28) + rapidScore(0-10)
+//   >= 70 → AI (confirmed)
+//   >= 40 → AI (suspicious)
 //   <  40 → Human
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export function detectCrawler(req, { path = '/' } = {}) {
+export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
   const ua = (
     req.headers.get?.('user-agent') ||
     req.headers['user-agent'] || ''
@@ -349,13 +322,28 @@ export function detectCrawler(req, { path = '/' } = {}) {
     req.headers['accept-language'] || ''
   );
 
-  const method     = req.method || 'GET';
-  const rapid      = isRapidAccess(ip);
-  const robots     = hadRobotsAccess(ip);
-  const htmlOnly   = isHtmlOnly(ip);
-  const sessionId  = makeSessionId(ip, ua);
+  const accept = (
+    req.headers.get?.('accept') ||
+    req.headers['accept'] || ''
+  ).toLowerCase();
 
-  // robots.txt のアクセスを記録
+  const secChUa = (
+    req.headers.get?.('sec-ch-ua') ||
+    req.headers['sec-ch-ua'] || ''
+  );
+
+  const connection = (
+    req.headers.get?.('connection') ||
+    req.headers['connection'] || ''
+  ).toLowerCase();
+
+  const method    = req.method || 'GET';
+  const rapid     = isRapidAccess(ip);
+  // ✅ DB参照結果（hadRobotsDb）をメモリ結果とOR合成
+  const robots    = hadRobotsDb || hadRobotsAccess(ip);
+  const htmlOnly  = isHtmlOnly(ip);
+  const sessionId = makeSessionId(ip, ua);
+
   if (path === '/robots.txt') markRobotsAccess(ip);
   trackHtmlOnly(ip, path);
 
@@ -375,7 +363,7 @@ export function detectCrawler(req, { path = '/' } = {}) {
     sessionId,
   };
 
-  // ── STEP 1: 検索エンジン判定（最優先）──────────────────
+  // ── STEP 1: 検索エンジン判定 ────────────────────────────
   for (const pattern of SEARCH_ENGINE_PATTERNS) {
     if (ua.includes(pattern)) {
       return {
@@ -391,11 +379,10 @@ export function detectCrawler(req, { path = '/' } = {}) {
   }
 
   // ── STEP 2 & 3: 統合スコア計算 ─────────────────────────
-  let uaScore       = 0;
-  let ipScore       = 0;
+  let uaScore        = 0;
+  let ipScore        = 0;
   let matchedCrawler = null;
 
-  // UA判定
   for (const crawler of AI_CRAWLERS) {
     for (const pattern of crawler.patterns) {
       if (ua.includes(pattern.toLowerCase())) {
@@ -407,16 +394,13 @@ export function detectCrawler(req, { path = '/' } = {}) {
     if (matchedCrawler) break;
   }
 
-  // IP判定（IPv4のみ、TODO: IPv6対応）
   if (!ip.includes(':')) {
     for (const crawler of AI_CRAWLERS) {
       for (const cidr of (crawler.ipRanges || [])) {
         if (isIpInCidr(ip, cidr)) {
           if (matchedCrawler?.name === crawler.name) {
-            // UA + IP 両方一致
             ipScore = 30;
           } else if (!matchedCrawler) {
-            // IPのみ一致
             ipScore = 20;
             matchedCrawler = crawler;
           }
@@ -427,17 +411,15 @@ export function detectCrawler(req, { path = '/' } = {}) {
     }
   }
 
-  // behavior スコア（0-20）
-  const behavior = analyzeBehavior({ ua, acceptEncoding, acceptLang, method, referer, robots, htmlOnly });
+  const behavior = analyzeBehavior({
+    ua, acceptEncoding, acceptLang, accept, secChUa, connection,
+    method, referer, robots, htmlOnly,
+  });
 
-  // rapid スコア（0-10）
   const rapidScore = rapid ? 10 : 0;
-
   const totalScore = uaScore + ipScore + behavior.score + rapidScore;
 
   // ── STEP 4: 判定 ────────────────────────────────────────
-
-  // 確定AI（UA or IP 一致あり）
   if (matchedCrawler && (uaScore > 0 || ipScore > 0)) {
     const detectionMethod =
       uaScore > 0 && ipScore > 0 ? 'user-agent+ip-range' :
@@ -455,9 +437,7 @@ export function detectCrawler(req, { path = '/' } = {}) {
     };
   }
 
-  // パターン推論（統合スコアで判定）
   if (totalScore >= 70) {
-    // refererからクローラー名を推測
     const hinted = AI_CRAWLERS.find(c =>
       c.officialDomains?.some(d => referer.includes(d))
     );
@@ -468,7 +448,6 @@ export function detectCrawler(req, { path = '/' } = {}) {
       crawlerName: hinted?.name || 'Unknown AI',
       purpose: hinted?.purpose || 'unknown',
       detectionMethod: rapid ? 'pattern-inference+rapid' : 'pattern-inference',
-      // ✅ 動的confidence: behaviorScore に基づいて計算
       confidence: Math.min(50 + behavior.score * 3 + (rapid ? 10 : 0), 85),
       totalScore,
       behaviorDetails: behavior.reasons,
@@ -489,7 +468,6 @@ export function detectCrawler(req, { path = '/' } = {}) {
     };
   }
 
-  // ── STEP 5: 人間判定 ─────────────────────────────────────
   return {
     ...base,
     isHuman: true,
@@ -502,20 +480,30 @@ export function detectCrawler(req, { path = '/' } = {}) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 6. 行動パターン分析（0-20点）
+// 6. 行動パターン分析
 //
-//   no-accept-language : +4  最も強いシグナル
-//   minimal-encoding   : +4
-//   head-method        : +4
-//   no-browser-ua      : +4  ※ mozilla偽装は STEP2で先に捕捉済み
-//   short-ua           : +2
-//   no-referer         : +2  ✅ 復活（補助）
-//   robots-first       : +3  ✅ 新規: robots.txtを先に叩いた
-//   html-only          : +3  ✅ 新規: CSS/JS/画像を読まない
+//   【既存】
+//   no-accept-language  : +4
+//   minimal-encoding    : +4
+//   head-method         : +4
+//   no-browser-ua       : +4
+//   short-ua            : +2
+//   no-referer          : +2
+//   robots-first        : +3  ← DB参照で強化済み
+//   html-only           : +3
 //
-//   合計上限: 20点（rawが超えても20でキャップ）
+//   【v5.2 追加】
+//   simple-accept       : +3  Accept: */* のみ
+//   ua-spoofing         : +4  ChromeっぽいUAなのにSec-CH-UAなし
+//   no-sec-ch-ua        : +2  UAもボット風でSec-CH-UAなし
+//   connection-close    : +2  Connection: close
+//
+//   合計上限: 28点
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function analyzeBehavior({ ua, acceptEncoding, acceptLang, method, referer, robots, htmlOnly }) {
+function analyzeBehavior({
+  ua, acceptEncoding, acceptLang, accept, secChUa, connection,
+  method, referer, robots, htmlOnly,
+}) {
   let score = 0;
   const reasons = [];
 
@@ -538,10 +526,13 @@ function analyzeBehavior({ ua, acceptEncoding, acceptLang, method, referer, robo
   }
 
   const hasBrowserUA =
-    ua.includes('mozilla') ||
-    ua.includes('chrome')  ||
-    ua.includes('safari')  ||
-    ua.includes('firefox');
+  ua.includes('mozilla') &&
+  (
+    ua.includes('chrome') ||
+    ua.includes('firefox') ||
+    ua.includes('safari')
+  );
+  
   if (!hasBrowserUA) {
     score += 4;
     reasons.push('no-browser-ua');
@@ -553,21 +544,51 @@ function analyzeBehavior({ ua, acceptEncoding, acceptLang, method, referer, robo
   }
 
   if (!referer) {
-    score += 2;  // ✅ 復活（補助スコア）
+    score += 2;
     reasons.push('no-referer');
   }
 
   if (robots) {
-    score += 3;  // ✅ 新規: robots.txt先行アクセス
+    score += 3;
     reasons.push('robots-first');
   }
 
   if (htmlOnly) {
-    score += 3;  // ✅ 新規: HTML only（CSS/JS/画像を読まない）
+    score += 3;
     reasons.push('html-only');
   }
 
-  return { score: Math.min(score, 20), reasons };
+  // ✅ v5.2 追加シグナル
+
+  // ① Accept: */* のみ（Vercelでヘッダーが削られるケースがあるため !accept は除外）
+  if (accept === '*/*') {
+    score += 3;
+    reasons.push('simple-accept');
+  }
+
+  // ② Sec-CH-UA: ChromeっぽいUAなのに送っていない → UA偽装疑い
+  //    SafariはSec-CH-UAを送らないので looksLikeChrome に絞る
+  const looksLikeChrome =
+    ua.includes("chrome") &&
+    ua.includes("mozilla") &&
+    !ua.includes("edg") &&
+    !ua.includes("opr");
+  if (!secChUa && looksLikeChrome) {
+    score += 4;
+    reasons.push('ua-spoofing-suspected');
+  } else if (!secChUa && !hasBrowserUA) {
+    // UAもボット風でSec-CH-UAもない → 通常のボット
+    score += 2;
+    reasons.push('no-sec-ch-ua');
+  }
+
+  // ③ Connection: close はAI系ボットに多い
+  if (connection === 'close') {
+    score += 2;
+    reasons.push('connection-close');
+  }
+
+  return { score: Math.min(score, 28), reasons };
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

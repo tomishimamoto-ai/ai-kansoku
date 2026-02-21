@@ -1,16 +1,12 @@
 /**
- * /api/track/route.js  (v5.1対応)
+ * /api/track/route.js  (v5.3対応)
  *
- * v5からの変更点:
- * - route.js側の markRobotsAccess / trackHtmlOnly 呼び出しを削除
- *   （detectCrawler内で既に処理されるため二重登録になっていた）
+ * v5.2からの変更点:
+ * - ua を ip の直後に移動（DB参照より前に定義）
+ * - robots.txt判定SQLに crawler_type != 'human' を追加
  */
 
-import {
-  detectCrawler,
-  markRobotsAccess,
-  trackHtmlOnly,
-} from '../../../lib/crawler-detection';
+import { detectCrawler } from '../../../lib/crawler-detection';
 import { neon } from '@neondatabase/serverless';
 const db = neon(process.env.DATABASE_URL);
 
@@ -36,20 +32,38 @@ async function handleTrack(req) {
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || ''
     );
 
-    // ── ❌ 削除: detectCrawler内で既に処理される ──────────
-    // if (path === '/robots.txt') markRobotsAccess(ip);
-    // trackHtmlOnly(ip, path);
-    // ────────────────────────────────────────────────────────
+    // ✅ ua を DB参照より前に定義
+    const ua = req.headers.get('user-agent') || '';
+
+    // ── DB参照型セミセッション ──────────────────────────────
+    // 同IP+UAで直近5分以内にrobots.txtアクセスがあるか確認
+    // Serverlessではメモリが共有されないためDBで代替
+    let hadRobotsDb = false;
+    if (ip && path !== '/robots.txt') {
+      try {
+        const robotsCheck = await db`
+          SELECT 1 FROM ai_crawler_visits
+          WHERE ip_address = ${ip}
+            AND user_agent = ${ua}
+            AND crawler_type != 'human'
+            AND page_url = '/robots.txt'
+            AND visited_at > NOW() - INTERVAL '5 minutes'
+          LIMIT 1
+        `;
+        hadRobotsDb = robotsCheck.length > 0;
+      } catch {
+        // DBエラー時はスキップ（検知精度より安定性優先）
+        hadRobotsDb = false;
+      }
+    }
 
     // ── クローラー検知 ──────────────────────────────────────
-    const detection = detectCrawler(req, { path });
+    const detection = detectCrawler(req, { path, hadRobotsDb });
 
     // 検索エンジンはスキップ
     if (detection.crawlerType === 'search-engine') {
       return new Response('ok', { status: 200 });
     }
-
-    const ua = req.headers.get('user-agent') || '';
 
     // ── DB に記録 ───────────────────────────────────────────
     await db`
