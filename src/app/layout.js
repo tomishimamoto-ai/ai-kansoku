@@ -45,6 +45,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "AI観測ラボ | AIクロール診断ツール",
     description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
+    images: ["/ogp-image.png"],
   },
   
   // Favicon
