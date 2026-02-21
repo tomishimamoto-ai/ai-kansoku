@@ -23,7 +23,7 @@ export const metadata = {
   creator: "AI観測ラボ",
   publisher: "AI観測ラボ",
   
-  // OGP (Open Graph Protocol)
+    // OGP (Open Graph Protocol)
   openGraph: {
     type: "website",
     locale: "ja_JP",
@@ -31,6 +31,14 @@ export const metadata = {
     siteName: "AI観測ラボ",
     title: "AI観測ラボ | AIクロール診断ツール",
     description: "あなたのサイトはAIに好かれていますか？ChatGPT、Claude、Perplexityなど主要AIのクロール状況を30秒で診断",
+    images: [
+      {
+        url: "/ogp-image.png",
+        width: 1200,
+        height: 630,
+        alt: "AI観測ラボ - AIクロール診断ツール",
+      },
+    ],
   },
   
   twitter: {
