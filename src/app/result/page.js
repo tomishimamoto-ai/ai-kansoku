@@ -792,12 +792,12 @@ function ResultContent() {
     <div className="relative">
       <pre className="p-4 rounded-lg bg-black/50 border border-white/10 overflow-x-auto text-xs md:text-sm">
         <code className="text-green-400 text-xs break-all">
-          {`<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>`}
+          { `<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>\n<img src="https://ai-kansoku.com/api/track/honeypot?siteId=${siteId}" style="display:none" aria-hidden="true" width="1" height="1" alt="">` }
         </code>
       </pre>
       <button
         onClick={() => {
-          navigator.clipboard.writeText(`<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>`)
+          navigator.clipboard.writeText(`<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>\n<img src="https://ai-kansoku.com/api/track/honeypot?siteId=${siteId}" style="display:none" aria-hidden="true" width="1" height="1" alt="">`)
           alert('コピーしました！');
         }}
         className="absolute top-2 right-2 px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded text-xs font-medium transition-all"
