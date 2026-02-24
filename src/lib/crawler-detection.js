@@ -1,21 +1,23 @@
 /**
- * AI観測ラボ - クローラー検知ロジック v5.2
+ * AI観測ラボ - クローラー検知ロジック v5.3
  *
- * v5.1からの変更点:
- * 1. analyzeBehavior に Accept ヘッダー判定追加（+3）
- *    ※ !accept は除外（Vercelでヘッダーが削られる場合があるため）
- * 2. Sec-CH-UA 判定追加（+4）
- *    ※ Safari誤判定防止のため looksLikeChrome に絞る
- * 3. Connection: close 判定追加（+2）
- * 4. detectCrawler が hadRobotsDb を受け取れるよう対応
- *    → Serverlessのメモリ問題をDB参照で解決（route.js側で実施）
- * 5. スコア上限 20 → 28 に引き上げ
+ * v5.2からの変更点:
+ * 1. SEARCH_ENGINE_PATTERNS に以下を追加
+ *    - adsbot-google（Google広告クローラー）
+ *    - chrome-lighthouse（パフォーマンス計測）
+ *    - googleother（Google汎用クローラー）
+ *    - google-inspectiontool（Search Console）
+ *    - apis-google（Google API）
+ *    - google-safety（Googleセーフブラウジング）
+ * 2. GeminiのAI_CRAWLERSパターンを純粋なAI系のみに絞る
+ *    - google-extended のみ残す（Gemini学習用の公式UA）
  */
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 1. 検索エンジン（AIではない）
+// 1. 検索エンジン・Google系Bot（AIではない）
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const SEARCH_ENGINE_PATTERNS = [
+  // 検索エンジン
   'duckduckbot',
   'bingbot',
   'msnbot',
@@ -25,6 +27,7 @@ const SEARCH_ENGINE_PATTERNS = [
   'yandexbot',
   'baiduspider',
   'ia_archiver',
+  // SNS系
   'facebookexternalhit',
   'twitterbot',
   'linkedinbot',
@@ -32,6 +35,13 @@ const SEARCH_ENGINE_PATTERNS = [
   'whatsapp',
   'telegrambot',
   'slackbot',
+  // Google系Bot（AI学習ではない）
+  'adsbot-google',        // Google広告クローラー
+  'chrome-lighthouse',    // PageSpeed Insights / Lighthouse
+  'googleother',          // Google汎用クローラー
+  'google-inspectiontool',// Search Console URL検査
+  'apis-google',          // Google API
+  'google-safety',        // Googleセーフブラウジング
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -83,17 +93,12 @@ const AI_CRAWLERS = [
     ipRanges: [],
   },
 
-  // ── Google Gemini / AI ──────────────────────────────────
+  // ── Google Gemini（AI学習専用UAのみ）──────────────────
   {
     name: 'Gemini',
     purpose: 'training',
     patterns: [
-      'google-extended',
-      'googleother',
-      'google-inspectiontool',
-      'apis-google',
-      'adsbot-google',
-      'google-safety',
+      'google-extended', // Gemini学習用の公式UA（これのみ残す）
       'bard',
       'gemini',
     ],
@@ -339,7 +344,6 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
 
   const method    = req.method || 'GET';
   const rapid     = isRapidAccess(ip);
-  // ✅ DB参照結果（hadRobotsDb）をメモリ結果とOR合成
   const robots    = hadRobotsDb || hadRobotsAccess(ip);
   const htmlOnly  = isHtmlOnly(ip);
   const sessionId = makeSessionId(ip, ua);
@@ -363,7 +367,7 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     sessionId,
   };
 
-  // ── STEP 1: 検索エンジン判定 ────────────────────────────
+  // ── STEP 1: 検索エンジン・Google系Bot判定 ──────────────
   for (const pattern of SEARCH_ENGINE_PATTERNS) {
     if (ua.includes(pattern)) {
       return {
@@ -481,24 +485,6 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 6. 行動パターン分析
-//
-//   【既存】
-//   no-accept-language  : +4
-//   minimal-encoding    : +4
-//   head-method         : +4
-//   no-browser-ua       : +4
-//   short-ua            : +2
-//   no-referer          : +2
-//   robots-first        : +3  ← DB参照で強化済み
-//   html-only           : +3
-//
-//   【v5.2 追加】
-//   simple-accept       : +3  Accept: */* のみ
-//   ua-spoofing         : +4  ChromeっぽいUAなのにSec-CH-UAなし
-//   no-sec-ch-ua        : +2  UAもボット風でSec-CH-UAなし
-//   connection-close    : +2  Connection: close
-//
-//   合計上限: 28点
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function analyzeBehavior({
   ua, acceptEncoding, acceptLang, accept, secChUa, connection,
@@ -526,13 +512,13 @@ function analyzeBehavior({
   }
 
   const hasBrowserUA =
-  ua.includes('mozilla') &&
-  (
-    ua.includes('chrome') ||
-    ua.includes('firefox') ||
-    ua.includes('safari')
-  );
-  
+    ua.includes('mozilla') &&
+    (
+      ua.includes('chrome') ||
+      ua.includes('firefox') ||
+      ua.includes('safari')
+    );
+
   if (!hasBrowserUA) {
     score += 4;
     reasons.push('no-browser-ua');
@@ -558,16 +544,11 @@ function analyzeBehavior({
     reasons.push('html-only');
   }
 
-  // ✅ v5.2 追加シグナル
-
-  // ① Accept: */* のみ（Vercelでヘッダーが削られるケースがあるため !accept は除外）
   if (accept === '*/*') {
     score += 3;
     reasons.push('simple-accept');
   }
 
-  // ② Sec-CH-UA: ChromeっぽいUAなのに送っていない → UA偽装疑い
-  //    SafariはSec-CH-UAを送らないので looksLikeChrome に絞る
   const looksLikeChrome =
     ua.includes("chrome") &&
     ua.includes("mozilla") &&
@@ -577,12 +558,10 @@ function analyzeBehavior({
     score += 4;
     reasons.push('ua-spoofing-suspected');
   } else if (!secChUa && !hasBrowserUA) {
-    // UAもボット風でSec-CH-UAもない → 通常のボット
     score += 2;
     reasons.push('no-sec-ch-ua');
   }
 
-  // ③ Connection: close はAI系ボットに多い
   if (connection === 'close') {
     score += 2;
     reasons.push('connection-close');
@@ -612,10 +591,13 @@ function ipToNum(ip) {
 
 function formatName(pattern) {
   const map = {
-    duckduckbot: 'DuckDuckBot', googlebot: 'Googlebot',
-    bingbot: 'Bingbot',         msnbot: 'MSNBot',
-    bingpreview: 'BingPreview', yandexbot: 'YandexBot',
-    baiduspider: 'BaiduSpider', slurp: 'Yahoo Slurp',
+    duckduckbot: 'DuckDuckBot',       googlebot: 'Googlebot',
+    bingbot: 'Bingbot',               msnbot: 'MSNBot',
+    bingpreview: 'BingPreview',       yandexbot: 'YandexBot',
+    baiduspider: 'BaiduSpider',       slurp: 'Yahoo Slurp',
+    'adsbot-google': 'AdsBot-Google', 'chrome-lighthouse': 'Chrome-Lighthouse',
+    'googleother': 'GoogleOther',     'google-inspectiontool': 'Google-InspectionTool',
+    'apis-google': 'APIs-Google',     'google-safety': 'Google-Safety',
   };
   return map[pattern] || pattern.charAt(0).toUpperCase() + pattern.slice(1);
 }
