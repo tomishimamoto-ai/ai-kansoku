@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Line, Bar } from 'react-chartjs-2';
-import MimicPanel from '@/components/MimicPanel';
+import MimicPanel from '@/app/components/MimicPanel';
 import {
   Chart as ChartJS,
   CategoryScale,
