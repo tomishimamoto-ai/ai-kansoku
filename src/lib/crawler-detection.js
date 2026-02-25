@@ -27,6 +27,9 @@ const SEARCH_ENGINE_PATTERNS = [
   'yandexbot',
   'baiduspider',
   'ia_archiver',
+  'chrome-lighthouse',
+  'lighthouse',
+  'vercel-screenshot', 
   // SNS系
   'facebookexternalhit',
   'twitterbot',
