@@ -2,17 +2,19 @@
 
 > あなたのウェブサイトが主要AIクローラー（ChatGPT、Claude、Gemini、Perplexity等）にどれだけ見つけやすいかを診断します
 
-最終更新: 2026-02-12
+最終更新: 2026-02-25
 
 ## サービス概要
 
-AI観測ラボは、ウェブサイトのAI可視性を8項目で診断し、具体的な改善提案を提供する無料診断ツールです。30秒で診断完了、レーダーチャートとPDFレポートで結果を可視化します。
+AI観測ラボは、ウェブサイトのAI可視性を8項目で診断し、具体的な改善提案を提供する無料診断ツールです。30秒で診断完了、レーダーチャートとPDFレポートで結果を可視化します。さらに、AIクローラーの訪問をリアルタイムで観測・記録するトラッキング機能も提供しています。
 
 ### 解決する課題
 - ChatGPTやClaudeの検索結果に自社サイトが表示されない
 - AIクローラーにブロックされていないか不安
 - AI時代のSEO対策が分からない
 - 構造化データやllms.txtの実装が正しいか確認したい
+- GA4では見えないAIクローラーの訪問を可視化したい
+- 改善施策の効果をAI訪問数で測定したい
 
 ### 対象ユーザー
 - Webサイト運営者
@@ -56,15 +58,17 @@ viewport設定、レスポンシブデザイン、メディアクエリの実装
 - **PDFエクスポート**: 診断結果を日本語PDFでダウンロード
 - **履歴管理**: 過去の診断結果を保存し、スコア推移を比較
 - **共有機能**: Twitter、メール、URLコピーで結果を共有
+- **トラッキングコード**: サイトに設置するとAIクローラーの訪問を自動記録
+- **観測ダッシュボード**: AI訪問数の推移、時間帯分布、AI別レポートをリアルタイム表示
 
-## 対応AIクローラー
+## 対応AIクローラー（検知対応）
 
-### ChatGPT
-- User-Agent: GPTBot
-- 用途: ChatGPTの検索機能、回答生成
+### ChatGPT / OpenAI
+- User-Agent: GPTBot, ChatGPT-User, OAI-SearchBot
+- 用途: ChatGPTの検索機能、回答生成、学習データ収集
 
-### Claude
-- User-Agent: Claude-Web、anthropic-ai
+### Claude / Anthropic
+- User-Agent: ClaudeBot, Claude-Web, anthropic-ai
 - 用途: Claudeの検索機能、情報収集
 
 ### Google Gemini
@@ -75,15 +79,27 @@ viewport設定、レスポンシブデザイン、メディアクエリの実装
 - User-Agent: PerplexityBot
 - 用途: Perplexity検索結果の生成
 
-### Cohere
-- User-Agent: cohere-ai
-- 用途: CohereのAIモデル学習
+### Microsoft Copilot
+- User-Agent: Copilot
+- 用途: Bing AIの検索・回答生成
+
+### Meta AI
+- User-Agent: Meta-ExternalAgent, facebookai
+- 用途: Meta AIの学習・回答生成
+
+### xAI (Grok)
+- User-Agent: grok, xai
+- 用途: Grokの情報収集
+
+### その他
+- DeepSeek, Mistral, Cohere, YouBot, HuggingFace, CCBot, AppleBot, AmazonBot 等200種類以上に対応
 
 ## サイトマップ
 
 ### メインページ
 - トップページ（診断フォーム）: https://ai-kansoku.com
 - 診断結果ページ: https://ai-kansoku.com/result
+- 観測ダッシュボード: https://ai-kansoku.com/dashboard
 - 改善ガイド: https://ai-kansoku.com/guide
 - FAQ（よくある質問）: https://ai-kansoku.com/faq
 - 使い方ガイド: https://ai-kansoku.com/how-to-use
@@ -93,6 +109,8 @@ viewport設定、レスポンシブデザイン、メディアクエリの実装
 - robots.txtの正しい書き方【AI時代版】: https://blog.ai-kansoku.com/robots-txt-for-ai/
 - llms.txtとは？最新のAI対応サイトマップを解説: https://blog.ai-kansoku.com/what-is-llms-txt/
 - 構造化データでAIに理解されやすいサイトを作る: https://blog.ai-kansoku.com/structured-data-for-ai/
+- PerplexityBotとは？Perplexity AIのクローラーを完全解説: https://blog.ai-kansoku.com/what-is-perplexitybot/
+- GA4では見えない！AIクローラー訪問で母数が変わっている現実: https://blog.ai-kansoku.com/ga4-ai-crawler-invisible/
 
 ## よくある質問（FAQ）
 
@@ -114,8 +132,14 @@ A: ビジネス目的によります。AIによる情報発見を望む場合は
 ### Q: llms.txtは必須ですか？
 A: 必須ではありませんが、実装することでAIがサイトを理解しやすくなり、より正確な情報引用が期待できます。
 
+### Q: トラッキングコードとは？
+A: サイトに設置するとAIクローラーの訪問をリアルタイムで記録できるコードです。無料で発行・設置できます。
+
+### Q: GA4との違いは？
+A: GA4はJavaScriptで計測するためAIクローラーを検知できません。AI観測ラボはサーバーサイドに近い形でUser-Agent・IPレンジ・行動パターンを組み合わせて検知します。
+
 ### Q: 診断結果はどのくらい保存されますか？
-A: ブラウザのLocalStorageに最大10件まで保存されます。別のブラウザやデバイスでは共有されません。
+A: ブラウザのLocalStorageに最大10件まで保存されます。トラッキングデータは7日間保存されます。
 
 ### Q: 企業サイトでも使えますか？
 A: はい、個人ブログから大規模なコーポレートサイトまで幅広く対応しています。
@@ -123,28 +147,18 @@ A: はい、個人ブログから大規模なコーポレートサイトまで�
 ## 技術スタック
 
 - フロントエンド: Next.js 15, React 18, Tailwind CSS
-- データ可視化: Chart.js（レーダーチャート）
+- データ可視化: Chart.js（レーダーチャート、推移グラフ）
 - PDF生成: @react-pdf/renderer（日本語対応）
 - データベース: Neon PostgreSQL
 - ホスティング: Vercel
 - Analytics: Google Analytics 4
-
-## 実装例・活用事例
-
-### 改善前後の比較
-診断→改善実装→再診断のサイクルで、平均して1ヶ月でスコア20-30点アップするケースが多数報告されています。
-
-### 推奨される改善順序
-1. robots.txtの設定（即日対応可能）
-2. メタタグの最適化（1-2日）
-3. 構造化データの実装（3-5日）
-4. llms.txtの作成（1日）
-5. セマンティックHTMLの改善（1週間）
-6. パフォーマンス最適化（継続的に）
+- クローラー検知: User-Agent分析（200種類以上）+ IPレンジ検証 + 行動パターン分析
 
 ## 更新履歴
 
-- 2026-02-12: llms.txt強化、ブログ記事4本追加、データ保持ポリシー実装
+- 2026-02-25: llms.txt更新（ダッシュボード追加、ブログ記事6本に更新）
+- 2026-02-17: Phase 3.5完了（クローラー検知精度向上、UI改善）
+- 2026-02-12: Phase 3完了（観測ダッシュボード実装、llms.txt強化）
 - 2026-01-29: ブログ立ち上げ（blog.ai-kansoku.com）
 - 2026-01-26: 初回リリース、8項目診断機能実装
 
@@ -152,7 +166,6 @@ A: はい、個人ブログから大規模なコーポレートサイトまで�
 
 - メインサイト: https://ai-kansoku.com
 - ブログ: https://blog.ai-kansoku.com
-- Twitter（開発予定）: 準備中
 - フィードバック: サイト内のフィードバックフォームから
 
 ## ライセンス
