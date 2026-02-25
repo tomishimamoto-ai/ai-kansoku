@@ -10,7 +10,7 @@ const notoSansJP = Noto_Sans_JP({ subsets: ['latin'], weight: ['400', '500', '70
 const BLOG_POSTS = [
   {
     title: 'AIクローラーとは？ChatGPT・Claude・Perplexityに見つけてもらう方法',
-    slug: 'ai-crawler-guide',
+    slug: 'ai-crawler',
     date: '2026.01.28',
     tag: '入門',
     tagColor: 'blue',
@@ -18,7 +18,7 @@ const BLOG_POSTS = [
   },
   {
     title: 'robots.txtの正しい書き方【AI時代版】GPTBotを許可する設定',
-    slug: 'robots-txt-ai-guide',
+    slug: 'robots-txt-ai-crawler-guide',
     date: '2026.01.29',
     tag: '実装',
     tagColor: 'purple',
@@ -895,7 +895,7 @@ export default function Home() {
             {BLOG_POSTS.map((post) => (
               <a
                 key={post.slug}
-                href={`https://blog.ai-kansoku.com/${post.slug}`}
+                href={`https://blog.ai-kansoku.com/${post.slug}/`}
                 target="_blank"
                 className="glass-card"
                 style={{ padding: '24px', display: 'block', textDecoration: 'none', color: 'inherit' }}
