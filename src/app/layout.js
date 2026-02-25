@@ -142,16 +142,7 @@ export default function RootLayout({ children }) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
 
-        {/* AI観測ラボ トラッキング */}
-        <script src="https://ai-kansoku.com/track.js" data-site="0000xtwgn7" async />
-        <img
-          src="https://ai-kansoku.com/api/track/honeypot?siteId=0000xtwgn7"
-          style={{ display: 'none' }}
-          aria-hidden="true"
-          width="1"
-          height="1"
-          alt=""
-        />
+        
       </body>
     </html>
   );
