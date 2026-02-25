@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Line, Bar } from 'react-chartjs-2';
+import MimicPanel from '@/components/MimicPanel';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -798,6 +799,8 @@ function DashboardContent() {
             </div>
           )}
         </div>
+
+<MimicPanel siteId={siteId} />
 
         {/* ─── 最新訪問ログ ─── */}
         <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
