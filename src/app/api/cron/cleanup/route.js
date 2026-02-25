@@ -8,6 +8,7 @@ export async function GET(request) {
 
   const sql = neon(process.env.DATABASE_URL);
   
+  // 7日以上前のデータを全部削除
   await sql`
     DELETE FROM ai_crawler_visits 
     WHERE visited_at < NOW() - INTERVAL '7 days'
