@@ -39,7 +39,7 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
-        AND (crawler_type = 'ai' OR crawler_type IS NULL) 
+        AND crawler_type = 'ai'
       GROUP BY crawler_name
       ORDER BY visit_count DESC
     `;
@@ -53,7 +53,7 @@ export async function GET(request) {
         AND visited_at >= ${fourteenDaysAgo.toISOString()}
         AND visited_at < ${sevenDaysAgo.toISOString()}
         AND is_human = false
-        AND (crawler_type = 'ai' OR crawler_type IS NULL)
+        AND crawler_type = 'ai'
       GROUP BY crawler_name
     `;
 
@@ -79,7 +79,7 @@ export async function GET(request) {
     });
 
     // ========================================
-    // [FIX] AI総訪問数（is_human = false のみ）
+    // AI総訪問数
     // ========================================
     const totalStats = await sql`
       SELECT 
@@ -92,6 +92,7 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
+        AND crawler_type = 'ai'
     `;
 
     // 人間訪問数（is_human = true）
@@ -104,7 +105,7 @@ export async function GET(request) {
     `;
     const humanTotalCount = parseInt(humanTotal[0]?.total_visits || '0');
 
-    // [FIX] 先週のAI総訪問数（is_human = false のみ）
+    // 先週のAI総訪問数
     const lastWeekTotal = await sql`
       SELECT COUNT(*) as total_visits
       FROM ai_crawler_visits
@@ -112,6 +113,7 @@ export async function GET(request) {
         AND visited_at >= ${fourteenDaysAgo.toISOString()}
         AND visited_at < ${sevenDaysAgo.toISOString()}
         AND is_human = false
+        AND crawler_type = 'ai'
     `;
 
     const thisWeekTotal = parseInt(totalStats[0]?.total_visits || '0');
@@ -121,7 +123,7 @@ export async function GET(request) {
       : (thisWeekTotal > 0 ? 100 : 0);
 
     // ========================================
-    // [FIX] よく読まれるページ TOP5（AI訪問のみ）
+    // よく読まれるページ TOP5（AI訪問のみ）
     // ========================================
     const topPages = await sql`
       SELECT 
@@ -132,6 +134,7 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
+        AND crawler_type = 'ai'
         AND page_url IS NOT NULL
         AND page_url != ''
       GROUP BY page_url
@@ -140,7 +143,7 @@ export async function GET(request) {
     `;
 
     // ========================================
-    // [FIX] 訪問時間帯分析（AI訪問のみ）
+    // 訪問時間帯分析（AI訪問のみ）
     // ========================================
     const hourlyStats = await sql`
       SELECT 
@@ -150,12 +153,13 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
+        AND crawler_type = 'ai'
       GROUP BY hour
       ORDER BY hour
     `;
 
     // ========================================
-    // [FIX] 検出方法の内訳（AI訪問のみ）
+    // 検出方法の内訳（AI訪問のみ）
     // ========================================
     const detectionMethods = await sql`
       SELECT 
@@ -165,6 +169,7 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
+        AND crawler_type = 'ai'
       GROUP BY detection_method
       ORDER BY count DESC
     `;
@@ -198,6 +203,7 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
+        AND crawler_type = 'ai'
       GROUP BY TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD')
       ORDER BY date ASC
     `;
@@ -231,7 +237,7 @@ export async function GET(request) {
     }
 
     // ========================================
-    // [FIX] 最新20件の訪問履歴（AI訪問のみ）
+    // 最新20件の訪問履歴（AI訪問のみ）
     // ========================================
     const recentVisits = await sql`
       SELECT 
@@ -245,7 +251,7 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
-        AND (crawler_type = 'ai' OR crawler_type IS NULL)
+        AND crawler_type = 'ai'
       ORDER BY visited_at DESC
       LIMIT 20
     `;
