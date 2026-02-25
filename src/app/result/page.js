@@ -789,15 +789,15 @@ function ResultContent() {
       以下のコードをサイトの <code className="px-2 py-1 bg-black/30 rounded text-blue-400">&lt;head&gt;</code> タグ内に追加してください
     </p>
     
-    <div className="relative">
+<div className="relative">
       <pre className="p-4 rounded-lg bg-black/50 border border-white/10 overflow-x-auto text-xs md:text-sm">
         <code className="text-green-400 text-xs break-all">
-          { `<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>\n<img src="https://ai-kansoku.com/api/track/honeypot?siteId=${siteId}" style="display:none" aria-hidden="true" width="1" height="1" alt="">` }
+          { `<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>\n<a href="https://ai-kansoku.com/api/track/honeypot?siteId=${siteId}" style="display:none;position:absolute;left:-9999px;" aria-hidden="true" tabindex="-1"></a>` }
         </code>
       </pre>
       <button
         onClick={() => {
-          navigator.clipboard.writeText(`<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>\n<img src="https://ai-kansoku.com/api/track/honeypot?siteId=${siteId}" style="display:none" aria-hidden="true" width="1" height="1" alt="">`)
+          navigator.clipboard.writeText(`<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>\n<a href="https://ai-kansoku.com/api/track/honeypot?siteId=${siteId}" style="display:none;position:absolute;left:-9999px;" aria-hidden="true" tabindex="-1"></a>`)
           alert('コピーしました！');
         }}
         className="absolute top-2 right-2 px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded text-xs font-medium transition-all"
