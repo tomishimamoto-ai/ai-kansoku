@@ -385,6 +385,97 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     }
   }
 
+// ── STEP 1.5: 偽装UA・正規化ルール ──────────────────────
+// 存在しないiOSバージョン
+const iosMatch = ua.match(/iphone os (\d+)_/);
+if (iosMatch) {
+  const majorVersion = parseInt(iosMatch[1]);
+  if (majorVersion >= 19) {
+    return {
+      ...base,
+      crawlerType: 'spoofed-bot',
+      crawlerName: 'Spoofed-iOS',
+      detectionMethod: 'ua-normalization',
+      confidence: 90,
+      totalScore: 90,
+    };
+  }
+}
+
+// 存在しないiPad OSバージョン
+const ipadMatch = ua.match(/cpu os (\d+)_/);
+if (ipadMatch) {
+  const majorVersion = parseInt(ipadMatch[1]);
+  if (majorVersion >= 19) {
+    return {
+      ...base,
+      crawlerType: 'spoofed-bot',
+      crawlerName: 'Spoofed-iOS',
+      detectionMethod: 'ua-normalization',
+      confidence: 90,
+      totalScore: 90,
+    };
+  }
+}
+
+// Android 10; K（機種名なしのGooglebot系）
+if (ua.includes('android 10; k)')) {
+  return {
+    ...base,
+    isSearchEngine: true,
+    crawlerType: 'search-engine',
+    crawlerName: 'Googlebot-family',
+    detectionMethod: 'ua-normalization',
+    confidence: 90,
+    totalScore: 90,
+  };
+}
+
+// 存在しないChromeバージョン（145以上）
+const chromeMatch = ua.match(/chrome\/(\d+)\./);
+if (chromeMatch) {
+  const chromeVersion = parseInt(chromeMatch[1]);
+  if (chromeVersion >= 145) {
+    return {
+      ...base,
+      crawlerType: 'spoofed-bot',
+      crawlerName: 'Spoofed-Chrome',
+      detectionMethod: 'ua-normalization',
+      confidence: 85,
+      totalScore: 85,
+    };
+  }
+}
+
+// Vercel Screenshot
+if (ua.includes('vercel-screenshot')) {
+  return {
+    ...base,
+    crawlerType: 'other-bot',
+    crawlerName: 'Vercel-Screenshot',
+    detectionMethod: 'ua-normalization',
+    confidence: 99,
+    totalScore: 99,
+  };
+}
+
+// Nexus 5X / Moto G (4) / CrOS（Google系クローラーUA）
+if (
+  ua.includes('nexus 5x build/mmb29p') ||
+  ua.includes('moto g (4)') ||
+  ua.includes('cros x86_64 14541')
+) {
+  return {
+    ...base,
+    isSearchEngine: true,
+    crawlerType: 'search-engine',
+    crawlerName: 'Googlebot-family',
+    detectionMethod: 'ua-normalization',
+    confidence: 90,
+    totalScore: 90,
+  };
+}
+
   // ── STEP 2 & 3: 統合スコア計算 ─────────────────────────
   let uaScore        = 0;
   let ipScore        = 0;

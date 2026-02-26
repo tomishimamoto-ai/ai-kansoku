@@ -64,33 +64,32 @@ function DashboardContent() {
   const [saving, setSaving] = useState(false);
   const [manualSaved, setManualSaved] = useState(false);
 
-  // データ取得
-  useEffect(() => {
-    if (!siteId) { setLoading(false); return; }
-
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`/api/visits?siteId=${siteId}`);
-        const json = await res.json();
-        if (json.success) {
-          setData(json);
-          if (json.manual_data) {
-            setManualInput({
-              userCount: json.manual_data.user_count || '',
-              pageViews: json.manual_data.page_views || '',
-              sessions: json.manual_data.sessions || ''
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
+const fetchData = async () => {
+  setLoading(true);
+  try {
+    const res = await fetch(`/api/visits?siteId=${siteId}&t=${Date.now()}`);
+    const json = await res.json();
+    if (json.success) {
+      setData(json);
+      if (json.manual_data) {
+        setManualInput({
+          userCount: json.manual_data.user_count || '',
+          pageViews: json.manual_data.page_views || '',
+          sessions: json.manual_data.sessions || ''
+        });
       }
-    };
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
-    fetchData();
-  }, [siteId]);
+useEffect(() => {
+  if (!siteId) { setLoading(false); return; }
+  fetchData();
+}, [siteId]);
 
   // 手動データ保存
   const handleSaveManualData = async () => {
@@ -355,12 +354,20 @@ function DashboardContent() {
               <p className="text-xs text-gray-400">Deep Space Observatory</p>
             </div>
           </div>
-          <button
-            onClick={() => window.history.back()}
-            className="px-4 py-2 bg-[#1a1e47] hover:bg-[#252a54] border border-[#2a2f57] rounded-lg transition-all duration-200 text-sm font-medium"
-          >
-            ← 戻る
-          </button>
+          <div className="flex items-center gap-2">
+  <button
+    onClick={fetchData}
+    className="px-4 py-2 bg-[#1a1e47] hover:bg-[#252a54] border border-[#2a2f57] rounded-lg transition-all duration-200 text-sm font-medium"
+  >
+    🔄 更新
+  </button>
+  <button
+    onClick={() => window.history.back()}
+    className="px-4 py-2 bg-[#1a1e47] hover:bg-[#252a54] border border-[#2a2f57] rounded-lg transition-all duration-200 text-sm font-medium"
+  >
+    ← 戻る
+  </button>
+</div>
         </div>
       </header>
 
@@ -800,7 +807,7 @@ function DashboardContent() {
           )}
         </div>
 
-<MimicPanel siteId={siteId} />
+<MimicPanel siteId={siteId} spoofedStats={data?.spoofed_stats} />
 
         {/* ─── 最新訪問ログ ─── */}
         <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">

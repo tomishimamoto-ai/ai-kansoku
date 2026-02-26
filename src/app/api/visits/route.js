@@ -175,6 +175,42 @@ export async function GET(request) {
     `;
 
     // ========================================
+    // 擬態クローラー統計（7日間）★追加★
+    // ========================================
+    const spoofedStats = await sql`
+      SELECT 
+        crawler_name,
+        crawler_type,
+        COUNT(*) as visit_count,
+        COUNT(DISTINCT ip_address) as unique_ips
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
+        AND crawler_type IN ('spoofed-bot', 'search-engine', 'other-bot')
+      GROUP BY crawler_name, crawler_type
+      ORDER BY visit_count DESC
+    `;
+
+    const spoofedTotal = spoofedStats.reduce((sum, r) => sum + parseInt(r.visit_count), 0);
+    const spoofedUniqueIps = spoofedStats.reduce((sum, r) => sum + parseInt(r.unique_ips), 0);
+
+    // 先週の擬態クローラー数（変化率計算用）
+    const lastWeekSpoofed = await sql`
+      SELECT COUNT(*) as total
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${fourteenDaysAgo.toISOString()}
+        AND visited_at < ${sevenDaysAgo.toISOString()}
+        AND is_human = false
+        AND crawler_type IN ('spoofed-bot', 'search-engine', 'other-bot')
+    `;
+    const lastWeekSpoofedCount = parseInt(lastWeekSpoofed[0]?.total || '0');
+    const spoofedChange = lastWeekSpoofedCount > 0
+      ? Math.round(((spoofedTotal - lastWeekSpoofedCount) / lastWeekSpoofedCount) * 100)
+      : (spoofedTotal > 0 ? 100 : 0);
+
+    // ========================================
     // 手動入力データの取得
     // ========================================
     const manualData = await sql`
@@ -272,6 +308,20 @@ export async function GET(request) {
         unique_ips: parseInt(totalStats[0]?.unique_ips || '0'),
         first_visit: totalStats[0]?.first_visit || null,
         last_visit: totalStats[0]?.last_visit || null
+      },
+
+      // ★追加★
+      spoofed_stats: {
+        total: spoofedTotal,
+        unique_ips: spoofedUniqueIps,
+        change_percent: spoofedChange,
+        trend: spoofedChange > 0 ? 'up' : spoofedChange < 0 ? 'down' : 'stable',
+        by_type: spoofedStats.map(r => ({
+          name: r.crawler_name,
+          type: r.crawler_type,
+          visits: parseInt(r.visit_count),
+          unique_ips: parseInt(r.unique_ips)
+        }))
       },
       
       top_pages: topPages.map(p => ({
