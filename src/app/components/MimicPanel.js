@@ -72,30 +72,28 @@ export default function MimicPanel({ siteId }) {
   };
 
   return (
-    <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-[#1a0a0a] to-[#1a1020] p-6 space-y-5">
+    <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-[#1a0a0a] to-[#1a1020] p-4 space-y-4 overflow-hidden w-full">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🕵️</span>
-          <h3 className="text-white font-bold text-lg">擬態クローラー検知</h3>
-          <span className="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full">
-            BETA
-          </span>
-        </div>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2 mb-1">
+        <span className="text-xl">🕵️</span>
+        <h3 className="text-white font-bold text-base">擬態クローラー検知</h3>
+        <span className="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full">
+          BETA
+        </span>
+        <div className="flex gap-2 ml-auto">
           <button
             onClick={() => runBatch(true)}
             disabled={running}
-            className="text-xs px-3 py-1.5 rounded-lg border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 transition disabled:opacity-50"
+            className="text-xs px-2.5 py-1 rounded-lg border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 transition disabled:opacity-50 whitespace-nowrap"
           >
-            {running ? '実行中...' : 'テスト実行'}
+            {running ? '...' : 'テスト'}
           </button>
           <button
             onClick={() => runBatch(false)}
             disabled={running}
-            className="text-xs px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition disabled:opacity-50"
+            className="text-xs px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition disabled:opacity-50 whitespace-nowrap"
           >
-            {running ? '実行中...' : '今すぐ再判定'}
+            {running ? '...' : '再判定'}
           </button>
         </div>
       </div>
@@ -145,20 +143,24 @@ export default function MimicPanel({ siteId }) {
         </div>
       )}
 
-      {/* 擬態IP詳細テーブル */}
+      {/* 擬態IP詳細テーブル - 折りたたみ */}
       {stats?.byIP?.length > 0 && (
-        <div>
-          <div className="text-xs text-gray-400 mb-2 font-medium">擬態疑いIP TOP10</div>
-          <div className="space-y-2">
+        <details className="group">
+          <summary className="flex items-center justify-between cursor-pointer list-none py-2 px-3 rounded-lg bg-black/20 hover:bg-black/40 transition">
+            <span className="text-xs text-gray-400 font-medium">擬態疑いIP TOP10</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-red-400">{stats.byIP.length}件</span>
+              <span className="text-gray-500 text-xs group-open:rotate-180 transition-transform duration-200">▼</span>
+            </div>
+          </summary>
+          <div className="mt-2 space-y-2">
             {stats.byIP.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 bg-black/30 rounded-xl px-4 py-3">
-                <span className="text-xs text-gray-500 w-4">{i + 1}</span>
-                <span className="font-mono text-sm text-red-300 flex-1">{item.ip_address}</span>
-                <div className="flex items-center gap-3 text-xs text-gray-400">
-                  <span>{item.visit_count}件</span>
-                  <span className="text-orange-400">スコア{item.max_score}</span>
-                </div>
-                <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div key={i} className="flex items-center gap-2 bg-black/30 rounded-xl px-3 py-2.5">
+                <span className="text-xs text-gray-500 w-4 shrink-0">{i + 1}</span>
+                <span className="font-mono text-xs text-red-300 flex-1 min-w-0 truncate">{item.ip_address}</span>
+                <span className="text-xs text-gray-400 shrink-0">{item.visit_count}件</span>
+                <span className="text-xs text-orange-400 shrink-0">スコア{item.max_score}</span>
+                <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden shrink-0">
                   <div
                     className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
                     style={{ width: `${Math.min(item.max_score, 100)}%` }}
@@ -167,7 +169,7 @@ export default function MimicPanel({ siteId }) {
               </div>
             ))}
           </div>
-        </div>
+        </details>
       )}
 
       {/* ━━━ ローテーション異常 ━━━ */}
@@ -226,24 +228,21 @@ export default function MimicPanel({ siteId }) {
               .map((item, i) => {
               const pt = periodTypeLabel(item.period_type);
               return (
-                <div key={i} className={`flex items-center gap-3 rounded-lg px-3 py-2 border ${
+                <div key={i} className={`flex items-center gap-2 rounded-lg px-3 py-2 border overflow-hidden ${
                   item.is_periodic
                     ? 'bg-red-500/10 border-red-500/30'
                     : 'bg-yellow-500/10 border-yellow-500/30'
                 }`}>
                   {/* 強度バッジ */}
-                  <span className={`text-xs font-bold whitespace-nowrap ${item.is_periodic ? 'text-red-400' : 'text-yellow-400'}`}>
-                    {item.is_periodic ? '🔴 強周期' : '🟡 周期疑い'}
+                  <span className={`text-xs font-bold whitespace-nowrap shrink-0 ${item.is_periodic ? 'text-red-400' : 'text-yellow-400'}`}>
+                    {item.is_periodic ? '🔴強' : '🟡疑'}
                   </span>
-                  <span className="font-mono text-xs text-gray-300 flex-1">{item.ip_address}</span>
-                  <span className={`text-xs whitespace-nowrap ${pt.color}`}>
-                    {pt.icon} {pt.label}
+                  <span className="font-mono text-xs text-gray-300 flex-1 min-w-0 truncate">{item.ip_address}</span>
+                  <span className={`text-xs whitespace-nowrap shrink-0 ${pt.color}`}>
+                    {pt.icon}{pt.label}
                   </span>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">
-                    avg {formatInterval(item.avg_interval_sec)}
-                  </span>
-                  <span className="text-xs text-gray-600 whitespace-nowrap">
-                    CV {item.cv_percent}%
+                  <span className="text-xs text-gray-500 whitespace-nowrap shrink-0">
+                    {formatInterval(item.avg_interval_sec)}
                   </span>
                 </div>
               );
