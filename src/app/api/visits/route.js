@@ -122,6 +122,36 @@ export async function GET(request) {
       ? Math.round(((thisWeekTotal - lastWeekTotalCount) / lastWeekTotalCount) * 100)
       : (thisWeekTotal > 0 ? 100 : 0);
 
+// ========================================
+// AI未確認シグナル（Unknown AI のみ）
+// ========================================
+const unknownSignalResult = await sql`
+  SELECT COUNT(*) as total
+  FROM ai_crawler_visits
+  WHERE site_id = ${siteId}
+    AND visited_at >= ${sevenDaysAgo.toISOString()}
+    AND is_human = false
+    AND crawler_type = 'ai'
+    AND crawler_name = 'Unknown AI'
+`;
+const unknownSignalCount = parseInt(unknownSignalResult[0]?.total || '0');
+
+// ========================================
+// AI偽装シグナル（高確信度 Spoofed のみ）
+// confidence >= 85 に絞る
+// ========================================
+const spoofedHighConfResult = await sql`
+  SELECT COUNT(*) as total
+  FROM ai_crawler_visits
+  WHERE site_id = ${siteId}
+    AND visited_at >= ${sevenDaysAgo.toISOString()}
+    AND is_human = false
+    AND crawler_type = 'spoofed-bot'
+    AND confidence >= 85
+`;
+const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
+
+
     // ========================================
     // よく読まれるページ TOP5（AI訪問のみ）
     // ========================================
@@ -300,6 +330,7 @@ export async function GET(request) {
       
       ai_stats: {
         total: thisWeekTotal,
+        unknown_signal: unknownSignalCount, 
         human_total: humanTotalCount,
         change_percent: totalChange,
         trend: totalChange > 0 ? 'up' : totalChange < 0 ? 'down' : 'stable',
@@ -313,6 +344,7 @@ export async function GET(request) {
       // ★追加★
       spoofed_stats: {
         total: spoofedTotal,
+        high_confidence_total: spoofedHighConfCount,
         unique_ips: spoofedUniqueIps,
         change_percent: spoofedChange,
         trend: spoofedChange > 0 ? 'up' : spoofedChange < 0 ? 'down' : 'stable',

@@ -132,9 +132,10 @@ function DashboardContent() {
     );
   }
 
-  const { ai_stats, top_pages, detection_methods, recent_visits, daily_trend, hourly_distribution } = data;
-  const totalAI = ai_stats.total;
-  const change = ai_stats.change_percent;
+const { ai_stats, spoofed_stats, top_pages, detection_methods, recent_visits, daily_trend, hourly_distribution } = data;
+const unknownSignal = ai_stats.unknown_signal ?? 0;
+const spoofedSignal = spoofed_stats?.high_confidence_total ?? 0;
+const humanTotal = ai_stats.human_total ?? 0;
 
   const lineChartData = {
     labels: daily_trend?.map(d => {
@@ -327,42 +328,67 @@ function DashboardContent() {
           </p>
         </div>
 
-        {/* サマリーカード */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl shadow-[#4a9eff]/10 hover:shadow-[#4a9eff]/20 transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">✦</span>
-                <h3 className="text-sm text-gray-400">AI訪問（彗星）</h3>
-              </div>
-              <span className={`text-xs font-bold px-3 py-1 rounded-full ${change > 0 ? 'bg-green-500/20 text-green-400' : change < 0 ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                {change > 0 ? '↗ +' : change < 0 ? '↘ ' : '→ '}{change}%
-              </span>
-            </div>
-            <p className="text-5xl font-bold bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff] bg-clip-text text-transparent mb-2">
-              {ai_stats.unique_ips.toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500">ユニークAIクローラーIP</p>
-          </div>
+       {/* サマリーカード */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-3xl">📄</span>
-              <h3 className="text-sm text-gray-400">AIページビュー</h3>
-            </div>
-            <p className="text-5xl font-bold text-[#4a9eff] mb-2">{ai_stats.total.toLocaleString()}</p>
-            <p className="text-xs text-gray-500">7日間のAIクローラー訪問数</p>
-          </div>
+  {/* 🌑 AI未確認シグナル（ダークマター） */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl hover:shadow-purple-500/20 hover:border-purple-500/40 transition-all group">
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">🌑</span>
+        <h3 className="text-sm text-gray-400">AI未確認シグナル</h3>
+      </div>
+      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+        ダークマター
+      </span>
+    </div>
+    <p className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent mb-2">
+      {(unknownSignal ?? 0).toLocaleString()}
+    </p>
+    <p className="text-xs text-gray-500 mb-3">正体不明のAIシグナル（7日間）</p>
+    <button className="w-full text-xs text-purple-400 border border-purple-500/30 rounded-lg py-1.5 hover:bg-purple-500/10 transition-all opacity-0 group-hover:opacity-100">
+      🔍 正体を調べる → Pro
+    </button>
+  </div>
 
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-3xl">●</span>
-              <h3 className="text-sm text-gray-400">人間訪問（恒星）</h3>
-            </div>
-            <p className="text-5xl font-bold text-[#ffd700] mb-2">{(ai_stats.human_total ?? 0).toLocaleString()}</p>
-            <p className="text-xs text-gray-500">7日間の人間訪問数</p>
-          </div>
-        </div>
+  {/* 🎭 AI偽装シグナル */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl hover:shadow-orange-500/20 hover:border-orange-500/40 transition-all group">
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">🎭</span>
+        <h3 className="text-sm text-gray-400">AI偽装シグナル</h3>
+      </div>
+      <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
+        擬態検知
+      </span>
+    </div>
+    <p className="text-5xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent mb-2">
+      {(spoofedSignal ?? 0).toLocaleString()}
+    </p>
+    <p className="text-xs text-gray-500 mb-3">人間を装った高確信度シグナル（7日間）</p>
+    <button className="w-full text-xs text-orange-400 border border-orange-500/30 rounded-lg py-1.5 hover:bg-orange-500/10 transition-all opacity-0 group-hover:opacity-100">
+      🔍 詳細を見る → Pro
+    </button>
+  </div>
+
+  {/* ● 人間訪問（恒星） */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl hover:shadow-yellow-500/20 hover:border-yellow-500/40 transition-all">
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">●</span>
+        <h3 className="text-sm text-gray-400">人間訪問（恒星）</h3>
+      </div>
+      <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+        確定
+      </span>
+    </div>
+    <p className="text-5xl font-bold text-[#ffd700] mb-2">
+      {humanTotal.toLocaleString()}
+    </p>
+    <p className="text-xs text-gray-500">7日間の人間訪問数</p>
+  </div>
+
+</div>
 
         {/* 7日間推移グラフ */}
         {daily_trend && daily_trend.length > 0 && (
