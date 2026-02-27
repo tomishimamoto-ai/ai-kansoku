@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Line, Bar } from 'react-chartjs-2';
 import MimicPanel from '../components/MimicPanel';
+import SearchConsolePanel from '../components/SearchConsolePanel';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -681,13 +682,18 @@ function DashboardContent() {
           )}
         </div>
 
-        <MimicPanel siteId={siteId} spoofedStats={data?.spoofed_stats} />
+       {/* Search Console分析パネル */}
+        <div className="mb-8">
+          <SearchConsolePanel siteId={siteId} />
+        </div>
+       
+        {/* 周期的アクセス検出（アコーディオン）*/}
+        <AccordionSection title="🛸 周期的アクセス検出（ミミッククローラー）" defaultOpen={false}>
+          <MimicPanel siteId={siteId} spoofedStats={data?.spoofed_stats} />
+        </AccordionSection>
 
-        {/* 最新訪問ログ */}
-        <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <span className="text-2xl">📋</span>最新観測ログ（20件）
-          </h2>
+        {/* 最新観測ログ（アコーディオン）*/}
+        <AccordionSection title="📋 最新観測ログ（20件）" defaultOpen={false} className="mt-8">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -713,8 +719,8 @@ function DashboardContent() {
               </tbody>
             </table>
           </div>
-        </div>
-      </main>
+        </AccordionSection>
+       </main>
 
       <footer className="border-t border-[#1a1e47] bg-[#0f1229]/80 backdrop-blur-xl mt-16">
         <div className="container mx-auto px-4 py-8 text-center text-gray-400 text-sm">
@@ -730,6 +736,26 @@ function DashboardContent() {
         }
         .animate-twinkle { animation: twinkle 3s ease-in-out infinite; }
       `}</style>
+    </div>
+  );
+}
+
+function AccordionSection({ title, children, defaultOpen = false, className = '' }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={`bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl shadow-xl mb-8 ${className}`}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-6 py-4 text-left"
+      >
+        <h2 className="text-xl font-bold flex items-center gap-2">{title}</h2>
+        <span className={`text-gray-400 text-xl transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>▼</span>
+      </button>
+      {open && (
+        <div className="px-6 pb-6">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
