@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Line, Bar } from 'react-chartjs-2';
 import MimicPanel from '../components/MimicPanel';
 import SearchConsolePanel from '../components/SearchConsolePanel';
+import PageRanking from '../components/PageRanking';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -53,6 +54,7 @@ function DashboardContent() {
   const [manualInput, setManualInput] = useState({ userCount: '', pageViews: '', sessions: '' });
   const [saving, setSaving] = useState(false);
   const [manualSaved, setManualSaved] = useState(false);
+  const [scData, setScData] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -61,6 +63,11 @@ function DashboardContent() {
       const json = await res.json();
       if (json.success) {
         setData(json);
+        try {
+  const scRes = await fetch(`/api/search-console/fetch?siteId=${siteId}`);
+  const scJson = await scRes.json();
+  if (scJson.connected) setScData(scJson);
+} catch {}
         if (json.manual_data) {
           setManualInput({
             userCount: json.manual_data.user_count || '',
@@ -531,37 +538,8 @@ const humanTotal = ai_stats.human_total ?? 0;
 
         {/* 2カラム: ページ / 検出方法 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-2xl">📄</span>高頻度観測ページ TOP5
-            </h2>
-            {top_pages.length === 0 ? (
-              <div className="text-center py-8">
-                <span className="text-4xl mb-2 block">📡</span>
-                <p className="text-gray-400">観測データがありません</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {top_pages.map((page, idx) => (
-                  <div key={idx} className="bg-[#1a1e47]/50 rounded-lg p-4 border border-[#2a2f57] hover:border-[#4a9eff]/50 transition-all">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-bold text-[#4a9eff] bg-[#4a9eff]/20 px-2 py-1 rounded">#{idx + 1}</span>
-                          <p className="text-sm font-mono text-[#6eb5ff] truncate">{page.url}</p>
-                        </div>
-                        <p className="text-xs text-gray-500">{page.crawler_variety}種類のAIが観測</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-2xl text-[#4a9eff]">{page.visits}</p>
-                        <p className="text-xs text-gray-500">回</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <PageRanking topPages={top_pages} scData={scData} />
+
 
           <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -603,109 +581,6 @@ const humanTotal = ai_stats.human_total ?? 0;
               ))}
             </div>
           </div>
-        </div>
-
-        {/* 人間訪問データ（手動入力）*/}
-        <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl mb-8">
-          <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-            <span className="text-2xl">●</span>人間訪問データ（恒星）
-          </h2>
-          <p className="text-sm text-gray-400 mb-5">
-            GA4の数値を入力すると、AI訪問（彗星 ✦）と合わせた総観測数を正確に確認できます
-          </p>
-          <div className="bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-xl p-4 mb-5 flex gap-3">
-            <span className="text-xl flex-shrink-0">💡</span>
-            <p className="text-sm text-gray-300">
-              GA4 › レポート › 集客 › 概要 から数値をコピーして入力してください。
-              <span className="text-gray-500 ml-1">（入力は任意です）</span>
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-            {[
-              { key: 'userCount', label: 'ユーザー数', placeholder: '例: 5,453' },
-              { key: 'pageViews', label: 'ページビュー', placeholder: '例: 12,345' },
-              { key: 'sessions', label: 'セッション数', placeholder: '例: 7,069' },
-            ].map(({ key, label, placeholder }) => (
-              <div key={key}>
-                <label className="block text-sm text-gray-400 mb-2 font-medium">{label}</label>
-                <input
-                  type="number"
-                  value={manualInput[key]}
-                  onChange={(e) => setManualInput({ ...manualInput, [key]: e.target.value })}
-                  placeholder={placeholder}
-                  className="w-full bg-[#1a1e47] border border-[#2a2f57] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#4a9eff] focus:border-transparent transition-all"
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <button
-              onClick={handleSaveManualData}
-              disabled={saving}
-              className="px-6 py-3 bg-gradient-to-r from-[#4a9eff] to-[#0066cc] hover:from-[#5aa9ff] hover:to-[#1a76dd] rounded-lg font-bold transition-all disabled:opacity-50 shadow-lg shadow-[#4a9eff]/30"
-            >
-              {saving ? '保存中...' : manualSaved ? '✅ 保存しました！' : '💾 データを保存'}
-            </button>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>🔒</span>
-              <span><span className="text-[#ffd700] font-medium">プロプラン</span>{' '}でGA4自動連携に対応予定</span>
-            </div>
-          </div>
-
-          {hasManualData && (
-            <div className="mt-6 bg-gradient-to-br from-[#1a1e47] to-[#252a54] rounded-xl p-6 border border-[#4a9eff]/30 shadow-lg shadow-[#4a9eff]/10">
-              <h3 className="font-bold mb-4 flex items-center gap-2"><span>📊</span> 総観測数の比較</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="bg-[#0a0e27]/50 rounded-lg p-4 border border-[#2a2f57]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">●</span>
-                    <p className="text-sm text-gray-400">人間訪問（恒星）</p>
-                    <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">GA4実測値</span>
-                  </div>
-                  <p className="text-4xl font-bold text-[#ffd700]">{manualUserCount.toLocaleString()}</p>
-                </div>
-                <div className="bg-[#0a0e27]/50 rounded-lg p-4 border border-[#2a2f57]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">✦</span>
-                    <p className="text-sm text-gray-400">AI訪問（彗星）</p>
-                    <span className="text-xs bg-[#4a9eff]/20 text-[#4a9eff] px-2 py-0.5 rounded">観測実測値</span>
-                  </div>
-                  <p className="text-4xl font-bold text-[#4a9eff]">{totalAI.toLocaleString()}</p>
-                </div>
-              </div>
-              <div className="pt-5 border-t border-[#2a2f57]">
-                <p className="text-sm text-gray-400 mb-2">🌌 総観測数（人間 + AI）</p>
-                <p className="text-5xl font-bold bg-gradient-to-r from-[#ffd700] to-[#4a9eff] bg-clip-text text-transparent">
-                  {(manualUserCount + totalAI).toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-2">7日間の全観測データ</p>
-                <div className="mt-4">
-                  <p className="text-xs text-gray-400 mb-2">AI訪問の比率</p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-3 rounded-full bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff]"
-                      style={{ width: `${Math.max(Math.round((totalAI / (manualUserCount + totalAI)) * 100), 1)}%`, minWidth: '4px' }} />
-                    <span className="text-sm font-bold text-[#4a9eff]">
-                      {Math.round((totalAI / (manualUserCount + totalAI)) * 100)}% がAI訪問
-                    </span>
-                  </div>
-                  <div className="mt-2 flex gap-4 text-xs text-gray-500">
-                    <span>✦ AI: {totalAI}回</span>
-                    <span>● 人間: {manualUserCount.toLocaleString()}人</span>
-                  </div>
-                </div>
-                {manualUserCount > 0 && (
-                  <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-xl p-4">
-                    <p className="text-sm text-green-400 font-bold mb-1">✅ GA4では見えていない露出が存在します</p>
-                    <p className="text-xs text-gray-400">
-                      GA4のユーザー数は {manualUserCount.toLocaleString()} 人ですが、
-                      AIクローラーによる露出が別途 {totalAI.toLocaleString()} 回発生しています。
-                      施策の効果はGA4の数値だけでは正確に測れません。
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
        {/* Search Console分析パネル */}

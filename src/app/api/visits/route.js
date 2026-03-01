@@ -169,7 +169,7 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
         AND page_url != ''
       GROUP BY page_url
       ORDER BY visit_count DESC
-      LIMIT 5
+      LIMIT 10
     `;
 
     // ========================================
