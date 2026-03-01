@@ -51,7 +51,7 @@ export default function PageRanking({ topPages, scData }) {
   const maxImpressions = hasScData ? Math.max(...pages.map(p => p.sc?.impressions || 0), 1) : 1;
 
   return (
-    <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
+    <div className="bg-gradient-to-br from-[#120f29] to-[#1e1a47] border border-[#3a2f7a] rounded-2xl p-6 shadow-xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <span className="text-2xl">📄</span>
