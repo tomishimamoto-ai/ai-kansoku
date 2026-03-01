@@ -536,52 +536,9 @@ const humanTotal = ai_stats.human_total ?? 0;
           </div>
         </div>
 
-        {/* 2カラム: ページ / 検出方法 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <PageRanking topPages={top_pages} scData={scData} />
-
-
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-2xl">🔍</span>観測方法の内訳
-            </h2>
-            <div className="space-y-3">
-              {detection_methods.map((method, idx) => (
-                <div key={idx} className="bg-[#1a1e47]/50 rounded-lg p-4 border border-[#2a2f57]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="font-bold text-[#4a9eff]">
-                        {method.method === 'user-agent' ? '🎯 User-Agent分析' :
-                         method.method === 'rapid-access' ? '⚡ 高速アクセス検出' :
-                         method.method === 'pattern-inference' ? '🧩 パターン推論' :
-                         method.method === 'ip-range' ? '🌐 IPレンジ照合' :
-                         method.method === 'dns-reverse' ? '🔎 DNS逆引き検証' :
-                         method.method === 'head-method' ? '📡 HEADメソッド検出' :
-                         method.method === 'javascript' ? '⚙️ JavaScript検出' :
-                         method.method === 'image-request' ? '🖼️ 画像リクエスト検出' :
-                         `🔬 ${method.method}`}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {method.method === 'user-agent' ? 'UA文字列から判定' :
-                         method.method === 'rapid-access' ? '1秒以内の連続アクセス' :
-                         method.method === 'pattern-inference' ? 'ヘッダー情報から推測' :
-                         method.method === 'ip-range' ? '公式公開CIDRリストと照合' :
-                         method.method === 'dns-reverse' ? 'IPから逆引きしたホスト名で確認' :
-                         method.method === 'head-method' ? 'HEADリクエストを送信するクローラー' :
-                         method.method === 'javascript' ? 'JSトラッキングコードで検出' :
-                         method.method === 'image-request' ? '画像リクエストパターンで検出' : ''}
-                      </p>
-                    </div>
-                    <div className="text-right ml-4">
-                      <p className="text-3xl font-bold text-[#4a9eff]">{method.count}</p>
-                      <p className="text-xs text-gray-500">件</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className="mb-8">
+       <PageRanking topPages={top_pages} scData={scData} />
+      </div>  
 
        {/* Search Console分析パネル */}
         <div className="mb-8">

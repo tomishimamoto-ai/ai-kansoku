@@ -45,7 +45,8 @@ export default function PageRanking({ topPages, scData }) {
     });
 
     // AI訪問ページにサーコンデータをマージ
-    const aiPages = topPages.map(p => {
+    const filteredTopPages = topPages.filter(p => !p.url.includes('honeypot'));
+    const aiPages = filteredTopPages.map(p => {
       const sc = scMap.get(p.url) || null;
       scMap.delete(p.url); // 使用済みフラグ
       return { url: p.url, aiVisits: p.visits, crawlerVariety: p.crawler_variety, sc };
