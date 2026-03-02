@@ -459,7 +459,7 @@ if (ua.includes('android 10; k)')) {
 const chromeMatch = ua.match(/chrome\/(\d+)\./);
 if (chromeMatch) {
   const chromeVersion = parseInt(chromeMatch[1]);
-  if (chromeVersion >= 145) {
+  if (chromeVersion >= 200) {
     return {
       ...base,
       crawlerType: 'spoofed-bot',
