@@ -23,7 +23,7 @@ export const metadata = {
   creator: "AI観測ラボ",
   publisher: "AI観測ラボ",
   
-    // OGP (Open Graph Protocol)
+  // OGP (Open Graph Protocol)
   openGraph: {
     type: "website",
     locale: "ja_JP",
@@ -84,12 +84,6 @@ export const metadata = {
     },
   },
   
-  // 検証用メタタグ（必要に応じて追加）
-  // verification: {
-  //   google: 'your-google-verification-code',
-  //   yandex: 'your-yandex-verification-code',
-  // },
-  
   // Canonical URL
   alternates: {
     canonical: "https://ai-kansoku.com",
@@ -100,8 +94,25 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ja">
       <head>
-          {/* Google Search Console 所有権確認 */}
-  <meta name="google-site-verification" content="ziqmb14N0-99w0COc_sqVhQNeStU1qdGrv5COcNmD_s" />
+        {/* Google Search Console 所有権確認 */}
+        <meta name="google-site-verification" content="ziqmb14N0-99w0COc_sqVhQNeStU1qdGrv5COcNmD_s" />
+
+        {/* Google Analytics (GA4) - G-CEXFWC8K8K */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-CEXFWC8K8K"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-CEXFWC8K8K');
+            `,
+          }}
+        />
+
         {/* JSON-LD構造化データ */}
         <script
           type="application/ld+json"
@@ -141,8 +152,6 @@ export default function RootLayout({ children }) {
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
-
-        
       </body>
     </html>
   );
