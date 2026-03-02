@@ -331,6 +331,20 @@ export async function GET(request) {
     }
 
     // ========================================
+    // 診断スコア履歴（最新5件）
+    // ========================================
+    const diagnosesHistory = await sql`
+      SELECT 
+        total_score,
+        scores,
+        diagnosed_at
+      FROM diagnoses
+      WHERE site_id = ${siteId}
+      ORDER BY diagnosed_at DESC
+      LIMIT 5
+    `;
+
+    // ========================================
     // 最新10件の訪問履歴（20件→10件に削減）
     // ========================================
     const recentVisits = await sql`
@@ -405,6 +419,12 @@ export async function GET(request) {
       
       recent_visits: recentVisits,
       
+      diagnoses_history: diagnosesHistory.map(d => ({
+        total_score: d.total_score,
+        scores: d.scores,
+        diagnosed_at: d.diagnosed_at,
+      })),
+
       period: '7days',
       period_start: sevenDaysAgo.toISOString(),
       period_end: new Date().toISOString(),

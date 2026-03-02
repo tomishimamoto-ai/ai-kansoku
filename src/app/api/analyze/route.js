@@ -162,10 +162,41 @@ export async function POST(request) {
     await checkPerformance(htmlContent, normalizedUrl, results);
 
     // 総合スコア計算
-    const scores = Object.values(results.scores);
-    results.totalScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+const scores = Object.values(results.scores);
+results.totalScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 
-    return NextResponse.json(results);
+// ── siteId生成（generateSiteIdと同じロジック） ──────────────────
+function generateSiteId(url) {
+  const normalizedUrl = url.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  let hash = 0;
+  for (let i = 0; i < normalizedUrl.length; i++) {
+    const char = normalizedUrl.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  const base36 = Math.abs(hash).toString(36);
+  return base36.substring(0, 10).padStart(10, '0');
+}
+
+// ── 診断履歴をDBに保存 ──────────────────────────────────────────
+try {
+  const siteId = generateSiteId(baseUrl);
+  const { neon } = await import('@neondatabase/serverless');
+  const db = neon(process.env.DATABASE_URL);
+  await db`
+    INSERT INTO diagnoses (site_id, total_score, scores, diagnosed_at)
+    VALUES (
+      ${siteId},
+      ${results.totalScore},
+      ${JSON.stringify(results.scores)},
+      NOW()
+    )
+  `;
+} catch (dbError) {
+  console.error('[analyze] 診断履歴保存エラー:', dbError);
+}
+
+return NextResponse.json(results);
 
   } catch (error) {
     console.error('分析エラー:', error);
