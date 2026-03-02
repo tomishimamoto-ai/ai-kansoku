@@ -45,6 +45,92 @@ function getHourColor(hour) {
   return 'rgba(50, 40, 140, 0.9)';
 }
 
+// ========================================
+// 課金セクション（予測ロック型）
+// ========================================
+function ProUpsellSection({ aiTotal }) {
+  // ダミーの予測値（将来はAIスコアから計算）
+  const predictions = [
+    { action: 'llms.txt を週1更新する', effect: '+23%', detail: 'GPTBotの訪問頻度が増加する見込み', icon: '📄' },
+    { action: '構造化データを追加する', effect: '+15%', detail: 'Claude・Perplexityに認識されやすくなる', icon: '🧩' },
+    { action: 'robots.txt を最適化する', effect: '+8%', detail: '未確認シグナルの正体判明率が上がる', icon: '🤖' },
+  ];
+
+  const totalUplift = 46; // ダミー
+
+  return (
+    <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#c084fc]/30 rounded-2xl p-6 shadow-xl mb-8 relative overflow-hidden">
+      {/* 背景グロー */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#c084fc]/5 to-[#4a9eff]/5 pointer-events-none" />
+      <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-[#c084fc]/10 blur-3xl pointer-events-none" />
+
+      {/* ヘッダー */}
+      <div className="relative z-10 flex items-start justify-between mb-5">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">🔮</span>
+            <h2 className="text-lg font-bold">改善予測シミュレーター</h2>
+          </div>
+          <p className="text-xs text-gray-400">今の施策を実行したら、AI訪問数はどう変わる？</p>
+        </div>
+        <span className="text-xs px-2 py-1 rounded-full bg-[#c084fc]/20 text-[#c084fc] border border-[#c084fc]/30 whitespace-nowrap">
+          Pro限定
+        </span>
+      </div>
+
+      {/* ぼかしダミー予測データ */}
+      <div className="relative mb-5">
+        <div className="space-y-3 blur-sm select-none pointer-events-none" aria-hidden="true">
+          {/* 総合予測 */}
+          <div className="bg-gradient-to-r from-[#c084fc]/10 to-[#4a9eff]/10 border border-[#c084fc]/20 rounded-xl p-4">
+            <p className="text-xs text-gray-400 mb-1">改善を全て実施した場合の予測増加率</p>
+            <p className="text-4xl font-bold text-[#c084fc]">+{totalUplift}%</p>
+            <p className="text-xs text-gray-400 mt-1">
+              現在 {(aiTotal ?? 0).toLocaleString()}回 → 予測 {Math.round((aiTotal ?? 0) * (1 + totalUplift / 100)).toLocaleString()}回/週
+            </p>
+          </div>
+          {/* 施策別 */}
+          {predictions.map((p) => (
+            <div key={p.action} className="bg-[#1a1e47]/50 rounded-xl p-3 border border-[#2a2f57] flex items-center gap-3">
+              <span className="text-xl">{p.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{p.action}</p>
+                <p className="text-xs text-gray-500 truncate">{p.detail}</p>
+              </div>
+              <span className="text-[#4ade80] font-bold text-sm whitespace-nowrap">{p.effect}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* ロックオーバーレイ */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0e27]/70 backdrop-blur-[2px] rounded-xl">
+          <div className="text-center px-6">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#c084fc]/20 to-[#4a9eff]/20 border border-[#c084fc]/40 flex items-center justify-center mx-auto mb-3">
+              <span className="text-2xl">🔒</span>
+            </div>
+            <p className="text-white font-bold mb-1">予測データを解除する</p>
+            <p className="text-xs text-gray-400">あなたのサイトに最適化された改善予測が見えます</p>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="relative z-10 flex items-center justify-between gap-4">
+        <a
+          href="#"
+          className="flex-1 text-center px-4 py-2.5 bg-gradient-to-r from-[#c084fc] to-[#4a9eff] rounded-xl font-bold text-sm hover:opacity-90 transition-opacity"
+        >
+          予測を見る →
+        </a>
+        <div className="text-right">
+          <p className="text-white font-bold text-sm">月額 980円</p>
+          <p className="text-xs text-gray-500">近日公開予定</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DashboardContent() {
   const searchParams = useSearchParams();
   const siteId = searchParams.get('siteId');
@@ -64,10 +150,10 @@ function DashboardContent() {
       if (json.success) {
         setData(json);
         try {
-  const scRes = await fetch(`/api/search-console/fetch?siteId=${siteId}`);
-  const scJson = await scRes.json();
-  if (scJson.connected) setScData(scJson);
-} catch {}
+          const scRes = await fetch(`/api/search-console/fetch?siteId=${siteId}`);
+          const scJson = await scRes.json();
+          if (scJson.connected) setScData(scJson);
+        } catch {}
         if (json.manual_data) {
           setManualInput({
             userCount: json.manual_data.user_count || '',
@@ -139,11 +225,14 @@ function DashboardContent() {
     );
   }
 
-const { ai_stats, spoofed_stats, top_pages, detection_methods, recent_visits, daily_trend, hourly_distribution } = data;
-const unknownSignal = ai_stats.unknown_signal ?? 0;
-const spoofedSignal = spoofed_stats?.high_confidence_total ?? 0;
-const humanTotal = ai_stats.human_total ?? 0;
+  const { ai_stats, spoofed_stats, top_pages, detection_methods, recent_visits, daily_trend, hourly_distribution } = data;
+  const unknownSignal = ai_stats.unknown_signal ?? 0;
+  const spoofedSignal = spoofed_stats?.high_confidence_total ?? 0;
+  const humanTotal = ai_stats.human_total ?? 0;
 
+  // ========================================
+  // グラフ: 3本線（AI確定 / 未確認AIシグナル / 人間）
+  // ========================================
   const lineChartData = {
     labels: daily_trend?.map(d => {
       const date = new Date(d.date);
@@ -151,30 +240,47 @@ const humanTotal = ai_stats.human_total ?? 0;
     }) || [],
     datasets: [
       {
-        label: 'AI訪問 (彗星)',
+        label: 'AI確定訪問 ✦',
         data: daily_trend?.map(d => d.ai_visits) || [],
         borderColor: '#4a9eff',
-        backgroundColor: 'rgba(74, 158, 255, 0.1)',
+        backgroundColor: 'rgba(74, 158, 255, 0.08)',
         pointBackgroundColor: '#4a9eff',
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8,
+        pointRadius: 5,
+        pointHoverRadius: 7,
         tension: 0.4,
-        fill: true
+        fill: true,
+        borderWidth: 2,
       },
       {
-        label: '人間訪問 (恒星)',
+        label: '未確認AIシグナル 🛸',
+        data: daily_trend?.map(d => d.unknown_visits || 0) || [],
+        borderColor: '#c084fc',
+        backgroundColor: 'rgba(192, 132, 252, 0.08)',
+        pointBackgroundColor: '#c084fc',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        tension: 0.4,
+        fill: true,
+        borderWidth: 2,
+        borderDash: [4, 3],
+      },
+      {
+        label: '人間訪問 ●',
         data: daily_trend?.map(d => d.human_visits || 0) || [],
         borderColor: '#ffd700',
-        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+        backgroundColor: 'rgba(255, 215, 0, 0.06)',
         pointBackgroundColor: '#ffd700',
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8,
+        pointRadius: 5,
+        pointHoverRadius: 7,
         tension: 0.4,
-        fill: true
+        fill: true,
+        borderWidth: 2,
       }
     ]
   };
@@ -186,7 +292,13 @@ const humanTotal = ai_stats.human_total ?? 0;
       legend: {
         display: true,
         position: 'top',
-        labels: { color: '#cbd5e1', font: { size: 12 }, padding: 15, usePointStyle: true }
+        labels: {
+          color: '#cbd5e1',
+          font: { size: 11 },
+          padding: 16,
+          usePointStyle: true,
+          pointStyleWidth: 10,
+        }
       },
       tooltip: {
         backgroundColor: 'rgba(10, 14, 39, 0.95)',
@@ -199,8 +311,15 @@ const humanTotal = ai_stats.human_total ?? 0;
       }
     },
     scales: {
-      y: { beginAtZero: true, grid: { color: 'rgba(74, 158, 255, 0.1)', drawBorder: false }, ticks: { color: '#64748b', font: { size: 11 } } },
-      x: { grid: { color: 'rgba(74, 158, 255, 0.05)', drawBorder: false }, ticks: { color: '#64748b', font: { size: 11 } } }
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(74, 158, 255, 0.08)', drawBorder: false },
+        ticks: { color: '#64748b', font: { size: 11 } }
+      },
+      x: {
+        grid: { color: 'rgba(74, 158, 255, 0.04)', drawBorder: false },
+        ticks: { color: '#64748b', font: { size: 11 } }
+      }
     }
   };
 
@@ -261,16 +380,23 @@ const humanTotal = ai_stats.human_total ?? 0;
       }
     },
     scales: {
-      y: { beginAtZero: true, grid: { color: 'rgba(74, 158, 255, 0.08)', drawBorder: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(74, 158, 255, 0.08)', drawBorder: false },
+        ticks: { color: '#64748b', font: { size: 10 } }
+      },
       x: {
         grid: { display: false },
-        ticks: { color: '#64748b', font: { size: 9 }, maxRotation: 45, minRotation: 45, callback: (val, idx) => (idx % 4 === 0 ? HOUR_LABELS[idx] : '') }
+        ticks: {
+          color: '#64748b',
+          font: { size: 9 },
+          maxRotation: 45,
+          minRotation: 45,
+          callback: (val, idx) => (idx % 4 === 0 ? HOUR_LABELS[idx] : '')
+        }
       }
     }
   };
-
-  const hasManualData = manualInput.userCount !== '';
-  const manualUserCount = hasManualData ? parseInt(manualInput.userCount || '0') : 0;
 
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white">
@@ -290,7 +416,7 @@ const humanTotal = ai_stats.human_total ?? 0;
         ))}
       </div>
 
-      {/* ヘッダー - SP対応: ボタンを小さく・折り返し防止 */}
+      {/* ヘッダー */}
       <header className="border-b border-[#1a1e47] bg-[#0f1229]/80 backdrop-blur-xl sticky top-0 z-50 shadow-lg shadow-[#4a9eff]/5">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -321,7 +447,6 @@ const humanTotal = ai_stats.human_total ?? 0;
         </div>
       </header>
 
-      {/* overflow-x-hidden で横スクロール防止 */}
       <main className="container mx-auto px-4 py-8 relative z-10 overflow-x-hidden">
         {/* タイトル */}
         <div className="mb-8 text-center">
@@ -335,91 +460,133 @@ const humanTotal = ai_stats.human_total ?? 0;
           </p>
         </div>
 
-       {/* サマリーカード */}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* ① ヒーローカード：AI確定訪問 */}
+        <div className="bg-gradient-to-br from-[#0f1229] via-[#0d1535] to-[#1a1e47] border border-[#4a9eff]/40 rounded-2xl p-8 shadow-2xl shadow-[#4a9eff]/10 mb-6 relative overflow-hidden">
+          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[#4a9eff]/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-[#c084fc]/8 blur-2xl pointer-events-none" />
 
-  {/* 🌑 AI未確認シグナル（ダークマター） */}
-  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl hover:shadow-purple-500/20 hover:border-purple-500/40 transition-all group">
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2">
-        <span className="text-2xl">🌑</span>
-        <h3 className="text-sm text-gray-400">AI未確認シグナル</h3>
-      </div>
-      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
-        ダークマター
-      </span>
-    </div>
-    <p className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent mb-2">
-      {(unknownSignal ?? 0).toLocaleString()}
-    </p>
-    <p className="text-xs text-gray-500 mb-3">正体不明のAIシグナル（7日間）</p>
-    <button className="w-full text-xs text-purple-400 border border-purple-500/30 rounded-lg py-1.5 hover:bg-purple-500/10 transition-all opacity-0 group-hover:opacity-100">
-      🔍 正体を調べる → Pro
-    </button>
-  </div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl">✦</span>
+                <span className="text-sm text-[#4a9eff] font-medium">今週のAI訪問（確定）</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#4a9eff]/20 text-[#4a9eff] border border-[#4a9eff]/30">7日間</span>
+              </div>
+              <p className="text-7xl font-bold bg-gradient-to-r from-white via-[#4a9eff] to-[#6eb5ff] bg-clip-text text-transparent mb-2 leading-none">
+                {(ai_stats.total ?? 0).toLocaleString()}
+                <span className="text-3xl ml-2">回</span>
+              </p>
+              {ai_stats.first_visit && (
+                <p className="text-xs text-gray-500 mt-2">
+                  初回観測: {new Date(ai_stats.first_visit).toLocaleDateString('ja-JP')}
+                </p>
+              )}
+            </div>
 
-  {/* 🎭 AI偽装シグナル */}
-  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl hover:shadow-orange-500/20 hover:border-orange-500/40 transition-all group">
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2">
-        <span className="text-2xl">🎭</span>
-        <h3 className="text-sm text-gray-400">AI偽装シグナル</h3>
-      </div>
-      <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
-        擬態検知
-      </span>
-    </div>
-    <p className="text-5xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent mb-2">
-      {(spoofedSignal ?? 0).toLocaleString()}
-    </p>
-    <p className="text-xs text-gray-500 mb-3">人間を装った高確信度シグナル（7日間）</p>
-    <button className="w-full text-xs text-orange-400 border border-orange-500/30 rounded-lg py-1.5 hover:bg-orange-500/10 transition-all opacity-0 group-hover:opacity-100">
-      🔍 詳細を見る → Pro
-    </button>
-  </div>
+            <div className="flex flex-col gap-3 md:items-end">
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${
+                ai_stats.trend === 'up'
+                  ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                  : ai_stats.trend === 'down'
+                  ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                  : 'bg-gray-500/10 border-gray-500/30 text-gray-400'
+              }`}>
+                <span className="text-2xl">
+                  {ai_stats.trend === 'up' ? '📈' : ai_stats.trend === 'down' ? '📉' : '➡️'}
+                </span>
+                <div>
+                  <p className="text-xs opacity-70">先週比</p>
+                  <p className="text-2xl font-bold">
+                    {ai_stats.trend === 'up' ? '+' : ''}{ai_stats.change_percent ?? 0}%
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {(ai_stats.by_crawler ?? []).slice(0, 3).map((c) => (
+                  <div key={c.crawler_name} className="text-center px-3 py-1.5 bg-[#1a1e47]/60 rounded-lg border border-[#2a2f57]">
+                    <p className="text-xs text-gray-400 truncate max-w-[60px]">{c.crawler_name}</p>
+                    <p className="text-sm font-bold text-[#4a9eff]">{c.visit_count}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
 
-  {/* ● 人間訪問（恒星） */}
-  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl hover:shadow-yellow-500/20 hover:border-yellow-500/40 transition-all">
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2">
-        <span className="text-2xl">●</span>
-        <h3 className="text-sm text-gray-400">人間訪問（恒星）</h3>
-      </div>
-      <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-        確定
-      </span>
-    </div>
-    <p className="text-5xl font-bold text-[#ffd700] mb-2">
-      {humanTotal.toLocaleString()}
-    </p>
-    <p className="text-xs text-gray-500">7日間の人間訪問数</p>
-  </div>
+        {/* ② サブカード：未確認シグナル・偽装・人間 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* 🌑 AI未確認シグナル */}
+          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 shadow-xl hover:border-purple-500/40 transition-all group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🌑</span>
+                <h3 className="text-xs text-gray-400">未確認AIシグナル</h3>
+              </div>
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">ダークマター</span>
+            </div>
+            <p className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent mb-1">
+              {(unknownSignal ?? 0).toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-500 mb-3">正体不明のAIシグナル（7日間）</p>
+            <p className="text-xs text-purple-400/60 group-hover:text-purple-400 transition-all">🔍 正体を調べる → Pro</p>
+          </div>
 
-</div>
+          {/* 🎭 AI偽装シグナル */}
+          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 shadow-xl hover:border-orange-500/40 transition-all group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎭</span>
+                <h3 className="text-xs text-gray-400">AI偽装シグナル</h3>
+              </div>
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">擬態検知</span>
+            </div>
+            <p className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent mb-1">
+              {(spoofedSignal ?? 0).toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-500 mb-3">人間を装った高確信度（7日間）</p>
+            <p className="text-xs text-orange-400/60 group-hover:text-orange-400 transition-all">🔍 詳細を見る → Pro</p>
+          </div>
 
-        {/* 7日間推移グラフ */}
+          {/* ● 人間訪問 */}
+          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 shadow-xl hover:border-yellow-500/40 transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">●</span>
+                <h3 className="text-xs text-gray-400">人間訪問（恒星）</h3>
+              </div>
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">確定</span>
+            </div>
+            <p className="text-4xl font-bold text-[#ffd700] mb-1">
+              {humanTotal.toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-500">7日間の人間訪問数</p>
+          </div>
+        </div>
+
+        {/* ② 7日間推移グラフ（3本線） */}
         {daily_trend && daily_trend.length > 0 && (
           <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl mb-8">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+            <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
               <span className="text-2xl">📈</span>7日間の観測推移
             </h2>
+            <p className="text-xs text-gray-500 mb-6">AI確定訪問・未確認AIシグナル・人間訪問の推移</p>
             <div className="h-80">
               <Line data={lineChartData} options={lineChartOptions} />
-            </div>
-            <div className="mt-4 flex items-center justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-[#4a9eff]" />
-                <span className="text-gray-400">AI訪問（彗星 ✦）</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-[#ffd700]" />
-                <span className="text-gray-400">人間訪問（恒星 ●）</span>
-              </div>
             </div>
           </div>
         )}
 
-        {/* 訪問時間帯グラフ */}
+        {/* ④ よく見られたページ */}
+        <div className="mb-8">
+          <PageRanking topPages={top_pages} scData={scData} />
+        </div>
+
+        {/* ⑤ Search Console分析パネル */}
+        <div className="mb-8">
+          <SearchConsolePanel siteId={siteId} />
+        </div>
+
+        {/* ⑥ 訪問時間帯グラフ */}
         <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -485,73 +652,16 @@ const humanTotal = ai_stats.human_total ?? 0;
           )}
         </div>
 
-        {/* AI別詳細統計 */}
-        <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl mb-8">
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <span className="text-2xl">🤖</span>AI別観測レポート
-          </h2>
-          <div className="space-y-4">
-            {ai_stats.by_crawler.length === 0 ? (
-              <div className="text-center py-12">
-                <span className="text-6xl mb-4 block">🔭</span>
-                <p className="text-gray-400">まだAI訪問が観測されていません</p>
-                <p className="text-sm text-gray-500 mt-2">トラッキングコードを設置してお待ちください</p>
-              </div>
-            ) : (
-              ai_stats.by_crawler.map((crawler, idx) => (
-                <div key={idx} className="bg-[#1a1e47]/50 rounded-xl p-5 border border-[#2a2f57] hover:border-[#4a9eff]/50 transition-all">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#4a9eff]/20 to-[#6eb5ff]/20 flex items-center justify-center border border-[#4a9eff]/30">
-                        <span className="text-2xl">
-                          {crawler.crawler_name.includes('GPT') ? '🤖' :
-                           crawler.crawler_name.includes('Claude') ? '🧠' :
-                           crawler.crawler_name.includes('Perplexity') ? '🔍' :
-                           crawler.crawler_name.includes('Gemini') ? '💎' : '🌐'}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-lg text-[#4a9eff]">{crawler.crawler_name}</h3>
-                        <p className="text-sm text-gray-400">{crawler.visit_count.toLocaleString()}回の観測記録</p>
-                      </div>
-                    </div>
-                    <span className={`text-sm font-bold px-3 py-1 rounded-full ${crawler.change_percent > 0 ? 'bg-green-500/20 text-green-400' : crawler.change_percent < 0 ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                      {crawler.change_percent > 0 ? '+' : ''}{crawler.change_percent}%
-                      <span className="ml-1 text-xs font-normal">先週比</span>
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm bg-[#0a0e27]/50 rounded-lg p-3">
-                    <div>
-                      <p className="text-gray-400 text-xs mb-1">セッション数</p>
-                      <p className="font-bold text-[#4a9eff]">{crawler.unique_sessions}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-xs mb-1">観測座標</p>
-                      <p className="font-bold text-[#6eb5ff]">{crawler.unique_ips}</p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        {/* ⑦ 課金セクション（予測ロック） */}
+        <ProUpsellSection aiTotal={ai_stats.total} />
 
-      <div className="mb-8">
-       <PageRanking topPages={top_pages} scData={scData} />
-      </div>  
-
-       {/* Search Console分析パネル */}
-        <div className="mb-8">
-          <SearchConsolePanel siteId={siteId} />
-        </div>
-       
-        {/* 周期的アクセス検出（アコーディオン）*/}
+        {/* ⑧ ミミック検知（アコーディオン） */}
         <AccordionSection title="🛸 周期的アクセス検出（ミミッククローラー）" defaultOpen={false}>
           <MimicPanel siteId={siteId} spoofedStats={data?.spoofed_stats} />
         </AccordionSection>
 
-        {/* 最新観測ログ（アコーディオン）*/}
-        <AccordionSection title="📋 最新観測ログ（20件）" defaultOpen={false} className="mt-8">
+        {/* ⑧ 最新観測ログ（10件） */}
+        <AccordionSection title="📋 最新観測ログ（10件）" defaultOpen={false} className="mt-8">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -578,7 +688,7 @@ const humanTotal = ai_stats.human_total ?? 0;
             </table>
           </div>
         </AccordionSection>
-       </main>
+      </main>
 
       <footer className="border-t border-[#1a1e47] bg-[#0f1229]/80 backdrop-blur-xl mt-16">
         <div className="container mx-auto px-4 py-8 text-center text-gray-400 text-sm">

@@ -17,9 +17,6 @@ export async function GET(request) {
 
     const sql = neon(process.env.DATABASE_URL);
 
-    // ========================================
-    // 期間設定（過去7日間）
-    // ========================================
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -95,7 +92,7 @@ export async function GET(request) {
         AND crawler_type = 'ai'
     `;
 
-    // 人間訪問数（is_human = true）
+    // 人間訪問数
     const humanTotal = await sql`
       SELECT COUNT(*) as total_visits
       FROM ai_crawler_visits
@@ -122,35 +119,33 @@ export async function GET(request) {
       ? Math.round(((thisWeekTotal - lastWeekTotalCount) / lastWeekTotalCount) * 100)
       : (thisWeekTotal > 0 ? 100 : 0);
 
-// ========================================
-// AI未確認シグナル（Unknown AI のみ）
-// ========================================
-const unknownSignalResult = await sql`
-  SELECT COUNT(*) as total
-  FROM ai_crawler_visits
-  WHERE site_id = ${siteId}
-    AND visited_at >= ${sevenDaysAgo.toISOString()}
-    AND is_human = false
-    AND crawler_type = 'ai'
-    AND crawler_name = 'Unknown AI'
-`;
-const unknownSignalCount = parseInt(unknownSignalResult[0]?.total || '0');
+    // ========================================
+    // AI未確認シグナル（Unknown AI のみ）
+    // ========================================
+    const unknownSignalResult = await sql`
+      SELECT COUNT(*) as total
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
+        AND crawler_type = 'ai'
+        AND crawler_type = 'unknown'
+    `;
+    const unknownSignalCount = parseInt(unknownSignalResult[0]?.total || '0');
 
-// ========================================
-// AI偽装シグナル（高確信度 Spoofed のみ）
-// confidence >= 85 に絞る
-// ========================================
-const spoofedHighConfResult = await sql`
-  SELECT COUNT(*) as total
-  FROM ai_crawler_visits
-  WHERE site_id = ${siteId}
-    AND visited_at >= ${sevenDaysAgo.toISOString()}
-    AND is_human = false
-    AND crawler_type = 'spoofed-bot'
-    AND confidence >= 85
-`;
-const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
-
+    // ========================================
+    // AI偽装シグナル（高確信度 Spoofed のみ）
+    // ========================================
+    const spoofedHighConfResult = await sql`
+      SELECT COUNT(*) as total
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
+        AND crawler_type = 'spoofed-bot'
+        AND confidence >= 85
+    `;
+    const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
 
     // ========================================
     // よく読まれるページ TOP5（AI訪問のみ）
@@ -189,7 +184,7 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
     `;
 
     // ========================================
-    // 検出方法の内訳（AI訪問のみ）
+    // 検出方法の内訳
     // ========================================
     const detectionMethods = await sql`
       SELECT 
@@ -205,7 +200,7 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
     `;
 
     // ========================================
-    // 擬態クローラー統計（7日間）★追加★
+    // 擬態クローラー統計（7日間）
     // ========================================
     const spoofedStats = await sql`
       SELECT 
@@ -225,7 +220,6 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
     const spoofedTotal = spoofedStats.reduce((sum, r) => sum + parseInt(r.visit_count), 0);
     const spoofedUniqueIps = spoofedStats.reduce((sum, r) => sum + parseInt(r.unique_ips), 0);
 
-    // 先週の擬態クローラー数（変化率計算用）
     const lastWeekSpoofed = await sql`
       SELECT COUNT(*) as total
       FROM ai_crawler_visits
@@ -259,7 +253,7 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
     `;
 
     // ========================================
-    // 7日間の日別推移データ（グラフ用）
+    // 7日間の日別推移データ（AI確定 + 未確認AIシグナル + 人間）
     // ========================================
     const dailyAI = await sql`
       SELECT 
@@ -286,6 +280,36 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
       ORDER BY date ASC
     `;
 
+    // ★追加★ 未確認AIシグナルの日別
+    const dailyUnknown = await sql`
+      SELECT 
+        TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD') as date,
+        COUNT(*) as unknown_visits
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
+        AND crawler_type = 'unknown'
+      GROUP BY TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD')
+      ORDER BY date ASC
+    `;
+
+    // ★追加★ AI偽装シグナルの日別（spoofed-bot、confidence >= 85）
+    const dailySpoofed = await sql`
+      SELECT 
+        TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD') as date,
+        COUNT(*) as spoofed_visits
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
+        AND crawler_type = 'spoofed-bot'
+        AND confidence >= 85
+      GROUP BY TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD')
+      ORDER BY date ASC
+    `;
+
+    // 日別データをマージ（7日分を確実に埋める）
     const dailyTrendFull = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
@@ -294,16 +318,20 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
       
       const foundAI = dailyAI.find(d => d.date === dateStr);
       const foundHuman = dailyHuman.find(d => d.date === dateStr);
+      const foundUnknown = dailyUnknown.find(d => d.date === dateStr);
+      const foundSpoofed = dailySpoofed.find(d => d.date === dateStr);
 
       dailyTrendFull.push({
         date: dateStr,
         ai_visits: foundAI ? parseInt(foundAI.ai_visits) : 0,
-        human_visits: foundHuman ? parseInt(foundHuman.human_visits) : 0
+        human_visits: foundHuman ? parseInt(foundHuman.human_visits) : 0,
+        unknown_visits: foundUnknown ? parseInt(foundUnknown.unknown_visits) : 0,
+        spoofed_visits: foundSpoofed ? parseInt(foundSpoofed.spoofed_visits) : 0,
       });
     }
 
     // ========================================
-    // 最新20件の訪問履歴（AI訪問のみ）
+    // 最新10件の訪問履歴（20件→10件に削減）
     // ========================================
     const recentVisits = await sql`
       SELECT 
@@ -319,7 +347,7 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
         AND is_human = false
         AND crawler_type = 'ai'
       ORDER BY visited_at DESC
-      LIMIT 20
+      LIMIT 10
     `;
 
     // ========================================
@@ -341,7 +369,6 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
         last_visit: totalStats[0]?.last_visit || null
       },
 
-      // ★追加★
       spoofed_stats: {
         total: spoofedTotal,
         high_confidence_total: spoofedHighConfCount,
@@ -385,7 +412,7 @@ const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
     });
 
   } catch (error) {
-    console.error('❌ Error fetching visits:', error);
+    console.error('Error fetching visits:', error);
     return Response.json(
       { error: 'Failed to fetch visits', details: error.message },
       { status: 500 }
@@ -451,7 +478,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('❌ Error saving manual data:', error);
+    console.error('Error saving manual data:', error);
     return Response.json(
       { error: 'Failed to save manual data', details: error.message },
       { status: 500 }
