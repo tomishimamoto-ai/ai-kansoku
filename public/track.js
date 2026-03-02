@@ -1,6 +1,7 @@
 // ========================================
 // AI観測ラボ - 統合トラッキングスクリプト
 // Phase 1（画像ピクセル）+ Phase 2（JS検出）を1行で実装
+// v5.4: document.referrerをクエリパラメータで明示的に送信
 // ========================================
 
 (function() {
@@ -17,6 +18,9 @@
   
   const currentPath = window.location.pathname;
   const baseUrl = 'https://ai-kansoku.com/api/track';
+
+  // document.referrer を取得（AIチャットから来た場合ここに入る）
+  const referrer = document.referrer || '';
   
   // Phase 1: 画像ピクセル（AIクローラーも動く）
   const img = new Image(1, 1);
@@ -25,8 +29,9 @@
   img.alt = '';
   
   // Phase 2: JS実行検出（人間ブラウザ判定用）
+  // referrerをクエリパラメータで明示的に送信（no-corsではheaderが送れないため）
   if (typeof fetch !== 'undefined') {
-    fetch(`${baseUrl}/js-active?siteId=${encodeURIComponent(siteId)}&path=${encodeURIComponent(currentPath)}&t=${Date.now()}`, {
+    fetch(`${baseUrl}/js-active?siteId=${encodeURIComponent(siteId)}&path=${encodeURIComponent(currentPath)}&referrer=${encodeURIComponent(referrer)}&t=${Date.now()}`, {
       method: 'GET',
       mode: 'no-cors',
       cache: 'no-cache'
