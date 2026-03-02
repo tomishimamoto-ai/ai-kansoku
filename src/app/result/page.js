@@ -403,10 +403,17 @@ function TodaysMission({ item, isChecked, onCheck, wasImproved, currentScore, ne
           <MissionDetail item={item} />
         )}
 
-        {/* 完了後のメッセージ */}
+        {/* 完了後のメッセージ + バッジ */}
         {isChecked && (
-          <div className="mb-5 text-sm text-emerald-300/80">
-            改善を実施しました。再診断でスコアへの反映を確認しましょう。
+          <div className="mb-5 flex flex-col items-center gap-3 py-2">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/15 border border-emerald-500/25"
+              style={{ animation: 'badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1)' }}>
+              <span className="text-lg">🧪</span>
+              <span className="text-sm font-bold text-emerald-400">実験完了</span>
+            </div>
+            <p className="text-sm text-emerald-300/70 text-center">
+              再診断でスコアへの反映を確認しましょう。
+            </p>
           </div>
         )}
 
@@ -660,10 +667,25 @@ function ResultContent() {
         </div>
 
         {/* SP用URL表示 */}
-        <div className="sm:hidden mb-5 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/10 bg-white/4">
+        <div className="sm:hidden mb-4 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/10 bg-white/4">
           <span className="text-xs text-gray-500 shrink-0">診断中</span>
           <span className="text-xs text-gray-200 font-mono truncate">{displayUrl}</span>
         </div>
+
+        {/* ブランドコピー */}
+        <div className="mb-7 text-center">
+          <p className="text-xs tracking-[0.25em] uppercase font-medium"
+            style={{ color: health.color, opacity: 0.7 }}>
+            改善を、観測で証明する。
+          </p>
+        </div>
+
+        <style>{`
+          @keyframes badgePop {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
 
         {/* ━━━━━ 成果演出 ━━━━━ */}
         {achievements.length > 0 && (
@@ -739,43 +761,58 @@ function ResultContent() {
           </div>
         </div>
 
-        {/* ━━━━━ ② 今日やること（3アクション要約） ━━━━━ */}
-        {(improvements.urgent.length + improvements.medium.length) > 0 && (
-          <div className="mb-6 rounded-2xl border border-white/8 bg-white/2 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-200 tracking-wide">今日やること</h3>
-              {totalPotentialGain > 0 && (
-                <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/15 px-2.5 py-1 rounded-full font-semibold">
-                  全部やると最大+{totalPotentialGain}点
-                </span>
-              )}
+        {/* ━━━━━ ② 今日の進捗バー ━━━━━ */}
+        {(improvements.urgent.length + improvements.medium.length) > 0 && (() => {
+          const allTasks = [...improvements.urgent, ...improvements.medium].slice(0, 3);
+          const doneCount = allTasks.filter(t => !!checkedItems[t.id]).length;
+          const total = allTasks.length;
+          const pct = Math.round((doneCount / total) * 100);
+          const allDone = doneCount === total;
+          return (
+            <div className="mb-6 rounded-2xl border border-white/8 bg-white/2 px-5 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-sm font-bold text-gray-200">今日の進捗</span>
+                  <span className={`text-sm font-black ${allDone ? 'text-emerald-400' : 'text-white'}`}>
+                    {doneCount}/{total}
+                  </span>
+                  {allDone && <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">完了 🎉</span>}
+                </div>
+                {totalPotentialGain > 0 && !allDone && (
+                  <span className="text-xs text-emerald-400/80">全部やると最大+{totalPotentialGain}点</span>
+                )}
+              </div>
+              {/* プログレスバー */}
+              <div className="w-full h-2 bg-white/6 rounded-full overflow-hidden mb-3">
+                <div className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${pct}%`,
+                    background: allDone
+                      ? 'linear-gradient(90deg, #4ade80, #34d399)'
+                      : 'linear-gradient(90deg, #f59e0b, #4a9eff)',
+                  }} />
+              </div>
+              {/* タスク一覧（小さく） */}
+              <div className="flex flex-col gap-1.5">
+                {allTasks.map((item, i) => {
+                  const isDone = !!checkedItems[item.id];
+                  return (
+                    <div key={item.id} className={`flex items-center gap-2.5 transition-opacity ${isDone ? 'opacity-40' : ''}`}>
+                      <div className={`shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-xs
+                        ${isDone ? 'bg-emerald-500/30 text-emerald-400' : i === 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-white/8 text-gray-600'}`}>
+                        {isDone ? '✓' : i + 1}
+                      </div>
+                      <span className={`text-xs flex-1 ${isDone ? 'line-through text-gray-600' : 'text-gray-300'}`}>
+                        {item.title}
+                      </span>
+                      <span className="text-xs text-gray-600 shrink-0">⏱{item.effort}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <ol className="space-y-2.5">
-              {[...improvements.urgent, ...improvements.medium].slice(0, 3).map((item, i) => {
-                const isDone = !!checkedItems[item.id];
-                return (
-                  <li key={item.id} className={`flex items-center gap-3 transition-opacity ${isDone ? 'opacity-40' : ''}`}>
-                    <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-                      ${isDone
-                        ? 'bg-emerald-500/20 text-emerald-400'
-                        : i === 0
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-white/8 text-gray-500'}`}>
-                      {isDone ? '✓' : i + 1}
-                    </div>
-                    <span className={`text-sm flex-1 ${isDone ? 'line-through text-gray-600' : 'text-gray-200'}`}>
-                      {item.title}
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs text-emerald-400/80">{item.gainLabel}</span>
-                      <span className="text-xs text-gray-600">⏱{item.effort}</span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ━━━━━ ③ 今日のミッション ━━━━━ */}
         {todaysMission ? (
@@ -871,20 +908,33 @@ function ResultContent() {
             </div>
 
             {/* チラ見せ数値 */}
-            <div className="flex items-center justify-between mb-4 p-3.5 rounded-xl border border-white/8 bg-black/20">
+            <div className="mb-4 p-3.5 rounded-xl border border-white/8 bg-black/20">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-sm">🛸</div>
-                <div>
-                  <div className="text-xs text-gray-500">直近7日間のAI訪問</div>
-                  <div className="text-lg font-bold text-white">
-                    {dashPreview !== null ? `${dashPreview}件` : '— 件'}
-                  </div>
+                <div className="w-9 h-9 rounded-xl bg-purple-500/20 flex items-center justify-center text-base shrink-0">🛸</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-gray-500 mb-0.5">直近7日間のAI訪問</div>
+                  {dashPreview === null ? (
+                    <p className="text-sm text-gray-400 leading-snug">
+                      まだ観測されていません。<br />
+                      <span className="text-gray-500">改善後に増えるか、一緒に確認しましょう。</span>
+                    </p>
+                  ) : dashPreview === 0 ? (
+                    <p className="text-sm text-gray-400 leading-snug">
+                      まだAI訪問は観測されていません。<br />
+                      <span className="text-gray-500">改善後に増えるか確認しましょう。</span>
+                    </p>
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xl font-black text-white">{dashPreview}件</span>
+                      <span className="text-xs text-purple-300">のAI訪問を観測中</span>
+                    </div>
+                  )}
                 </div>
+                <Link href={`/dashboard?siteId=${siteId}`}
+                  className="text-xs text-purple-400 hover:text-purple-300 transition-colors shrink-0 whitespace-nowrap">
+                  詳細 →
+                </Link>
               </div>
-              <Link href={`/dashboard?siteId=${siteId}`}
-                className="text-xs text-purple-300 hover:text-purple-200 transition-colors">
-                詳細を見る →
-              </Link>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2.5">
@@ -1105,6 +1155,7 @@ function ResultContent() {
                 <div>
                   <h3 className="font-bold text-lg mb-1">AI訪問トラッキングを設置する</h3>
                   <p className="text-sm text-gray-400">設置すると、どのAIがあなたのサイトを訪問したか観測できます</p>
+                  <p className="text-xs text-gray-600 mt-1">※ サイトの表示速度・見た目には影響しません</p>
                 </div>
               </div>
               <pre className="p-4 rounded-xl mb-4 overflow-x-auto text-sm"
