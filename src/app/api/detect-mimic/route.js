@@ -170,7 +170,6 @@ export async function GET(request) {
         name: row.crawler_name,
         visits: parseInt(row.visit_count),
       })),
-      // ローテーション異常
       rotation: {
         ua_rotation: uaRotation.map(row => ({
           user_agent: row.user_agent?.substring(0, 80),
@@ -183,20 +182,15 @@ export async function GET(request) {
           total_visits: parseInt(row.total_visits),
         })),
       },
-      // 周期検出
-      // is_periodic: CV 30%以下 = 強周期（確定Bot的）
-      // is_periodic_weak: CV 50%以下 = 周期疑い（要観察）
-      // period_type: 間隔の長さで分類
       periodic: periodicIPs.map(row => {
         const cv = parseFloat(row.cv_percent || 999);
         const avgSec = parseFloat(row.avg_interval_sec || 0);
 
-        // 周期タイプ分類
         let period_type = 'unknown';
         if (avgSec > 0) {
-          if (avgSec < 60) period_type = 'rapid-periodic';        // 1分未満
-          else if (avgSec < 3600) period_type = 'medium-periodic'; // 1分〜1時間
-          else period_type = 'slow-periodic';                      // 1時間以上
+          if (avgSec < 60) period_type = 'rapid-periodic';
+          else if (avgSec < 3600) period_type = 'medium-periodic';
+          else period_type = 'slow-periodic';
         }
 
         return {
@@ -205,8 +199,8 @@ export async function GET(request) {
           avg_interval_sec: avgSec,
           stddev_sec: parseFloat(row.stddev_sec || 0),
           cv_percent: cv,
-          is_periodic: cv <= 30,       // 強周期（確定）
-          is_periodic_weak: cv <= 50,  // 周期疑い
+          is_periodic: cv <= 30,
+          is_periodic_weak: cv <= 50,
           period_type,
         };
       }),
@@ -231,7 +225,6 @@ export async function POST(request) {
       return Response.json({ error: 'siteId required' }, { status: 400 });
     }
 
-    // is_human=true のレコードを再判定対象として取得
     const visits = await sql`
       SELECT
         id,
@@ -251,10 +244,6 @@ export async function POST(request) {
       return Response.json({ processed: 0, mimic_detected: 0, normal: 0, dryRun });
     }
 
-    // ========================================
-    // ローテーション異常スコア（事前計算）
-    // 同一UAで多数IPを使い回す分散型擬態を検出
-    // ========================================
     const uaRotationMap = {};
     const ipRotationMap = {};
     for (const row of visits) {
@@ -274,6 +263,25 @@ export async function POST(request) {
       const ua = (row.user_agent || '').toLowerCase();
       const reasons = [];
       let score = 0;
+
+      // ── 正規アプリ除外（誤検知防止）──────────────────────
+      const LEGITIMATE_APP_PATTERNS = [
+        'gsa/',        // Google Search App (iOS)
+        'yjapp-',      // Yahoo! JAPAN アプリ (Android)
+        'jp.co.yahoo', // Yahoo! JAPAN アプリ識別子
+        'yahoojapan/', // Yahoo Japan 関連
+        'com.yahoo.',  // Yahoo アプリ系
+        'yjtop',       // Yahoo! JAPANトップ
+        'line/',       // LINE アプリ内ブラウザ
+        'fbav/',       // Facebook アプリ内ブラウザ
+        'instagram',   // Instagram アプリ内ブラウザ
+      ];
+      const isLegitimateApp = LEGITIMATE_APP_PATTERNS.some(p => ua.includes(p));
+      if (isLegitimateApp) {
+        normal++;
+        continue;
+      }
+      // ────────────────────────────────────────────────────
 
       // ローテーション異常スコア
       const uaUniqueIPs = uaRotationMap[row.user_agent || '']?.size || 0;

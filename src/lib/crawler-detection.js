@@ -386,7 +386,31 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
   }
 
 // ── STEP 1.5: 偽装UA・正規化ルール ──────────────────────
-// 存在しないiOSバージョン
+const LEGITIMATE_APP_PATTERNS = [
+  'gsa/',          // Google Search App (iOS) 例: GSA/319.0.638.53
+  'yjapp-',        // Yahoo! JAPAN アプリ (Android) 例: YJApp-ANDROID
+  'jp.co.yahoo',   // Yahoo! JAPAN アプリ識別子
+  'yahoojapan/',   // Yahoo Japan 関連
+  'com.yahoo.',    // Yahoo アプリ系 bundle ID
+  'yjtop',         // Yahoo! JAPANトップ
+  'line/',         // LINE アプリ内ブラウザ
+  'fbav/',         // Facebook アプリ内ブラウザ
+  'instagram',     // Instagram アプリ内ブラウザ
+];
+
+const isLegitimateApp = LEGITIMATE_APP_PATTERNS.some(p => ua.includes(p));
+if (isLegitimateApp) {
+  return {
+    ...base,
+    isHuman: true,
+    crawlerType: 'human',
+    crawlerName: 'Human',
+    detectionMethod: 'human-default',
+    confidence: 70,
+    totalScore: 0,
+  };
+}
+
 const iosMatch = ua.match(/iphone os (\d+)_/);
 if (iosMatch) {
   const majorVersion = parseInt(iosMatch[1]);
