@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import MimicPanel from '../components/MimicPanel';
 import SearchConsolePanel from '../components/SearchConsolePanel';
 import PageRanking from '../components/PageRanking';
@@ -24,7 +24,6 @@ import {
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
   PointElement,
   LineElement,
   Title,
@@ -32,18 +31,6 @@ ChartJS.register(
   Legend,
   Filler
 );
-
-const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-
-function getHourColor(hour) {
-  if (hour >= 0 && hour < 6) return 'rgba(30, 60, 120, 0.9)';
-  if (hour >= 6 && hour < 9) return 'rgba(56, 130, 220, 0.9)';
-  if (hour >= 9 && hour < 12) return 'rgba(74, 158, 255, 0.9)';
-  if (hour >= 12 && hour < 15) return 'rgba(96, 175, 255, 0.9)';
-  if (hour >= 15 && hour < 18) return 'rgba(74, 130, 220, 0.9)';
-  if (hour >= 18 && hour < 21) return 'rgba(100, 80, 200, 0.9)';
-  return 'rgba(50, 40, 140, 0.9)';
-}
 
 // ========================================
 // 課金セクション（予測ロック型）
@@ -346,81 +333,6 @@ function DashboardContent() {
     }
   };
 
-  const hourCounts = Array(24).fill(0);
-  if (hourly_distribution && Array.isArray(hourly_distribution)) {
-    hourly_distribution.forEach(item => {
-      const h = item.hour ?? item.h;
-      if (h >= 0 && h < 24) hourCounts[h] = item.count ?? item.visits ?? 0;
-    });
-  }
-
-  const peakHour = hourCounts.indexOf(Math.max(...hourCounts));
-  const totalHourVisits = hourCounts.reduce((a, b) => a + b, 0);
-
-  const getPeakLabel = (hour) => {
-    if (hour >= 0 && hour < 6) return '深夜帯';
-    if (hour >= 6 && hour < 9) return '早朝帯';
-    if (hour >= 9 && hour < 12) return '午前帯';
-    if (hour >= 12 && hour < 15) return '昼帯';
-    if (hour >= 15 && hour < 18) return '午後帯';
-    if (hour >= 18 && hour < 21) return '夕方帯';
-    return '夜間帯';
-  };
-
-  const barChartData = {
-    labels: HOUR_LABELS,
-    datasets: [{
-      label: 'AI訪問回数',
-      data: hourCounts,
-      backgroundColor: hourCounts.map((_, i) => getHourColor(i)),
-      borderColor: hourCounts.map((_, i) => i === peakHour ? '#ffffff' : 'transparent'),
-      borderWidth: hourCounts.map((_, i) => (i === peakHour ? 2 : 0)),
-      borderRadius: 4,
-      borderSkipped: false,
-      hoverBackgroundColor: '#6eb5ff'
-    }]
-  };
-
-  const barChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(10, 14, 39, 0.95)',
-        titleColor: '#fff',
-        bodyColor: '#cbd5e1',
-        borderColor: '#4a9eff',
-        borderWidth: 1,
-        padding: 10,
-        callbacks: {
-          title: (items) => `${items[0].label} の観測`,
-          label: (ctx) => {
-            const pct = totalHourVisits > 0 ? ((ctx.parsed.y / totalHourVisits) * 100).toFixed(1) : '0.0';
-            return ` ${ctx.parsed.y}回 (${pct}%)`;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(74, 158, 255, 0.08)', drawBorder: false },
-        ticks: { color: '#64748b', font: { size: 10 } }
-      },
-      x: {
-        grid: { display: false },
-        ticks: {
-          color: '#64748b',
-          font: { size: 9 },
-          maxRotation: 45,
-          minRotation: 45,
-          callback: (val, idx) => (idx % 4 === 0 ? HOUR_LABELS[idx] : '')
-        }
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white">
       {/* 星空背景 */}
@@ -622,72 +534,6 @@ function DashboardContent() {
         {/* ⑤ Search Console分析パネル */}
         <div className="mb-8">
           <SearchConsolePanel siteId={siteId} />
-        </div>
-
-        {/* ⑥ 訪問時間帯グラフ */}
-        <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <span className="text-2xl">🕐</span>AIクローラー 訪問時間帯分布
-            </h2>
-            {totalHourVisits > 0 && (
-              <div className="flex items-center gap-3 bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-xl px-4 py-2">
-                <span className="text-2xl">⚡</span>
-                <div>
-                  <p className="text-xs text-gray-400">ピーク観測時刻</p>
-                  <p className="font-bold text-[#4a9eff]">
-                    {HOUR_LABELS[peakHour]}
-                    <span className="ml-2 text-xs text-gray-400 font-normal">({getPeakLabel(peakHour)})</span>
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {totalHourVisits === 0 ? (
-            <div className="text-center py-12">
-              <span className="text-5xl mb-3 block">📡</span>
-              <p className="text-gray-400">時間帯データがまだありません</p>
-              <p className="text-xs text-gray-500 mt-1">AIクローラーの訪問が増えると表示されます</p>
-            </div>
-          ) : (
-            <>
-              <div className="h-56 md:h-64">
-                <Bar data={barChartData} options={barChartOptions} />
-              </div>
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { label: '深夜 (0-6時)', range: [0, 6], icon: '🌙' },
-                  { label: '午前 (6-12時)', range: [6, 12], icon: '🌅' },
-                  { label: '昼間 (12-18時)', range: [12, 18], icon: '☀️' },
-                  { label: '夜間 (18-24時)', range: [18, 24], icon: '🌆' },
-                ].map(({ label, range, icon }) => {
-                  const sum = hourCounts.slice(range[0], range[1]).reduce((a, b) => a + b, 0);
-                  const pct = totalHourVisits > 0 ? Math.round((sum / totalHourVisits) * 100) : 0;
-                  return (
-                    <div key={label} className="bg-[#1a1e47]/50 rounded-xl p-3 border border-[#2a2f57] text-center">
-                      <span className="text-xl">{icon}</span>
-                      <p className="text-xs text-gray-400 mt-1 mb-2">{label}</p>
-                      <p className="text-2xl font-bold text-[#4a9eff]">{pct}%</p>
-                      <p className="text-xs text-gray-500">{sum}回</p>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-4 bg-[#1a1e47]/30 border border-[#4a9eff]/20 rounded-xl p-4">
-                <p className="text-sm text-gray-300">
-                  <span className="text-[#4a9eff] font-bold">💡 インサイト: </span>
-                  {(() => {
-                    const nightPct = hourCounts.slice(0, 6).reduce((a, b) => a + b, 0) / totalHourVisits * 100;
-                    const dayPct = hourCounts.slice(9, 18).reduce((a, b) => a + b, 0) / totalHourVisits * 100;
-                    if (nightPct > 40) return 'このサイトのAIクローラーは深夜帯に集中しています。サーバー負荷の低い時間帯に活発なクロールが行われています。';
-                    if (dayPct > 50) return 'AIクローラーの活動は日中に集中しています。コンテンツの更新タイミングを午前中に合わせると検出率が上がる可能性があります。';
-                    return `最もAIクローラーが活発な時間帯は ${HOUR_LABELS[peakHour]} (${getPeakLabel(peakHour)}) です。この時間帯のサーバーパフォーマンスを最適化しましょう。`;
-                  })()}
-                </p>
-              </div>
-            </>
-          )}
         </div>
 
         {/* ⑦ 課金セクション（予測ロック） */}
