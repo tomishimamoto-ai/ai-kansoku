@@ -640,7 +640,7 @@ function ResultContent() {
           style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
       </div>
 
-      <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 pb-20">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pb-20">
 
         {/* ━━━━━ ヘッダー ━━━━━ */}
         <div className="flex items-center justify-between py-5 border-b border-white/8 mb-8 gap-3">
