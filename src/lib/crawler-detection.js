@@ -79,12 +79,26 @@ const AI_CRAWLERS = [
   },
 
   // ── Anthropic (Claude) ──────────────────────────────────
-  {
-    name: 'Claude',
-    purpose: 'realtime',
-    patterns: ['claudebot', 'claude-web', 'anthropic', 'claude/'],
+    {
+    name: 'ClaudeBot',
+    purpose: 'training',
+    patterns: ['claudebot', 'anthropic'],
     officialDomains: ['anthropic.com'],
     ipRanges: ['160.79.104.0/23'],
+  },
+  {
+    name: 'Claude-User',
+    purpose: 'realtime',
+    patterns: ['claude-user', 'claude-web', 'claude/'],
+    officialDomains: ['anthropic.com'],
+    ipRanges: ['160.79.104.0/23'],
+  },
+  {
+    name: 'Claude-SearchBot',
+    purpose: 'search-summary',
+    patterns: ['claude-searchbot'],
+    officialDomains: ['anthropic.com'],
+    ipRanges: [],
   },
 
   // ── Perplexity ──────────────────────────────────────────
