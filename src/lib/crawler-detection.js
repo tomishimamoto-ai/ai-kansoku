@@ -27,7 +27,6 @@ const SEARCH_ENGINE_PATTERNS = [
   'yandexbot',
   'baiduspider',
   'ia_archiver',
-  'chrome-lighthouse',
   'lighthouse',
   'vercel-screenshot', 
   // SNS系
@@ -105,7 +104,7 @@ const AI_CRAWLERS = [
   {
     name: 'PerplexityBot',
     purpose: 'search-summary',
-    patterns: ['perplexitybot', 'perplexity'],
+    patterns: ['perplexitybot'],
     officialDomains: ['perplexity.ai'],
     ipRanges: [],
   },
@@ -114,11 +113,7 @@ const AI_CRAWLERS = [
   {
     name: 'Gemini',
     purpose: 'training',
-    patterns: [
-      'google-extended', // Gemini学習用の公式UA（これのみ残す）
-      'bard',
-      'gemini',
-    ],
+    patterns: ['google-extended'],
     officialDomains: ['google.com'],
     ipRanges: [],
   },
@@ -127,7 +122,7 @@ const AI_CRAWLERS = [
   {
     name: 'Microsoft Copilot',
     purpose: 'search-summary',
-    patterns: ['copilot'],
+    patterns: ['copilotbot'],
     officialDomains: ['microsoft.com'],
     ipRanges: ['40.77.167.0/24', '207.46.13.0/24'],
   },
@@ -136,7 +131,7 @@ const AI_CRAWLERS = [
   {
     name: 'Meta AI',
     purpose: 'training',
-    patterns: ['meta-externalagent', 'meta-externalachecker', 'facebookai', 'metaai', 'llama'],
+    patterns: ['meta-externalagent', 'meta-externalachecker', 'facebookai', 'metaai'],
     officialDomains: ['meta.com', 'facebook.com'],
     ipRanges: [],
   },
@@ -145,7 +140,7 @@ const AI_CRAWLERS = [
   {
     name: 'Grok',
     purpose: 'realtime',
-    patterns: ['grok', 'xai', 'grokbot'],
+    patterns: ['xai', 'grokbot'],
     officialDomains: ['x.ai'],
     ipRanges: [],
   },
@@ -190,7 +185,7 @@ const AI_CRAWLERS = [
   {
     name: 'Phind',
     purpose: 'search-summary',
-    patterns: ['phindbot', 'phind'],
+    patterns: ['phindbot'],
     officialDomains: ['phind.com'],
     ipRanges: [],
   },
@@ -199,7 +194,7 @@ const AI_CRAWLERS = [
   {
     name: 'HuggingFaceBot',
     purpose: 'academic',
-    patterns: ['huggingface', 'transformersbot'],
+    patterns: ['transformersbot'],
     officialDomains: ['huggingface.co'],
     ipRanges: [],
   },
@@ -235,7 +230,7 @@ const AI_CRAWLERS = [
   {
     name: 'ByteSpider',
     purpose: 'training',
-    patterns: ['bytespider', 'bytedance'],
+    patterns: ['bytespider'],
     officialDomains: ['bytedance.com'],
     ipRanges: [],
   },
@@ -324,6 +319,8 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
   ).toLowerCase();
 
   const ip = (
+    req.headers.get?.('cf-connecting-ip') ||
+    req.headers.get?.('x-real-ip') ||
     req.headers.get?.('x-forwarded-for')?.split(',')[0]?.trim() ||
     req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
     req.ip || ''
