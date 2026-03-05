@@ -1,9 +1,16 @@
 /**
  * /api/track/honeypot/route.js
  *
- * 人間には見えない隠しリンクを踏んだら即AI確定
- * - display:none のリンクを辿るのはHTMLを解析するクローラーのみ
- * - 踏んだら confidence=99 で記録
+ * 人間には見えない隠しリンクを踏んだらbot確定
+ * - aria-hidden + tabindex=-1 + position:absolute で人間からは完全に隠す
+ * - ただしSEOクローラー・セキュリティスキャナーも踏む可能性あり
+ * - → crawler_type: 'bot'（AI確定ではなくbot確定）confidence: 85
+ *
+ * track.jsでの埋め込み方（標準）:
+ * <a href="/api/track/honeypot?siteId=xxx"
+ *    style="position:absolute;left:-9999px"
+ *    tabindex="-1"
+ *    aria-hidden="true">.</a>
  */
 
 import { neon } from '@neondatabase/serverless';
@@ -19,13 +26,31 @@ export async function GET(req) {
       return new Response('not found', { status: 404 });
     }
 
-    const ip = (
-      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || ''
-    );
-    const ua        = req.headers.get('user-agent') || '';
+    // IP取得強化（Vercel/CDN環境で安定）
+    const ip =
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      '';
+
+    const ua = req.headers.get('user-agent') || '';
+
+    // ② UA空はノイズなので記録しない
+    if (!ua) {
+      return new Response('ok', { status: 200 });
+    }
+
+    // ③ 監視ツール・uptimeチェッカーは記録しない（DB節約）
+    const NOISE_UA = ['monitor', 'uptime', 'pingdom', 'statuspage', 'healthcheck'];
+    if (NOISE_UA.some(kw => ua.toLowerCase().includes(kw))) {
+      return new Response('ok', { status: 200 });
+    }
+
     const sessionId = makeSessionId(ip, ua);
 
-    // Honeypotを踏んだ → AI確定（confidence=99）
+    // refererを保存（page_urlとして活用）
+    const referer = req.headers.get('referer') || '/honeypot';
+
+    // Honeypotを踏んだ → bot確定（AI確定ではない）
     await db`
       INSERT INTO ai_crawler_visits (
         site_id,
@@ -49,17 +74,17 @@ export async function GET(req) {
         ${ip},
         ${ua},
         ${sessionId},
-        ${'Unknown AI'},
-        ${'ai'},
+        ${'Unknown Bot'},
+        ${'bot'},
         ${'unknown'},
         ${false},
         ${'honeypot'},
-        ${99},
-        ${99},
+        ${85},
+        ${85},
         ${false},
         ${false},
         ${false},
-        ${'/honeypot'},
+        ${referer},
         NOW()
       )
     `;
