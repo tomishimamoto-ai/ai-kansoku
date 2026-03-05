@@ -279,6 +279,7 @@ function CopyBlock({ templateId }) {
 function useCountUp(target, duration = 1800) {
   const [val, setVal] = useState(0);
   useEffect(() => {
+    if (!target) return;
     let start = 0;
     const step = target / (duration / 16);
     const timer = setInterval(() => {
@@ -510,9 +511,13 @@ function ResultContent() {
   const url = searchParams.get('url') || 'https://example.com';
   const siteId = searchParams.get('siteId') || generateSiteId(url);
 
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // すべての hooks をトップレベルにまとめる
+  // （条件分岐・早期returnより必ず前に置く）
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const [isClient, setIsClient] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);   // ← 追加
-  const [analyzedData, setAnalyzedData] = useState(null); // ← localStorageから読む
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [analyzedData, setAnalyzedData] = useState(null);
   const [PDFReport, setPDFReport] = useState(null);
   const [isTrackingInstalled, setIsTrackingInstalled] = useState(false);
   const [prevScore, setPrevScore] = useState(null);
@@ -525,12 +530,15 @@ function ResultContent() {
   const [achievements, setAchievements] = useState([]);
   const [dashPreview, setDashPreview] = useState(null);
 
-  // ── ① localStorageから診断データを取得 ──────────────────
+  // useCountUp を早期returnより前に移動（React #310 の修正）
+  // analyzedData が null の間は 0 をターゲットとして渡す
+  const displayScore = useCountUp(analyzedData?.totalScore ?? 0);
+
+  // ── localStorageから診断データを取得 ──────────────────
   useEffect(() => {
     setIsClient(true);
     import('../components/PDFReport').then((mod) => setPDFReport(() => mod.default));
     try {
-      // 診断データをlocalStorageから取得
       const raw = localStorage.getItem(`analysis_${siteId}`);
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -548,7 +556,7 @@ function ResultContent() {
     }
   }, [siteId]);
 
-  // ── ② データロード中はスピナー表示 ──────────────────────
+  // ── データロード中はスピナー表示 ──────────────────────
   if (!dataLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#080c1a' }}>
@@ -560,17 +568,17 @@ function ResultContent() {
     );
   }
 
-  // ── ③ データなしはエラーUI ───────────────────────────────
+  // ── データなしはエラーUI ───────────────────────────────
   if (!analyzedData) {
     return <NoDataError url={url} />;
   }
 
+  // ── analyzedData が確定した後の変数 ───────────────────
   const totalScore = analyzedData.totalScore ?? 0;
   const currentScores = analyzedData.scores || {};
   const health = getHealthStatus(totalScore);
   const nextTarget = getNextTarget(totalScore);
   const improvements = getImprovements(analyzedData);
-  const displayScore = useCountUp(totalScore);
 
   const totalPotentialGain = [...improvements.urgent, ...improvements.medium]
     .reduce((sum, item) => sum + (item.gain || 0), 0);
@@ -630,10 +638,12 @@ function ResultContent() {
     return !!checkedItems[id] && (currentScores[id] || 0) > (prevScores[id] || 0);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (url && totalScore && analyzedData) saveHistory(url, totalScore, analyzedData);
   }, [url, totalScore]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (prevScore === null || !prevScores) return;
     const list = [];

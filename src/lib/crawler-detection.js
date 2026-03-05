@@ -1,16 +1,10 @@
 /**
- * AI観測ラボ - クローラー検知ロジック v5.3
+ * AI観測ラボ - クローラー検知ロジック v5.4
  *
- * v5.2からの変更点:
- * 1. SEARCH_ENGINE_PATTERNS に以下を追加
- *    - adsbot-google（Google広告クローラー）
- *    - chrome-lighthouse（パフォーマンス計測）
- *    - googleother（Google汎用クローラー）
- *    - google-inspectiontool（Search Console）
- *    - apis-google（Google API）
- *    - google-safety（Googleセーフブラウジング）
- * 2. GeminiのAI_CRAWLERSパターンを純粋なAI系のみに絞る
- *    - google-extended のみ残す（Gemini学習用の公式UA）
+ * v5.3からの変更点:
+ * 1. makeSessionId: ip + ua + 10分バケット（NAT環境のセッション混在を防止）
+ * 2. isRapidAccess: 閾値 300ms → 1000ms（AI crawlerの実際のアクセス間隔に合わせる）
+ * 3. analyzeBehavior: Cookie無しシグナルを追加（+3点）
  */
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -78,7 +72,7 @@ const AI_CRAWLERS = [
   },
 
   // ── Anthropic (Claude) ──────────────────────────────────
-    {
+  {
     name: 'ClaudeBot',
     purpose: 'training',
     patterns: ['claudebot', 'anthropic'],
@@ -249,7 +243,10 @@ export function isRapidAccess(ip) {
   const last = accessMap.get(ip);
   accessMap.set(ip, now);
   pruneMap(accessMap, 10000, now - 60_000);
-  return last ? (now - last) < 300 : false;
+  // v5.4: 300ms → 1000ms
+  // AI crawlerの実際のアクセス間隔は0.3〜2秒が多い。
+  // 300msは厳しすぎて正規ブラウザ（スマホの低速回線等）を誤検知しやすかった。
+  return last ? (now - last) < 1000 : false;
 }
 
 export function markRobotsAccess(ip) {
@@ -293,9 +290,17 @@ function pruneMap(map, maxSize, cutoffTime) {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 4. セッションID生成
+//
+// v5.4: ip + ua + 10分バケット
+// 理由: NAT環境（会社・大学・携帯キャリア）では複数ユーザーが同一IPを共有する。
+//       ip + ua だけだと同一IPの異なる人間がセッション混在する問題があった。
+//       10分バケットを加えることで、同じIP/UAであっても時間窓が変わればID変化し、
+//       「同じセッションの連続アクセス」と「別タイミングのアクセス」を区別できる。
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export function makeSessionId(ip, ua) {
-  const raw = `${ip}::${ua}`;
+  // 10分単位のバケット（epoch ms / 10min）
+  const bucket = Math.floor(Date.now() / (10 * 60 * 1000));
+  const raw = `${ip}::${ua}::${bucket}`;
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
     hash = ((hash << 5) - hash) + raw.charCodeAt(i);
@@ -307,7 +312,8 @@ export function makeSessionId(ip, ua) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 5. メイン検知関数
 //
-//   totalScore = uaScore(0-40) + ipScore(0-30) + behaviorScore(0-28) + rapidScore(0-10)
+//   totalScore = uaScore(0-40) + ipScore(0-30) + behaviorScore(0-31) + rapidScore(0-10)
+//   ※ behaviorスコア上限を28→31に更新（cookie無しシグナル+3追加のため）
 //   >= 70 → AI (confirmed)
 //   >= 40 → AI (suspicious)
 //   <  40 → Human
@@ -356,6 +362,12 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     req.headers['connection'] || ''
   ).toLowerCase();
 
+  // v5.4: cookie ヘッダーを追加取得
+  const cookie = (
+    req.headers.get?.('cookie') ||
+    req.headers['cookie'] || ''
+  );
+
   const method    = req.method || 'GET';
   const rapid     = isRapidAccess(ip);
   const robots    = hadRobotsDb || hadRobotsAccess(ip);
@@ -396,120 +408,115 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     }
   }
 
-// ── STEP 1.5: 偽装UA・正規化ルール ──────────────────────
-const LEGITIMATE_APP_PATTERNS = [
-  'gsa/',          // Google Search App (iOS) 例: GSA/319.0.638.53
-  'yjapp-',        // Yahoo! JAPAN アプリ (Android) 例: YJApp-ANDROID
-  'jp.co.yahoo',   // Yahoo! JAPAN アプリ識別子
-  'yahoojapan/',   // Yahoo Japan 関連
-  'com.yahoo.',    // Yahoo アプリ系 bundle ID
-  'yjtop',         // Yahoo! JAPANトップ
-  'line/',         // LINE アプリ内ブラウザ
-  'fbav/',         // Facebook アプリ内ブラウザ
-  'instagram',     // Instagram アプリ内ブラウザ
-];
+  // ── STEP 1.5: 偽装UA・正規化ルール ──────────────────────
+  const LEGITIMATE_APP_PATTERNS = [
+    'gsa/',          // Google Search App (iOS)
+    'yjapp-',        // Yahoo! JAPAN アプリ (Android)
+    'jp.co.yahoo',   // Yahoo! JAPAN アプリ識別子
+    'yahoojapan/',   // Yahoo Japan 関連
+    'com.yahoo.',    // Yahoo アプリ系 bundle ID
+    'yjtop',         // Yahoo! JAPANトップ
+    'line/',         // LINE アプリ内ブラウザ
+    'fbav/',         // Facebook アプリ内ブラウザ
+    'instagram',     // Instagram アプリ内ブラウザ
+  ];
 
-const isLegitimateApp = LEGITIMATE_APP_PATTERNS.some(p => ua.includes(p));
-if (isLegitimateApp) {
-  return {
-    ...base,
-    isHuman: true,
-    crawlerType: 'human',
-    crawlerName: 'Human',
-    detectionMethod: 'human-default',
-    confidence: 70,
-    totalScore: 0,
-  };
-}
-
-const iosMatch = ua.match(/iphone os (\d+)_/);
-if (iosMatch) {
-  const majorVersion = parseInt(iosMatch[1]);
-  if (majorVersion >= 19) {
+  const isLegitimateApp = LEGITIMATE_APP_PATTERNS.some(p => ua.includes(p));
+  if (isLegitimateApp) {
     return {
       ...base,
-      crawlerType: 'spoofed-bot',
-      crawlerName: 'Spoofed-iOS',
+      isHuman: true,
+      crawlerType: 'human',
+      crawlerName: 'Human',
+      detectionMethod: 'human-default',
+      confidence: 70,
+      totalScore: 0,
+    };
+  }
+
+  const iosMatch = ua.match(/iphone os (\d+)_/);
+  if (iosMatch) {
+    const majorVersion = parseInt(iosMatch[1]);
+    if (majorVersion >= 19) {
+      return {
+        ...base,
+        crawlerType: 'spoofed-bot',
+        crawlerName: 'Spoofed-iOS',
+        detectionMethod: 'ua-normalization',
+        confidence: 90,
+        totalScore: 90,
+      };
+    }
+  }
+
+  const ipadMatch = ua.match(/cpu os (\d+)_/);
+  if (ipadMatch) {
+    const majorVersion = parseInt(ipadMatch[1]);
+    if (majorVersion >= 19) {
+      return {
+        ...base,
+        crawlerType: 'spoofed-bot',
+        crawlerName: 'Spoofed-iOS',
+        detectionMethod: 'ua-normalization',
+        confidence: 90,
+        totalScore: 90,
+      };
+    }
+  }
+
+  if (ua.includes('android 10; k)')) {
+    return {
+      ...base,
+      isSearchEngine: true,
+      crawlerType: 'search-engine',
+      crawlerName: 'Googlebot-family',
       detectionMethod: 'ua-normalization',
       confidence: 90,
       totalScore: 90,
     };
   }
-}
 
-// 存在しないiPad OSバージョン
-const ipadMatch = ua.match(/cpu os (\d+)_/);
-if (ipadMatch) {
-  const majorVersion = parseInt(ipadMatch[1]);
-  if (majorVersion >= 19) {
+  const chromeMatch = ua.match(/chrome\/(\d+)\./);
+  if (chromeMatch) {
+    const chromeVersion = parseInt(chromeMatch[1]);
+    if (chromeVersion >= 200) {
+      return {
+        ...base,
+        crawlerType: 'spoofed-bot',
+        crawlerName: 'Spoofed-Chrome',
+        detectionMethod: 'ua-normalization',
+        confidence: 85,
+        totalScore: 85,
+      };
+    }
+  }
+
+  if (ua.includes('vercel-screenshot')) {
     return {
       ...base,
-      crawlerType: 'spoofed-bot',
-      crawlerName: 'Spoofed-iOS',
+      crawlerType: 'other-bot',
+      crawlerName: 'Vercel-Screenshot',
+      detectionMethod: 'ua-normalization',
+      confidence: 99,
+      totalScore: 99,
+    };
+  }
+
+  if (
+    ua.includes('nexus 5x build/mmb29p') ||
+    ua.includes('moto g (4)') ||
+    ua.includes('cros x86_64 14541')
+  ) {
+    return {
+      ...base,
+      isSearchEngine: true,
+      crawlerType: 'search-engine',
+      crawlerName: 'Googlebot-family',
       detectionMethod: 'ua-normalization',
       confidence: 90,
       totalScore: 90,
     };
   }
-}
-
-// Android 10; K（機種名なしのGooglebot系）
-if (ua.includes('android 10; k)')) {
-  return {
-    ...base,
-    isSearchEngine: true,
-    crawlerType: 'search-engine',
-    crawlerName: 'Googlebot-family',
-    detectionMethod: 'ua-normalization',
-    confidence: 90,
-    totalScore: 90,
-  };
-}
-
-// 存在しないChromeバージョン（145以上）
-const chromeMatch = ua.match(/chrome\/(\d+)\./);
-if (chromeMatch) {
-  const chromeVersion = parseInt(chromeMatch[1]);
-  if (chromeVersion >= 200) {
-    return {
-      ...base,
-      crawlerType: 'spoofed-bot',
-      crawlerName: 'Spoofed-Chrome',
-      detectionMethod: 'ua-normalization',
-      confidence: 85,
-      totalScore: 85,
-    };
-  }
-}
-
-// Vercel Screenshot
-if (ua.includes('vercel-screenshot')) {
-  return {
-    ...base,
-    crawlerType: 'other-bot',
-    crawlerName: 'Vercel-Screenshot',
-    detectionMethod: 'ua-normalization',
-    confidence: 99,
-    totalScore: 99,
-  };
-}
-
-// Nexus 5X / Moto G (4) / CrOS（Google系クローラーUA）
-if (
-  ua.includes('nexus 5x build/mmb29p') ||
-  ua.includes('moto g (4)') ||
-  ua.includes('cros x86_64 14541')
-) {
-  return {
-    ...base,
-    isSearchEngine: true,
-    crawlerType: 'search-engine',
-    crawlerName: 'Googlebot-family',
-    detectionMethod: 'ua-normalization',
-    confidence: 90,
-    totalScore: 90,
-  };
-}
 
   // ── STEP 2 & 3: 統合スコア計算 ─────────────────────────
   let uaScore        = 0;
@@ -546,7 +553,7 @@ if (
 
   const behavior = analyzeBehavior({
     ua, acceptEncoding, acceptLang, accept, secChUa, connection,
-    method, referer, robots, htmlOnly,
+    method, referer, robots, htmlOnly, cookie,
   });
 
   const rapidScore = rapid ? 10 : 0;
@@ -614,10 +621,13 @@ if (
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 6. 行動パターン分析
+//
+// v5.4: cookie 引数を追加
+//       スコア上限: 28 → 31
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function analyzeBehavior({
   ua, acceptEncoding, acceptLang, accept, secChUa, connection,
-  method, referer, robots, htmlOnly,
+  method, referer, robots, htmlOnly, cookie,
 }) {
   let score = 0;
   const reasons = [];
@@ -696,7 +706,18 @@ function analyzeBehavior({
     reasons.push('connection-close');
   }
 
-  return { score: Math.min(score, 28), reasons };
+  // v5.4: Cookie無し判定
+  // AIクローラーはセッションを維持しないためcookieを送らないことが多い。
+  // ただしブラウザUAを偽装している場合のみカウント（純粋なbot UAはno-browser-uaで加点済み）。
+  // 正規ブラウザの初回アクセスでも cookie='' になるため、
+  // 他のシグナル（no-accept-language等）との組み合わせで効果を発揮する設計。
+  if (!cookie && hasBrowserUA) {
+    score += 3;
+    reasons.push('no-cookie-with-browser-ua');
+  }
+
+  // スコア上限: v5.3=28 → v5.4=31（+3追加のため更新）
+  return { score: Math.min(score, 31), reasons };
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
