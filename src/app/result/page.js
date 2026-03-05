@@ -534,6 +534,30 @@ function ResultContent() {
   // analyzedData が null の間は 0 をターゲットとして渡す
   const displayScore = useCountUp(analyzedData?.totalScore ?? 0);
 
+  // 早期returnより前に定義（useEffectで参照するため）
+  const currentScores = analyzedData?.scores || {};
+  const totalScore = analyzedData?.totalScore ?? 0;
+
+  // saveHistory useEffect（早期returnより前に移動）
+  useEffect(() => {
+    if (url && totalScore && analyzedData) saveHistory(url, totalScore, analyzedData);
+  }, [url, totalScore]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // achievements useEffect（早期returnより前に移動）
+  useEffect(() => {
+    if (prevScore === null || !prevScores) return;
+    const list = [];
+    const diff = totalScore - prevScore;
+    if (diff > 0) list.push({ emoji: diff >= 10 ? '🔥' : '✨', text: `スコアが ${diff}点 アップ！` });
+    const names = { metaTags:'メタタグ', performance:'パフォーマンス', sitemap:'サイトマップ', structuredData:'構造化データ', semanticHTML:'セマンティックHTML', robotsTxt:'robots.txt', llmsTxt:'llms.txt', mobileOptimization:'モバイル対応' };
+    Object.entries(checkedItems).forEach(([id, done]) => {
+      if (!done) return;
+      const d = (currentScores[id] || 0) - (prevScores[id] || 0);
+      if (d > 0) list.push({ emoji: '🟢', text: `${names[id] || id} が改善 (+${d}点)` });
+    });
+    setAchievements(list);
+  }, [prevScore, prevScores]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── localStorageから診断データを取得 ──────────────────
   useEffect(() => {
     setIsClient(true);
@@ -574,8 +598,7 @@ function ResultContent() {
   }
 
   // ── analyzedData が確定した後の変数 ───────────────────
-  const totalScore = analyzedData.totalScore ?? 0;
-  const currentScores = analyzedData.scores || {};
+  // totalScore / currentScores はトップレベルで定義済み
   const health = getHealthStatus(totalScore);
   const nextTarget = getNextTarget(totalScore);
   const improvements = getImprovements(analyzedData);
@@ -637,26 +660,6 @@ function ResultContent() {
     if (!prevScores) return false;
     return !!checkedItems[id] && (currentScores[id] || 0) > (prevScores[id] || 0);
   };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (url && totalScore && analyzedData) saveHistory(url, totalScore, analyzedData);
-  }, [url, totalScore]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (prevScore === null || !prevScores) return;
-    const list = [];
-    const diff = totalScore - prevScore;
-    if (diff > 0) list.push({ emoji: diff >= 10 ? '🔥' : '✨', text: `スコアが ${diff}点 アップ！` });
-    const names = { metaTags:'メタタグ', performance:'パフォーマンス', sitemap:'サイトマップ', structuredData:'構造化データ', semanticHTML:'セマンティックHTML', robotsTxt:'robots.txt', llmsTxt:'llms.txt', mobileOptimization:'モバイル対応' };
-    Object.entries(checkedItems).forEach(([id, done]) => {
-      if (!done) return;
-      const d = (currentScores[id] || 0) - (prevScores[id] || 0);
-      if (d > 0) list.push({ emoji: '🟢', text: `${names[id] || id} が改善 (+${d}点)` });
-    });
-    setAchievements(list);
-  }, [prevScore, prevScores]);
 
   const todaysMission = improvements.urgent[0] || improvements.medium[0] || null;
   const urgentRest = improvements.urgent.slice(1);
