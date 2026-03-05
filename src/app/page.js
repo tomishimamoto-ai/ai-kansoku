@@ -84,6 +84,15 @@ function StarField({ count = 80 }) {
   );
 }
 
+// ─── localStorageに診断結果を保存するユーティリティ ───────────
+function saveAnalysisToStorage(siteId, data) {
+  try {
+    localStorage.setItem(`analysis_${siteId}`, JSON.stringify(data));
+  } catch (e) {
+    console.warn('localStorage save failed:', e);
+  }
+}
+
 export default function Home() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -175,10 +184,13 @@ export default function Home() {
       const data = await response.json();
       if (response.ok) {
         setLoadingStep('観測完了！');
+
+        // ── ① localStorageに診断結果を保存（URLにJSONを入れない） ──
+        saveAnalysisToStorage(siteId, data);
+
+        // ── ② siteIdとurlだけをURLパラメータに渡す ──
         const params = new URLSearchParams({
           url: normalizedUrl,
-          score: data.totalScore,
-          data: JSON.stringify(data),
           siteId,
         });
         window.location.href = `/result?${params.toString()}`;
@@ -251,7 +263,6 @@ export default function Home() {
           100% { transform: scale(1); }
         }
 
-        /* font-syne は next/font で制御 */
         .animate-fadeSlideUp { animation: fadeSlideUp 0.7s ease-out both; }
         .delay-100 { animation-delay: 0.1s; }
         .delay-200 { animation-delay: 0.2s; }
@@ -316,12 +327,10 @@ export default function Home() {
         .tag-purple { background: rgba(155,109,255,0.15); color: var(--purple); border: 1px solid rgba(155,109,255,0.3); }
         .tag-green { background: rgba(61,255,160,0.12); color: var(--green); border: 1px solid rgba(61,255,160,0.3); }
 
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
 
-        /* モバイル */
         @media (max-width: 640px) {
           .pc-nav { display: none !important; }
           .hamburger-btn { display: flex !important; }
@@ -377,7 +386,6 @@ export default function Home() {
         {/* ── 星フィールド（固定背景） ── */}
         <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
           <StarField count={100} />
-          {/* Nebula blobs */}
           <div style={{
             position: 'absolute', top: '-10%', left: '10%',
             width: 600, height: 600,
@@ -396,7 +404,6 @@ export default function Home() {
             background: 'radial-gradient(circle, rgba(255,110,180,0.07) 0%, transparent 70%)',
             animation: 'pulseGlow 12s 4s ease-in-out infinite',
           }} />
-          {/* Grid */}
           <div style={{
             position: 'absolute', inset: 0,
             backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
@@ -416,7 +423,6 @@ export default function Home() {
             height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {/* Logo mark */}
               <div style={{
                 width: 34, height: 34,
                 background: 'linear-gradient(135deg, var(--blue), var(--purple))',
@@ -428,7 +434,6 @@ export default function Home() {
                 AI観測ラボ
               </span>
             </div>
-            {/* PC nav */}
             <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }} className="pc-nav">
               {[
                 ['使い方', '/how-to-use'],
@@ -443,7 +448,6 @@ export default function Home() {
                 >{label}</a>
               ))}
             </nav>
-            {/* ハンバーガー（モバイルのみ） */}
             <button
               className="hamburger-btn"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -459,7 +463,6 @@ export default function Home() {
               <span style={{ display: 'block', width: 18, height: 2, background: menuOpen ? 'transparent' : '#fff', borderRadius: 2, transition: 'all 0.3s' }} />
               <span style={{ display: 'block', width: 18, height: 2, background: menuOpen ? 'var(--blue)' : '#fff', borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(-45deg) translate(3px, -3px)' : 'none' }} />
             </button>
-            {/* モバイルドロワー */}
             {menuOpen && (
               <div className="mobile-drawer" style={{
                 position: 'fixed', top: 64, left: 0, right: 0,
@@ -470,7 +473,6 @@ export default function Home() {
                 zIndex: 200,
                 boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,158,255,0.1)',
               }}>
-                {/* メニューヘッダー */}
                 <div style={{ padding: '12px 0 16px', marginBottom: 4, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', letterSpacing: '0.1em', fontFamily: "'Inter', sans-serif" }}>NAVIGATION</p>
                 </div>
@@ -506,7 +508,6 @@ export default function Home() {
                     <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.8rem' }}>›</span>
                   </a>
                 ))}
-                {/* 観測CTAボタン */}
                 <div style={{ padding: '12px 12px 0', marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                   <button
                     onClick={() => { setMenuOpen(false); inputRef.current?.focus(); inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
@@ -531,15 +532,14 @@ export default function Home() {
           padding: '100px 24px 60px',
           textAlign: 'center',
         }}>
-          {/* Badge */}
           <div className="animate-fadeSlideUp" style={{ marginBottom: 20 }}>
             <span className="tag tag-blue" style={{ fontSize: '0.78rem' }}>
               ✦ AIクロール可視化ツール — 無料・登録不要
             </span>
           </div>
 
-          {/* Headline */}
-          <h1 className='animate-fadeSlideUp delay-100' style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",
+          <h1 className='animate-fadeSlideUp delay-100' style={{
+            fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",
             fontSize: 'clamp(2rem, 5vw, 4rem)',
             fontWeight: 900,
             lineHeight: 1.15,
@@ -547,9 +547,7 @@ export default function Home() {
             marginBottom: 20,
             wordBreak: 'keep-all',
           }}>
-            <span style={{ color: '#fff', display: 'block',
-              textShadow: '0 0 60px rgba(255,255,255,0.2)',
-            }}>あなたのサイトは</span>
+            <span style={{ color: '#fff', display: 'block', textShadow: '0 0 60px rgba(255,255,255,0.2)' }}>あなたのサイトは</span>
             <span style={{
               background: 'linear-gradient(135deg, #4a9eff 0%, #9b6dff 50%, #ff6eb4 100%)',
               WebkitBackgroundClip: 'text',
@@ -662,16 +660,14 @@ export default function Home() {
           maxWidth: 800, margin: '0 auto 80px',
           padding: '0 24px',
         }}>
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16,
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {[
               { val: stats.sites, suffix: '+', label: '累計観測サイト数', color: 'var(--blue)' },
               { val: stats.crawlers, suffix: '種類', label: '対応AIクローラー', color: 'var(--purple)' },
               { val: stats.score, suffix: '点', label: '平均観測スコア', color: 'var(--green)' },
             ].map(({ val, suffix, label, color }) => (
               <div key={label} className="glass-card" style={{ padding: '24px 16px', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
+                <div style={{
                   fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
                   fontWeight: 800,
                   color,
@@ -681,7 +677,7 @@ export default function Home() {
                   fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif",
                   fontVariantNumeric: 'tabular-nums',
                 }}>
-                  {val.toLocaleString()}<span style={{ fontSize: '0.5em', fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif" }}>{suffix}</span>
+                  {val.toLocaleString()}<span style={{ fontSize: '0.5em' }}>{suffix}</span>
                 </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{label}</p>
               </div>
@@ -693,7 +689,7 @@ export default function Home() {
         <section style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto 100px', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <span className="tag tag-purple" style={{ marginBottom: 12, display: 'inline-block' }}>HOW IT WORKS</span>
-            <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
+            <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif", fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
               4ステップで観測完了
             </h2>
           </div>
@@ -706,29 +702,28 @@ export default function Home() {
                 { from: '#3dffa0', to: '#80ffcc' },
               ];
               const c = stepColors[i];
+              const rgba = i===0?'74,158,255':i===1?'155,109,255':i===2?'255,110,180':'61,255,160';
               return (
                 <div key={step.num} style={{
                   padding: '28px 24px', position: 'relative', overflow: 'hidden',
                   borderRadius: 20,
-                  background: `linear-gradient(135deg, rgba(${i===0?'74,158,255':i===1?'155,109,255':i===2?'255,110,180':'61,255,160'},0.08) 0%, rgba(3,4,14,0.6) 100%)`,
-                  border: `1px solid rgba(${i===0?'74,158,255':i===1?'155,109,255':i===2?'255,110,180':'61,255,160'},0.25)`,
+                  background: `linear-gradient(135deg, rgba(${rgba},0.08) 0%, rgba(3,4,14,0.6) 100%)`,
+                  border: `1px solid rgba(${rgba},0.25)`,
                   transition: 'transform 0.3s, box-shadow 0.3s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 12px 40px rgba(${i===0?'74,158,255':i===1?'155,109,255':i===2?'255,110,180':'61,255,160'},0.2)`; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 12px 40px rgba(${rgba},0.2)`; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
-                  {/* 矢印コネクター（最後以外） */}
-                  {/* BG number */}
-                  <div style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
+                  <div style={{
                     position: 'absolute', top: -8, right: 12,
                     fontSize: '5.5rem', fontWeight: 900,
                     background: `linear-gradient(135deg, ${c.from}22, ${c.to}08)`,
                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
                     lineHeight: 1, userSelect: 'none',
+                    fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
                   }}>
                     {step.num}
                   </div>
-                  {/* ステップバッジ */}
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     marginBottom: 16,
@@ -742,8 +737,9 @@ export default function Home() {
                       boxShadow: `0 0 8px ${c.from}`,
                       display: 'inline-block',
                     }} />
-                    <span style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
+                    <span style={{
                       fontSize: '0.7rem', fontWeight: 700, color: c.from, letterSpacing: '0.1em',
+                      fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
                     }}>STEP {step.num}</span>
                   </div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>{step.title}</h3>
@@ -758,7 +754,7 @@ export default function Home() {
         <section className="hide-mobile" style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto 100px', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <span className="tag tag-green" style={{ marginBottom: 12, display: 'inline-block' }}>WHAT WE ANALYZE</span>
-            <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
+            <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif", fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
               8項目の観測レポート
             </h2>
             <p style={{ color: 'var(--text-muted)', marginTop: 12, fontSize: '0.9rem' }}>
@@ -798,7 +794,6 @@ export default function Home() {
         {/* ── 診断履歴 ── */}
         {history.length > 0 && (
           <section style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto 100px', padding: '0 24px' }}>
-            {/* ダッシュボード風ラッパー */}
             <div style={{
               background: 'linear-gradient(135deg, rgba(74,158,255,0.12) 0%, rgba(155,109,255,0.14) 50%, rgba(255,110,180,0.08) 100%)',
               border: '1px solid rgba(74,158,255,0.3)',
@@ -806,74 +801,78 @@ export default function Home() {
               padding: '24px',
               boxShadow: '0 0 60px rgba(74,158,255,0.1), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}>
-            {/* ヘッダー行 */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-              <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: '1.4rem', fontWeight: 700 }}>
-                🛸 観測履歴
-              </h2>
-              <button onClick={clearHistory}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.82rem', cursor: 'pointer', textDecoration: 'underline' }}>
-                すべて削除
-              </button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {history.map((item, i) => {
-                const date = new Date(item.date);
-                const fmt = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
-                const prev = history[i + 1];
-                const diff = prev && prev.url === item.url ? item.score - prev.score : null;
-                const scoreColor = item.score >= 80 ? 'var(--green)' : item.score >= 60 ? 'var(--yellow)' : '#ff6b6b';
-                return (
-                  <div key={i} className="glass-card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item.url.replace(/https?:\/\//, '')}
-                        </span>
-                        <span style={{ color: scoreColor, fontWeight: 800, fontSize: '1.2rem', fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif" }}>
-                          {item.score}点
-                        </span>
-                        {diff !== null && diff !== 0 && (
-                          <span style={{
-                            fontSize: '0.75rem', fontWeight: 700,
-                            padding: '2px 8px', borderRadius: 100,
-                            background: diff > 0 ? 'rgba(61,255,160,0.12)' : 'rgba(255,80,80,0.12)',
-                            color: diff > 0 ? 'var(--green)' : '#ff8080',
-                          }}>
-                            {diff > 0 ? '↑' : '↓'} {diff > 0 ? '+' : ''}{diff}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif", fontSize: '1.4rem', fontWeight: 700 }}>
+                  🛸 観測履歴
+                </h2>
+                <button onClick={clearHistory}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.82rem', cursor: 'pointer', textDecoration: 'underline' }}>
+                  すべて削除
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {history.map((item, i) => {
+                  const date = new Date(item.date);
+                  const fmt = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+                  const prev = history[i + 1];
+                  const diff = prev && prev.url === item.url ? item.score - prev.score : null;
+                  const scoreColor = item.score >= 80 ? 'var(--green)' : item.score >= 60 ? 'var(--yellow)' : '#ff6b6b';
+
+                  // ── ③ 履歴の「詳細」リンクもsiteIdだけで遷移 ──
+                  const historySiteId = generateSiteId(item.url);
+
+                  return (
+                    <div key={i} className="glass-card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {item.url.replace(/https?:\/\//, '')}
                           </span>
-                        )}
+                          <span style={{ color: scoreColor, fontWeight: 800, fontSize: '1.2rem', fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif" }}>
+                            {item.score}点
+                          </span>
+                          {diff !== null && diff !== 0 && (
+                            <span style={{
+                              fontSize: '0.75rem', fontWeight: 700,
+                              padding: '2px 8px', borderRadius: 100,
+                              background: diff > 0 ? 'rgba(61,255,160,0.12)' : 'rgba(255,80,80,0.12)',
+                              color: diff > 0 ? 'var(--green)' : '#ff8080',
+                            }}>
+                              {diff > 0 ? '↑' : '↓'} {diff > 0 ? '+' : ''}{diff}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{fmt}</p>
                       </div>
-                      <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{fmt}</p>
+                      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                        <button onClick={() => diagnoseFromHistory(item.url)}
+                          style={{
+                            padding: '8px 14px', borderRadius: 10, cursor: 'pointer',
+                            background: 'rgba(74,158,255,0.12)',
+                            border: '1px solid rgba(74,158,255,0.25)',
+                            color: 'var(--blue)', fontSize: '0.8rem', fontWeight: 600,
+                            transition: 'background 0.2s',
+                          }}>
+                          再観測
+                        </button>
+                        {/* ── URLにdataを入れず、siteIdだけで遷移 ── */}
+                        <a href={`/result?url=${encodeURIComponent(item.url)}&siteId=${historySiteId}`}
+                          style={{
+                            padding: '8px 14px', borderRadius: 10,
+                            background: 'var(--card)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-sub)', fontSize: '0.8rem', fontWeight: 600,
+                            textDecoration: 'none', display: 'inline-block',
+                            transition: 'background 0.2s',
+                          }}>
+                          詳細
+                        </a>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                      <button onClick={() => diagnoseFromHistory(item.url)}
-                        style={{
-                          padding: '8px 14px', borderRadius: 10, cursor: 'pointer',
-                          background: 'rgba(74,158,255,0.12)',
-                          border: '1px solid rgba(74,158,255,0.25)',
-                          color: 'var(--blue)', fontSize: '0.8rem', fontWeight: 600,
-                          transition: 'background 0.2s',
-                        }}>
-                        再観測
-                      </button>
-                      <a href={`/result?url=${encodeURIComponent(item.url)}&data=${encodeURIComponent(JSON.stringify(item.data))}`}
-                        style={{
-                          padding: '8px 14px', borderRadius: 10,
-                          background: 'var(--card)',
-                          border: '1px solid var(--border)',
-                          color: 'var(--text-sub)', fontSize: '0.8rem', fontWeight: 600,
-                          textDecoration: 'none', display: 'inline-block',
-                          transition: 'background 0.2s',
-                        }}>
-                        詳細
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-            </div>{/* /ダッシュボードラッパー */}
           </section>
         )}
 
@@ -882,7 +881,7 @@ export default function Home() {
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 12 }}>
             <div>
               <span className="tag tag-blue" style={{ marginBottom: 8, display: 'inline-block' }}>LATEST POSTS</span>
-              <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
+              <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
                 最新ブログ記事
               </h2>
             </div>
@@ -920,7 +919,7 @@ export default function Home() {
         <section style={{ position: 'relative', zIndex: 1, maxWidth: 680, margin: '0 auto 100px', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
             <span className="tag tag-purple" style={{ marginBottom: 12, display: 'inline-block' }}>FAQ</span>
-            <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
+            <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
               よくある質問
             </h2>
           </div>
@@ -932,9 +931,7 @@ export default function Home() {
                 style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
               >
-                <div style={{
-                  padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                }}>
+                <div style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>Q. {item.q}</p>
                   <span style={{
                     color: 'var(--blue)', fontSize: '1.2rem', flexShrink: 0,
@@ -977,7 +974,6 @@ export default function Home() {
             border: '1px solid rgba(74,158,255,0.2)',
             position: 'relative', overflow: 'hidden',
           }}>
-            {/* Glow */}
             <div style={{
               position: 'absolute', top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
@@ -987,7 +983,7 @@ export default function Home() {
             }} />
             <div style={{ position: 'relative' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>✦</div>
-              <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",  fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 800, marginBottom: 12, letterSpacing: '-0.03em' }}>
+              <h2 style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 800, marginBottom: 12, letterSpacing: '-0.03em' }}>
                 今すぐ観測をはじめよう
               </h2>
               <p style={{ color: 'var(--text-sub)', fontSize: '0.9rem', marginBottom: 28, lineHeight: 1.7 }}>

@@ -73,7 +73,7 @@ function getImprovements(analyzedData) {
     why: 'GPTBot・ClaudeBotがブロックされている可能性があります',
     how: 'robots.txtにUser-Agent: GPTBot / Allow: / を追加',
     howSimple: 'robots.txtに3行追加するだけ（コピペOK）',
-    gain: 10, gainLabel: '+10〜20点',  effort: '15分',
+    gain: 10, gainLabel: '+10〜20点', effort: '15分',
   });
   addItem(scores.llmsTxt || 0, 30, 70, {
     id: 'llmsTxt', icon: '📝', title: 'llms.txtの作成',
@@ -291,7 +291,7 @@ function useCountUp(target, duration = 1800) {
   return val;
 }
 
-// ─── ミッション詳細（why + how + コピペブロック）─────────────
+// ─── ミッション詳細 ────────────────────────────────────────
 function MissionDetail({ item }) {
   const [showCode, setShowCode] = useState(false);
   const hasTemplate = !!COPY_TEMPLATES[item.id];
@@ -321,7 +321,6 @@ function MissionDetail({ item }) {
 
 // ─── 今日のミッションカード ────────────────────────────────
 function TodaysMission({ item, isChecked, onCheck, wasImproved, currentScore, nextTarget }) {
-  // 改善後の予測スコア
   const predictedScore = Math.min(100, currentScore + item.gain);
 
   return (
@@ -338,7 +337,6 @@ function TodaysMission({ item, isChecked, onCheck, wasImproved, currentScore, ne
       )}
 
       <div className="p-5 md:p-7">
-        {/* ヘッダー */}
         <div className="flex items-start gap-4 mb-4">
           <div className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl
             ${isChecked ? 'bg-emerald-500/15' : 'bg-amber-500/15'}`}>
@@ -351,21 +349,18 @@ function TodaysMission({ item, isChecked, onCheck, wasImproved, currentScore, ne
                 {isChecked ? '✔ ミッション完了' : '本日のミッション'}
               </span>
             </div>
-            {/* 最大ボトルネック表示 */}
             {!isChecked && (
               <div className="text-xs text-gray-500 mb-1.5">
                 最大のボトルネック：<span className="text-amber-300 font-semibold">{item.title}</span>
                 <span className="text-gray-600 ml-1">（現在 {item.score}点）</span>
               </div>
             )}
-            <h4 className={`font-bold text-xl leading-snug
-              ${isChecked ? 'text-emerald-300' : 'text-white'}`}>
+            <h4 className={`font-bold text-xl leading-snug ${isChecked ? 'text-emerald-300' : 'text-white'}`}>
               {item.title}
             </h4>
           </div>
         </div>
 
-        {/* 改善前後の予測（未完了時のみ） */}
         {!isChecked && (
           <div className="mb-4 p-4 rounded-xl bg-black/25 border border-white/8">
             <div className="text-xs text-gray-500 mb-2.5">この改善を実施すると</div>
@@ -398,12 +393,8 @@ function TodaysMission({ item, isChecked, onCheck, wasImproved, currentScore, ne
           </div>
         )}
 
-        {/* Why / How + コピペブロック（未完了時） */}
-        {!isChecked && (
-          <MissionDetail item={item} />
-        )}
+        {!isChecked && <MissionDetail item={item} />}
 
-        {/* 完了後のメッセージ + バッジ */}
         {isChecked && (
           <div className="mb-5 flex flex-col items-center gap-3 py-2">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/15 border border-emerald-500/25"
@@ -411,13 +402,10 @@ function TodaysMission({ item, isChecked, onCheck, wasImproved, currentScore, ne
               <span className="text-lg">🧪</span>
               <span className="text-sm font-bold text-emerald-400">実験完了</span>
             </div>
-            <p className="text-sm text-emerald-300/70 text-center">
-              再診断でスコアへの反映を確認しましょう。
-            </p>
+            <p className="text-sm text-emerald-300/70 text-center">再診断でスコアへの反映を確認しましょう。</p>
           </div>
         )}
 
-        {/* アクションボタン */}
         <div className="flex flex-col sm:flex-row gap-2.5">
           <button
             onClick={() => onCheck(item.id)}
@@ -431,8 +419,6 @@ function TodaysMission({ item, isChecked, onCheck, wasImproved, currentScore, ne
             } : {}}>
             {isChecked ? '↩ 取り消す' : '✅ 完了にする'}
           </button>
-
-          {/* 完了後：即再診断ボタン */}
           {isChecked && (
             <Link href="/"
               className="flex-1 flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl font-bold text-sm transition-all hover:opacity-90 hover:scale-[1.02]"
@@ -491,10 +477,29 @@ function CollapsibleItem({ item, isChecked, onCheck, wasImproved, priority }) {
         </div>
       </div>
       {showCode && !isChecked && hasTemplate && (
-        <div className="mt-2">
-          <CopyBlock templateId={item.id} />
-        </div>
+        <div className="mt-2"><CopyBlock templateId={item.id} /></div>
       )}
+    </div>
+  );
+}
+
+// ─── データなしエラーUI ────────────────────────────────────
+function NoDataError({ url }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#080c1a' }}>
+      <div className="max-w-md w-full text-center">
+        <div className="text-6xl mb-6">🔭</div>
+        <h2 className="text-xl font-bold text-white mb-3">診断データが見つかりません</h2>
+        <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+          診断データの有効期限が切れたか、別のブラウザでアクセスした可能性があります。<br />
+          もう一度診断してください。
+        </p>
+        <Link href={url ? `/?url=${encodeURIComponent(url)}` : '/'}
+          className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover:opacity-90"
+          style={{ background: 'linear-gradient(135deg, #4a9eff, #6366f1)' }}>
+          🔄 再診断する
+        </Link>
+      </div>
     </div>
   );
 }
@@ -506,6 +511,8 @@ function ResultContent() {
   const siteId = searchParams.get('siteId') || generateSiteId(url);
 
   const [isClient, setIsClient] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);   // ← 追加
+  const [analyzedData, setAnalyzedData] = useState(null); // ← localStorageから読む
   const [PDFReport, setPDFReport] = useState(null);
   const [isTrackingInstalled, setIsTrackingInstalled] = useState(false);
   const [prevScore, setPrevScore] = useState(null);
@@ -516,21 +523,55 @@ function ResultContent() {
   const [techOpen, setTechOpen] = useState(false);
   const [othersOpen, setOthersOpen] = useState(false);
   const [achievements, setAchievements] = useState([]);
-  // ダッシュボードチラ見せ（実際はAPIから取るが、ここではlocalStorageのvisitCountを使う）
   const [dashPreview, setDashPreview] = useState(null);
 
-  const apiData = searchParams.get('data');
-  let analyzedData = null;
-  if (apiData) { try { analyzedData = JSON.parse(apiData); } catch (e) {} }
+  // ── ① localStorageから診断データを取得 ──────────────────
+  useEffect(() => {
+    setIsClient(true);
+    import('../components/PDFReport').then((mod) => setPDFReport(() => mod.default));
+    try {
+      // 診断データをlocalStorageから取得
+      const raw = localStorage.getItem(`analysis_${siteId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setAnalyzedData(parsed);
+      }
+      setDataLoaded(true);
 
-  const totalScore = analyzedData?.totalScore || 67;
-  const currentScores = analyzedData?.scores || {};
+      if (localStorage.getItem(`trackingInstalled_${siteId}`)) setIsTrackingInstalled(true);
+      const saved = localStorage.getItem(`checkedItems_${siteId}`);
+      if (saved) setCheckedItems(JSON.parse(saved));
+      const visitCount = localStorage.getItem(`visitCount_${siteId}`);
+      setDashPreview(visitCount !== null ? parseInt(visitCount) : null);
+    } catch (e) {
+      setDataLoaded(true);
+    }
+  }, [siteId]);
+
+  // ── ② データロード中はスピナー表示 ──────────────────────
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#080c1a' }}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-full border-2 border-blue-500/30 border-t-blue-400 animate-spin" />
+          <span className="text-base text-gray-500">観測データを読み込み中...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ③ データなしはエラーUI ───────────────────────────────
+  if (!analyzedData) {
+    return <NoDataError url={url} />;
+  }
+
+  const totalScore = analyzedData.totalScore ?? 0;
+  const currentScores = analyzedData.scores || {};
   const health = getHealthStatus(totalScore);
   const nextTarget = getNextTarget(totalScore);
   const improvements = getImprovements(analyzedData);
   const displayScore = useCountUp(totalScore);
 
-  // 伸びしろ合計計算
   const totalPotentialGain = [...improvements.urgent, ...improvements.medium]
     .reduce((sum, item) => sum + (item.gain || 0), 0);
 
@@ -590,19 +631,6 @@ function ResultContent() {
   };
 
   useEffect(() => {
-    setIsClient(true);
-    import('../components/PDFReport').then((mod) => setPDFReport(() => mod.default));
-    try {
-      if (localStorage.getItem(`trackingInstalled_${siteId}`)) setIsTrackingInstalled(true);
-      const saved = localStorage.getItem(`checkedItems_${siteId}`);
-      if (saved) setCheckedItems(JSON.parse(saved));
-      // ダッシュボードチラ見せ（visitCountをlocalStorageから取得、なければAPIから）
-      const visitCount = localStorage.getItem(`visitCount_${siteId}`);
-      setDashPreview(visitCount !== null ? parseInt(visitCount) : null);
-    } catch (e) {}
-  }, [siteId]);
-
-  useEffect(() => {
     if (url && totalScore && analyzedData) saveHistory(url, totalScore, analyzedData);
   }, [url, totalScore]);
 
@@ -623,8 +651,6 @@ function ResultContent() {
   const todaysMission = improvements.urgent[0] || improvements.medium[0] || null;
   const urgentRest = improvements.urgent.slice(1);
   const mediumAll = todaysMission && improvements.urgent[0] ? improvements.medium : improvements.medium.slice(1);
-
-  // URLの表示用（短縮）
   const displayUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   return (
@@ -642,24 +668,19 @@ function ResultContent() {
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pb-20">
 
-        {/* ━━━━━ ヘッダー ━━━━━ */}
+        {/* ヘッダー */}
         <div className="flex items-center justify-between py-5 border-b border-white/8 mb-8 gap-3">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-70 transition-opacity shrink-0">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600" />
             <span className="font-bold text-base tracking-wide">AI観測ラボ</span>
           </Link>
-
           <div className="flex items-center gap-3 min-w-0">
-            {/* 観測対象サイト */}
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/12 bg-white/5 min-w-0">
               <span className="text-xs text-gray-500 shrink-0">診断中</span>
               <span className="text-xs text-gray-200 font-mono truncate max-w-[180px]">{displayUrl}</span>
             </div>
-
-            {/* ダッシュボードへのショートカット（常設） */}
             <Link href={`/dashboard?siteId=${siteId}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 transition-all shrink-0"
-              title="観測ダッシュボード">
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 transition-all shrink-0">
               <span className="text-sm">📊</span>
               <span className="text-xs text-purple-300 hidden md:block">ダッシュボード</span>
             </Link>
@@ -687,7 +708,7 @@ function ResultContent() {
           }
         `}</style>
 
-        {/* ━━━━━ 成果演出 ━━━━━ */}
+        {/* 成果演出 */}
         {achievements.length > 0 && (
           <div className="mb-6 space-y-2">
             {achievements.map((a, i) => (
@@ -700,10 +721,8 @@ function ResultContent() {
           </div>
         )}
 
-        {/* ━━━━━ ① 健康判定 + スコア ━━━━━ */}
+        {/* ① 健康判定 + スコア */}
         <div className="mb-8">
-
-          {/* ステータスバッジ */}
           <div className="flex items-center justify-between mb-6">
             <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold tracking-wider uppercase ${health.badge}`}>
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: health.color }} />
@@ -716,9 +735,7 @@ function ResultContent() {
             )}
           </div>
 
-          {/* スコアリング */}
           <div className="flex items-center gap-6 md:gap-8 mb-6">
-            {/* リングゲージ */}
             <div className="relative shrink-0">
               <svg width="140" height="140" viewBox="0 0 140 140" className="-rotate-90">
                 <circle cx="70" cy="70" r="58" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="10" />
@@ -741,8 +758,6 @@ function ResultContent() {
 
             <div className="flex-1 min-w-0">
               <p className="text-base text-gray-300 mb-4 leading-relaxed">{health.desc}</p>
-
-              {/* プログレス + 次ステージ */}
               {nextTarget && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
@@ -761,7 +776,7 @@ function ResultContent() {
           </div>
         </div>
 
-        {/* ━━━━━ ② 今日の進捗バー ━━━━━ */}
+        {/* ② 今日の進捗バー */}
         {(improvements.urgent.length + improvements.medium.length) > 0 && (() => {
           const allTasks = [...improvements.urgent, ...improvements.medium].slice(0, 3);
           const doneCount = allTasks.filter(t => !!checkedItems[t.id]).length;
@@ -773,26 +788,17 @@ function ResultContent() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
                   <span className="text-sm font-bold text-gray-200">今日の進捗</span>
-                  <span className={`text-sm font-black ${allDone ? 'text-emerald-400' : 'text-white'}`}>
-                    {doneCount}/{total}
-                  </span>
+                  <span className={`text-sm font-black ${allDone ? 'text-emerald-400' : 'text-white'}`}>{doneCount}/{total}</span>
                   {allDone && <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">完了 🎉</span>}
                 </div>
                 {totalPotentialGain > 0 && !allDone && (
                   <span className="text-xs text-emerald-400/80">全部やると最大+{totalPotentialGain}点</span>
                 )}
               </div>
-              {/* プログレスバー */}
               <div className="w-full h-2 bg-white/6 rounded-full overflow-hidden mb-3">
                 <div className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${pct}%`,
-                    background: allDone
-                      ? 'linear-gradient(90deg, #4ade80, #34d399)'
-                      : 'linear-gradient(90deg, #f59e0b, #4a9eff)',
-                  }} />
+                  style={{ width: `${pct}%`, background: allDone ? 'linear-gradient(90deg, #4ade80, #34d399)' : 'linear-gradient(90deg, #f59e0b, #4a9eff)' }} />
               </div>
-              {/* タスク一覧（小さく） */}
               <div className="flex flex-col gap-1.5">
                 {allTasks.map((item, i) => {
                   const isDone = !!checkedItems[item.id];
@@ -802,9 +808,7 @@ function ResultContent() {
                         ${isDone ? 'bg-emerald-500/30 text-emerald-400' : i === 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-white/8 text-gray-600'}`}>
                         {isDone ? '✓' : i + 1}
                       </div>
-                      <span className={`text-xs flex-1 ${isDone ? 'line-through text-gray-600' : 'text-gray-300'}`}>
-                        {item.title}
-                      </span>
+                      <span className={`text-xs flex-1 ${isDone ? 'line-through text-gray-600' : 'text-gray-300'}`}>{item.title}</span>
                       <span className="text-xs text-gray-600 shrink-0">⏱{item.effort}</span>
                     </div>
                   );
@@ -814,7 +818,7 @@ function ResultContent() {
           );
         })()}
 
-        {/* ━━━━━ ③ 今日のミッション ━━━━━ */}
+        {/* ③ 今日のミッション */}
         {todaysMission ? (
           <div className="mb-6">
             <TodaysMission
@@ -834,7 +838,7 @@ function ResultContent() {
           </div>
         )}
 
-        {/* ━━━━━ ④ その他の改善項目（折りたたみ） ━━━━━ */}
+        {/* ④ その他の改善項目 */}
         {(urgentRest.length + mediumAll.length + improvements.completed.length > 0) && (
           <div className="mb-6 rounded-2xl border border-white/8 overflow-hidden">
             <button
@@ -853,7 +857,6 @@ function ResultContent() {
               </div>
               <span className={`text-gray-500 text-sm transition-transform duration-200 ${othersOpen ? 'rotate-180' : ''}`}>▼</span>
             </button>
-
             {othersOpen && (
               <div className="px-5 pb-5 space-y-2.5">
                 {urgentRest.length > 0 && (
@@ -892,7 +895,7 @@ function ResultContent() {
           </div>
         )}
 
-        {/* ━━━━━ ④ ダッシュボード導線（ギャップコピー + チラ見せ） ━━━━━ */}
+        {/* ダッシュボード導線 */}
         <div className="mb-6 rounded-2xl border overflow-hidden"
           style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'linear-gradient(135deg, rgba(99,102,241,0.09), rgba(59,130,246,0.05))' }}>
           <div className="p-5 md:p-7">
@@ -906,8 +909,6 @@ function ResultContent() {
                 </p>
               </div>
             </div>
-
-            {/* チラ見せ数値 */}
             <div className="mb-4 p-3.5 rounded-xl border border-white/8 bg-black/20">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-purple-500/20 flex items-center justify-center text-base shrink-0">🛸</div>
@@ -936,7 +937,6 @@ function ResultContent() {
                 </Link>
               </div>
             </div>
-
             <div className="flex flex-col sm:flex-row gap-2.5">
               <Link href="/"
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-medium transition-all">
@@ -951,7 +951,7 @@ function ResultContent() {
           </div>
         </div>
 
-        {/* ━━━━━ ⑤ AIクロール許可状況（折りたたみ） ━━━━━ */}
+        {/* AIクロール許可状況 */}
         {crawlers.length > 0 && (
           <div className="mb-3">
             <button onClick={() => setCrawlOpen(!crawlOpen)}
@@ -987,7 +987,7 @@ function ResultContent() {
           </div>
         )}
 
-        {/* ━━━━━ ⑥ 詳細スコア（折りたたみ） ━━━━━ */}
+        {/* 詳細スコア */}
         <div className="mb-3">
           <button onClick={() => setRadarOpen(!radarOpen)}
             className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border border-white/8 bg-white/3 hover:bg-white/5 transition-all">
@@ -1020,7 +1020,7 @@ function ResultContent() {
           )}
         </div>
 
-        {/* ━━━━━ ⑦ 技術詳細（折りたたみ、上級者向け） ━━━━━ */}
+        {/* 技術詳細 */}
         <div className="mb-8">
           <button onClick={() => setTechOpen(!techOpen)}
             className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border border-white/8 bg-white/3 hover:bg-white/5 transition-all">
@@ -1033,7 +1033,6 @@ function ResultContent() {
           </button>
           {techOpen && (
             <div className="mt-1.5 space-y-3">
-              {/* メタタグ詳細 */}
               {analyzedData?.details?.metaTags?.exists && (() => {
                 const d = analyzedData.details.metaTags;
                 return (
@@ -1073,7 +1072,6 @@ function ResultContent() {
                 );
               })()}
 
-              {/* セマンティックHTML詳細 */}
               {analyzedData?.details?.semanticHTML?.exists && (() => {
                 const d = analyzedData.details.semanticHTML;
                 const tags = [['header', d.semanticTags?.hasHeader], ['nav', d.semanticTags?.hasNav], ['main', d.semanticTags?.hasMain], ['article', d.semanticTags?.hasArticle], ['section', d.semanticTags?.hasSection], ['aside', d.semanticTags?.hasAside], ['footer', d.semanticTags?.hasFooter]];
@@ -1101,7 +1099,6 @@ function ResultContent() {
                 );
               })()}
 
-              {/* パフォーマンス詳細 */}
               {analyzedData?.details?.performance?.exists && (() => {
                 const d = analyzedData.details.performance;
                 return (
@@ -1129,7 +1126,7 @@ function ResultContent() {
           )}
         </div>
 
-        {/* ━━━━━ ⑧ トラッキングコード ━━━━━ */}
+        {/* トラッキングコード */}
         <div className="mb-8">
           {isTrackingInstalled ? (
             <details className="group">
@@ -1171,7 +1168,7 @@ function ResultContent() {
           )}
         </div>
 
-        {/* ━━━━━ ⑨ アクションボタン ━━━━━ */}
+        {/* アクションボタン */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Link href="/"
             className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base transition-all hover:opacity-90 hover:scale-[1.02]"
