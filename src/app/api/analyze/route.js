@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
+import dns from 'dns/promises';
+import { neon } from '@neondatabase/serverless';
 
 // タイムアウト付きfetch
 async function fetchWithTimeout(url, options = {}, timeout = 10000) {
@@ -21,6 +24,51 @@ async function fetchWithTimeout(url, options = {}, timeout = 10000) {
   }
 }
 
+// ① SSRF対策（強化版）
+const PRIVATE_IP_RANGES = [
+  /^127\./,
+  /^10\./,
+  /^192\.168\./,
+  /^172\.(1[6-9]|2\d|3[0-1])\./,
+  /^169\.254\./,   // リンクローカル
+];
+
+function isPrivateOrLocalHost(hostname) {
+  if (hostname === 'localhost') return true;
+  if (hostname === '0.0.0.0') return true;
+  if (hostname === '[::1]') return true;      // IPv6 loopback
+  if (hostname === '::1') return true;
+  if (PRIVATE_IP_RANGES.some(r => r.test(hostname))) return true;
+  return false;
+}
+
+// ① DNSリバインド対策（IPv4 + IPv6対応）
+async function resolvesToPrivate(hostname) {
+  try {
+    const records = await dns.lookup(hostname, { all: true });
+    return records.some(r => {
+      if (r.address.includes(':')) {
+        // IPv6ローカルアドレス
+        return r.address === '::1' ||
+               r.address.startsWith('fe80') ||
+               r.address.startsWith('fc00') ||
+               r.address.startsWith('fd00');
+      }
+      // IPv4
+      return PRIVATE_IP_RANGES.some(range => range.test(r.address));
+    });
+  } catch {
+    return false;
+  }
+}
+
+// siteId生成（SHA-256 hex 10桁）
+function generateSiteId(url) {
+  const normalized = url.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const hash = crypto.createHash('sha256').update(normalized).digest('hex');
+  return hash.slice(0, 10);
+}
+
 export async function POST(request) {
   try {
     const { url } = await request.json();
@@ -29,28 +77,32 @@ export async function POST(request) {
       return NextResponse.json({ error: 'URLが必要です' }, { status: 400 });
     }
 
-    // URLの正規化とバリデーション
     let normalizedUrl;
     let baseUrl;
     
     try {
-      normalizedUrl = url.startsWith('http') ? url : `https://${url}`;
+      normalizedUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`;
       const urlObj = new URL(normalizedUrl);
       baseUrl = urlObj.origin;
       
-      // ローカルホストや内部IPをブロック
-      if (urlObj.hostname === 'localhost' || 
-          urlObj.hostname.startsWith('127.') || 
-          urlObj.hostname.startsWith('192.168.') ||
-          urlObj.hostname.startsWith('10.')) {
+      // ① SSRF対策（文字列チェック）
+      if (isPrivateOrLocalHost(urlObj.hostname)) {
         return NextResponse.json(
-          { error: 'ローカルURLは診断できません' }, 
+          { error: 'ローカルネットワークは診断できません' },
+          { status: 400 }
+        );
+      }
+
+      // ① DNSリバインド対策
+      if (await resolvesToPrivate(urlObj.hostname)) {
+        return NextResponse.json(
+          { error: 'ローカルネットワークは診断できません' },
           { status: 400 }
         );
       }
     } catch (error) {
       return NextResponse.json(
-        { error: '有効なURLを入力してください' }, 
+        { error: '有効なURLを入力してください' },
         { status: 400 }
       );
     }
@@ -62,7 +114,6 @@ export async function POST(request) {
       timestamp: new Date().toISOString()
     };
 
-    // HTMLを一度だけ取得（複数の解析で使い回す）
     let htmlContent = null;
     let siteAccessible = false;
     
@@ -70,133 +121,121 @@ export async function POST(request) {
       const response = await fetchWithTimeout(normalizedUrl, {
         headers: { 
           'User-Agent': 'AI-Observatory/1.0',
-          'Accept': 'text/html'
+          'Accept': 'text/html,application/xhtml+xml'
         }
-      }, 15000); // 15秒タイムアウト
+      }, 15000);
       
-      // ステータスコードをチェック
       if (!response.ok) {
         if (response.status === 404) {
           return NextResponse.json(
-            { error: 'ページが見つかりません。URLを確認してください。' }, 
+            { error: 'ページが見つかりません。URLを確認してください。' },
             { status: 404 }
           );
         } else if (response.status === 403) {
           return NextResponse.json(
-            { error: 'アクセスが拒否されました。サイトがクロールを許可していない可能性があります。' }, 
+            { error: 'アクセスが拒否されました。サイトがクロールを許可していない可能性があります。' },
             { status: 403 }
           );
         } else if (response.status >= 500) {
           return NextResponse.json(
-            { error: 'サーバーエラーが発生しました。しばらく待ってから再度お試しください。' }, 
+            { error: 'サーバーエラーが発生しました。しばらく待ってから再度お試しください。' },
             { status: 500 }
           );
         } else {
           return NextResponse.json(
-            { error: `サイトへの接続に失敗しました (HTTP ${response.status})` }, 
+            { error: `サイトへの接続に失敗しました (HTTP ${response.status})` },
             { status: response.status }
           );
         }
       }
       
-      // レスポンスが正常ならHTMLを取得
+      // ③ HTMLサイズ制限（3MB）
+      const contentLength = response.headers.get('content-length');
+      if (contentLength && Number(contentLength) > 3_000_000) {
+        return NextResponse.json(
+          { error: 'ページサイズが大きすぎます' },
+          { status: 413 }
+        );
+      }
+
       htmlContent = await response.text();
+
+      // ② chunked transfer対応：text()後もサイズチェック
+      if (htmlContent.length > 3_000_000) {
+        return NextResponse.json(
+          { error: 'ページサイズが大きすぎます' },
+          { status: 413 }
+        );
+      }
+
       siteAccessible = true;
       
     } catch (error) {
       console.error('HTML取得エラー:', error);
       
-      // エラーメッセージを詳細化
       if (error.message.includes('タイムアウト')) {
         return NextResponse.json(
-          { error: 'サイトへの接続がタイムアウトしました。サイトが応答しない可能性があります。' }, 
+          { error: 'サイトへの接続がタイムアウトしました。サイトが応答しない可能性があります。' },
           { status: 504 }
         );
       }
       
-      // DNS解決エラーやネットワークエラー
       if (error.cause?.code === 'ENOTFOUND' || error.message.includes('fetch failed')) {
         return NextResponse.json(
-          { error: 'サイトが見つかりませんでした。URLを確認してください。' }, 
+          { error: 'サイトが見つかりませんでした。URLを確認してください。' },
           { status: 404 }
         );
       }
       
-      // その他のネットワークエラー
       return NextResponse.json(
-        { error: 'サイトへの接続に失敗しました。URLを確認してください。' }, 
+        { error: 'サイトへの接続に失敗しました。URLを確認してください。' },
         { status: 500 }
       );
     }
     
-    // サイトにアクセスできない場合は診断を中止
     if (!siteAccessible) {
       return NextResponse.json(
-        { error: 'サイトにアクセスできませんでした' }, 
+        { error: 'サイトにアクセスできませんでした' },
         { status: 500 }
       );
     }
 
-    // 1. robots.txt チェック
+    // 各チェック実行
     await checkRobotsTxt(baseUrl, results);
-
-    // 2. sitemap.xml チェック
     await checkSitemap(baseUrl, results);
-
-    // 3. llms.txt チェック
     await checkLlmsTxt(baseUrl, results);
-
-    // 4. 構造化データ解析
     await checkStructuredData(htmlContent, results);
-
-    // 5. メタタグ解析
     await checkMetaTags(htmlContent, results);
-
-    // 6. セマンティックHTML解析 (NEW!)
     await checkSemanticHTML(htmlContent, results);
-
-    // 7. モバイル対応チェック (NEW!)
     await checkMobileOptimization(htmlContent, results);
-
-    // 8. パフォーマンス解析 (NEW!)
     await checkPerformance(htmlContent, normalizedUrl, results);
 
-    // 総合スコア計算
-const scores = Object.values(results.scores);
-results.totalScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    // ⑦ totalScore（NaNガード付き）
+    const scores = Object.values(results.scores);
+    results.totalScore = scores.length > 0
+      ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+      : 0;
 
-// ── siteId生成（generateSiteIdと同じロジック） ──────────────────
-function generateSiteId(url) {
-  const normalizedUrl = url.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
-  let hash = 0;
-  for (let i = 0; i < normalizedUrl.length; i++) {
-    const char = normalizedUrl.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  const base36 = Math.abs(hash).toString(36);
-  return base36.substring(0, 10).padStart(10, '0');
-}
+    // DB保存
+    // TODO: diagnoses テーブルに site_id の UNIQUE制約があれば
+    //       ON CONFLICT(site_id) DO NOTHING に変更して重複INSERT防止
+    try {
+      const siteId = generateSiteId(baseUrl);
+      const db = neon(process.env.DATABASE_URL);
+      await db`
+        INSERT INTO diagnoses (site_id, total_score, scores, diagnosed_at)
+        VALUES (
+          ${siteId},
+          ${results.totalScore},
+          ${JSON.stringify(results.scores)},
+          NOW()
+        )
+      `;
+    } catch (dbError) {
+      console.error('[analyze] 診断履歴保存エラー:', dbError);
+    }
 
-// ── 診断履歴をDBに保存 ──────────────────────────────────────────
-try {
-  const siteId = generateSiteId(baseUrl);
-  const { neon } = await import('@neondatabase/serverless');
-  const db = neon(process.env.DATABASE_URL);
-  await db`
-    INSERT INTO diagnoses (site_id, total_score, scores, diagnosed_at)
-    VALUES (
-      ${siteId},
-      ${results.totalScore},
-      ${JSON.stringify(results.scores)},
-      NOW()
-    )
-  `;
-} catch (dbError) {
-  console.error('[analyze] 診断履歴保存エラー:', dbError);
-}
-
-return NextResponse.json(results);
+    return NextResponse.json(results);
 
   } catch (error) {
     console.error('分析エラー:', error);
@@ -207,12 +246,14 @@ return NextResponse.json(results);
   }
 }
 
-// robots.txt チェック（修正版）
+// ② robots.txt チェック（fetchWithTimeout使用）
 async function checkRobotsTxt(baseUrl, results) {
   try {
-    const response = await fetch(`${baseUrl}/robots.txt`, {
-      headers: { 'User-Agent': 'AI-Observatory/1.0' }
-    });
+    const response = await fetchWithTimeout(
+      `${baseUrl}/robots.txt`,
+      { headers: { 'User-Agent': 'AI-Observatory/1.0' } },
+      8000  // ② 8秒タイムアウト
+    );
 
     if (response.ok) {
       const content = await response.text();
@@ -222,7 +263,6 @@ async function checkRobotsTxt(baseUrl, results) {
       const hasDisallow = lines.some(line => line.toLowerCase().includes('disallow'));
       const hasSitemap = lines.some(line => line.toLowerCase().includes('sitemap'));
       
-      // AIクローラーの個別チェック
       const crawlers = {
         chatgpt: { name: 'ChatGPT', agents: ['gptbot', 'chatgpt-user'], allowed: true },
         claude: { name: 'Claude', agents: ['claude-web', 'claudebot'], allowed: true },
@@ -231,16 +271,14 @@ async function checkRobotsTxt(baseUrl, results) {
         cohere: { name: 'Cohere', agents: ['cohere-ai'], allowed: true }
       };
 
-      // User-agentごとにルールをパース
       let currentUserAgent = null;
       let currentRules = [];
-      const agentRules = {}; // User-agent -> { allows: [], disallows: [] }
+      const agentRules = {};
 
       for (const line of lines) {
         const lowerLine = line.toLowerCase();
         
         if (lowerLine.startsWith('user-agent:')) {
-          // 前のUser-agentのルールを保存
           if (currentUserAgent) {
             if (!agentRules[currentUserAgent]) {
               agentRules[currentUserAgent] = { allows: [], disallows: [] };
@@ -248,22 +286,19 @@ async function checkRobotsTxt(baseUrl, results) {
             agentRules[currentUserAgent].allows.push(...currentRules.filter(r => r.type === 'allow').map(r => r.path));
             agentRules[currentUserAgent].disallows.push(...currentRules.filter(r => r.type === 'disallow').map(r => r.path));
           }
-          
-          // 新しいUser-agentを設定
           currentUserAgent = line.split(':')[1].trim().toLowerCase();
           currentRules = [];
         } 
         else if (lowerLine.startsWith('allow:')) {
-          const path = line.split(':')[1].trim();
+          const path = (line.split(':')[1] || '').trim();
           currentRules.push({ type: 'allow', path });
         }
         else if (lowerLine.startsWith('disallow:')) {
-          const path = line.split(':')[1].trim();
+          const path = (line.split(':')[1] || '').trim();
           currentRules.push({ type: 'disallow', path });
         }
       }
       
-      // 最後のUser-agentのルールを保存
       if (currentUserAgent) {
         if (!agentRules[currentUserAgent]) {
           agentRules[currentUserAgent] = { allows: [], disallows: [] };
@@ -272,36 +307,25 @@ async function checkRobotsTxt(baseUrl, results) {
         agentRules[currentUserAgent].disallows.push(...currentRules.filter(r => r.type === 'disallow').map(r => r.path));
       }
 
-      // 各クローラーの許可状態を判定
       for (const [key, crawler] of Object.entries(crawlers)) {
-        let isAllowed = true; // デフォルトは許可
+        let isAllowed = true;
         
-        // まず * (全体) のルールをチェック
         if (agentRules['*']) {
           const wildcardRules = agentRules['*'];
-          
-          // Disallow: / があればブロック
           if (wildcardRules.disallows.includes('/') || wildcardRules.disallows.includes('')) {
             isAllowed = false;
           }
-          
-          // Allow: / があれば許可（Disallowより優先）
           if (wildcardRules.allows.includes('/') || wildcardRules.allows.includes('')) {
             isAllowed = true;
           }
         }
         
-        // 次に特定のクローラーのルールをチェック（こちらが優先）
         for (const agent of crawler.agents) {
           if (agentRules[agent]) {
             const specificRules = agentRules[agent];
-            
-            // Disallow: / があればブロック
             if (specificRules.disallows.includes('/') || specificRules.disallows.includes('')) {
               isAllowed = false;
             }
-            
-            // Allow: / があれば許可（最優先）
             if (specificRules.allows.includes('/') || specificRules.allows.includes('')) {
               isAllowed = true;
             }
@@ -311,14 +335,12 @@ async function checkRobotsTxt(baseUrl, results) {
         crawler.allowed = isAllowed;
       }
 
-      // スコア計算
-      let score = 30; // 基本点
+      let score = 30;
       if (hasUserAgent) score += 10;
       if (hasSitemap) score += 10;
       
-      // AIクローラーの許可数に応じて加点
       const allowedCount = Object.values(crawlers).filter(c => c.allowed).length;
-      score += allowedCount * 10; // 1クローラーあたり10点
+      score += allowedCount * 10;
 
       results.scores.robotsTxt = Math.min(score, 100);
       results.details.robotsTxt = {
@@ -347,12 +369,14 @@ async function checkRobotsTxt(baseUrl, results) {
   }
 }
 
-// sitemap.xml チェック
+// ② sitemap.xml チェック（fetchWithTimeout使用）
 async function checkSitemap(baseUrl, results) {
   try {
-    const response = await fetch(`${baseUrl}/sitemap.xml`, {
-      headers: { 'User-Agent': 'AI-Observatory/1.0' }
-    });
+    const response = await fetchWithTimeout(
+      `${baseUrl}/sitemap.xml`,
+      { headers: { 'User-Agent': 'AI-Observatory/1.0' } },
+      8000  // ② 8秒タイムアウト
+    );
 
     if (response.ok) {
       const content = await response.text();
@@ -387,12 +411,14 @@ async function checkSitemap(baseUrl, results) {
   }
 }
 
-// llms.txt チェック
+// ② llms.txt チェック（fetchWithTimeout使用）
 async function checkLlmsTxt(baseUrl, results) {
   try {
-    const response = await fetch(`${baseUrl}/llms.txt`, {
-      headers: { 'User-Agent': 'AI-Observatory/1.0' }
-    });
+    const response = await fetchWithTimeout(
+      `${baseUrl}/llms.txt`,
+      { headers: { 'User-Agent': 'AI-Observatory/1.0' } },
+      8000  // ② 8秒タイムアウト
+    );
 
     if (response.ok) {
       const content = await response.text();
@@ -442,7 +468,7 @@ async function checkLlmsTxt(baseUrl, results) {
   }
 }
 
-// 構造化データ解析
+// 構造化データ解析（変更なし）
 async function checkStructuredData(html, results) {
   try {
     if (!html) {
@@ -517,7 +543,7 @@ async function checkStructuredData(html, results) {
   }
 }
 
-// メタタグ解析
+// メタタグ解析（変更なし）
 async function checkMetaTags(html, results) {
   try {
     if (!html) {
@@ -616,7 +642,7 @@ async function checkMetaTags(html, results) {
   }
 }
 
-// セマンティックHTML解析 (NEW!)
+// セマンティックHTML解析（変更なし）
 async function checkSemanticHTML(html, results) {
   try {
     if (!html) {
@@ -625,7 +651,6 @@ async function checkSemanticHTML(html, results) {
       return;
     }
 
-    // セマンティックタグの検出
     const hasHeader = /<header[^>]*>/i.test(html);
     const hasNav = /<nav[^>]*>/i.test(html);
     const hasMain = /<main[^>]*>/i.test(html);
@@ -634,7 +659,6 @@ async function checkSemanticHTML(html, results) {
     const hasAside = /<aside[^>]*>/i.test(html);
     const hasFooter = /<footer[^>]*>/i.test(html);
 
-    // 見出し階層の検証
     const h1Matches = html.match(/<h1[^>]*>/gi) || [];
     const h2Matches = html.match(/<h2[^>]*>/gi) || [];
     const h3Matches = html.match(/<h3[^>]*>/gi) || [];
@@ -645,31 +669,26 @@ async function checkSemanticHTML(html, results) {
     const h3Count = h3Matches.length;
     const h4Count = h4Matches.length;
     
-    const hasProperH1 = h1Count === 1; // h1は1つが理想
+    const hasProperH1 = h1Count === 1;
     const hasHeadingHierarchy = h1Count > 0 && h2Count > 0;
 
-    // ARIAラベルの使用
     const hasAriaLabels = /aria-label/i.test(html);
     const hasAriaRoles = /role=/i.test(html);
 
-    // スコア計算
     let score = 0;
     
-    // セマンティックタグ（50点）
     if (hasHeader) score += 8;
     if (hasNav) score += 7;
-    if (hasMain) score += 10; // mainは重要
+    if (hasMain) score += 10;
     if (hasArticle) score += 7;
     if (hasSection) score += 6;
     if (hasAside) score += 6;
     if (hasFooter) score += 6;
 
-    // 見出し階層（40点）
     if (hasProperH1) score += 20;
     if (hasHeadingHierarchy) score += 15;
     if (h3Count > 0) score += 5;
 
-    // アクセシビリティ（10点）
     if (hasAriaLabels) score += 5;
     if (hasAriaRoles) score += 5;
 
@@ -722,7 +741,7 @@ async function checkSemanticHTML(html, results) {
   }
 }
 
-// モバイル対応チェック (NEW!)
+// モバイル対応チェック（変更なし）
 async function checkMobileOptimization(html, results) {
   try {
     if (!html) {
@@ -731,52 +750,41 @@ async function checkMobileOptimization(html, results) {
       return;
     }
 
-    // viewportメタタグの検出
     const viewportMatch = html.match(/<meta\s+name=["']viewport["']\s+content=["'](.*?)["']/i);
     const hasViewport = !!viewportMatch;
     const viewportContent = viewportMatch ? viewportMatch[1] : null;
     
-    // 理想的なviewport設定
     const hasWidthDevice = viewportContent ? viewportContent.includes('width=device-width') : false;
     const hasInitialScale = viewportContent ? viewportContent.includes('initial-scale=1') : false;
     
-    // レスポンシブデザインの検出
     const hasMediaQueries = /@media/.test(html);
     const mediaQueryCount = (html.match(/@media/g) || []).length;
     
-    // フレキシブルレイアウトの検出
     const hasFlexbox = /display:\s*flex/i.test(html);
     const hasGrid = /display:\s*grid/i.test(html);
     
-    // モバイルフレンドリーなフォントサイズ
     const hasFontSizeVW = /font-size:\s*\d+vw/i.test(html);
     const hasRemUnit = /font-size:\s*\d+(\.\d+)?rem/i.test(html);
     
-    // タッチ対応の検出
     const hasTouchEvents = /ontouchstart|ontouchend|ontouchmove/i.test(html);
     
-    // スコア計算
     let score = 0;
     
-    // viewport設定（40点）
     if (hasViewport) {
       score += 20;
       if (hasWidthDevice) score += 10;
       if (hasInitialScale) score += 10;
     }
     
-    // レスポンシブデザイン（40点）
     if (hasMediaQueries) {
       score += 20;
-      if (mediaQueryCount >= 3) score += 10; // 複数のブレークポイント
-      if (mediaQueryCount >= 5) score += 10; // さらに充実
+      if (mediaQueryCount >= 3) score += 10;
+      if (mediaQueryCount >= 5) score += 10;
     }
     
-    // フレキシブルレイアウト（15点）
     if (hasFlexbox) score += 8;
     if (hasGrid) score += 7;
     
-    // その他（5点）
     if (hasFontSizeVW || hasRemUnit) score += 3;
     if (hasTouchEvents) score += 2;
 
@@ -815,7 +823,7 @@ async function checkMobileOptimization(html, results) {
   }
 }
 
-// パフォーマンス解析 (NEW!)
+// パフォーマンス解析（変更なし）
 async function checkPerformance(html, url, results) {
   try {
     if (!html) {
@@ -824,11 +832,9 @@ async function checkPerformance(html, url, results) {
       return;
     }
 
-    // 画像の検出と最適化チェック
     const imgMatches = html.match(/<img[^>]*>/gi) || [];
     const imgCount = imgMatches.length;
     
-    // 画像の最適化属性
     let lazyLoadCount = 0;
     let altTextCount = 0;
     let widthHeightCount = 0;
@@ -841,29 +847,23 @@ async function checkPerformance(html, url, results) {
       if (/\.webp/i.test(img)) webpCount++;
     });
     
-    // リソース最適化
     const hasDeferScripts = /<script[^>]*defer/i.test(html);
     const hasAsyncScripts = /<script[^>]*async/i.test(html);
     const scriptCount = (html.match(/<script/gi) || []).length;
     const externalScriptCount = (html.match(/<script[^>]*src=/gi) || []).length;
     
-    // CSS最適化
     const hasInlineCSS = /<style/i.test(html);
     const externalCSSCount = (html.match(/<link[^>]*rel=["']stylesheet["']/gi) || []).length;
     
-    // プリロード/プリコネクトの使用
     const hasPreload = /<link[^>]*rel=["']preload["']/i.test(html);
     const hasPreconnect = /<link[^>]*rel=["']preconnect["']/i.test(html);
     const hasDNSPrefetch = /<link[^>]*rel=["']dns-prefetch["']/i.test(html);
     
-    // 圧縮の検出（推測）
     const htmlSize = html.length;
-    const isLikelyMinified = !/\n\s{4,}/.test(html.substring(0, 1000)); // インデントが少ない
+    const isLikelyMinified = !/\n\s{4,}/.test(html.substring(0, 1000));
     
-    // スコア計算
-    let score = 30; // 基本点
+    let score = 30;
     
-    // 画像最適化（40点）
     if (imgCount > 0) {
       const lazyLoadRatio = lazyLoadCount / imgCount;
       const altTextRatio = altTextCount / imgCount;
@@ -874,15 +874,13 @@ async function checkPerformance(html, url, results) {
       score += Math.floor(dimensionsRatio * 10);
       if (webpCount > 0) score += 5;
     } else {
-      score += 20; // 画像がない場合は一部加点
+      score += 20;
     }
     
-    // スクリプト最適化（20点）
     if (hasDeferScripts || hasAsyncScripts) score += 10;
     if (externalScriptCount <= 5) score += 5;
     if (scriptCount <= 10) score += 5;
     
-    // リソース最適化（10点）
     if (hasPreload) score += 4;
     if (hasPreconnect) score += 3;
     if (hasDNSPrefetch) score += 3;
