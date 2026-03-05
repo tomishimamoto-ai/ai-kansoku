@@ -1,6 +1,9 @@
 import { neon } from '@neondatabase/serverless';
 import { initDB } from '../../../lib/db-init.js';
 
+// DBコネクションをファイル上部に移動
+const sql = neon(process.env.DATABASE_URL);
+
 export async function GET(request) {
   await initDB();
   
@@ -15,7 +18,13 @@ export async function GET(request) {
       );
     }
 
-    const sql = neon(process.env.DATABASE_URL);
+    // siteIdバリデーション
+    if (!/^[a-z0-9]{8,12}$/.test(siteId)) {
+      return Response.json(
+        { error: 'Invalid siteId' },
+        { status: 400 }
+      );
+    }
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -120,7 +129,7 @@ export async function GET(request) {
       : (thisWeekTotal > 0 ? 100 : 0);
 
     // ========================================
-    // AI未確認シグナル（Unknown AI のみ）
+    // AI未確認シグナル（① バグ修正: crawler_type = 'unknown' のみ）
     // ========================================
     const unknownSignalResult = await sql`
       SELECT COUNT(*) as total
@@ -128,7 +137,6 @@ export async function GET(request) {
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
         AND is_human = false
-        AND crawler_type = 'ai'
         AND crawler_type = 'unknown'
     `;
     const unknownSignalCount = parseInt(unknownSignalResult[0]?.total || '0');
@@ -148,7 +156,7 @@ export async function GET(request) {
     const spoofedHighConfCount = parseInt(spoofedHighConfResult[0]?.total || '0');
 
     // ========================================
-    // よく読まれるページ TOP5（AI訪問のみ）
+    // よく読まれるページ TOP10（AI訪問のみ）
     // ========================================
     const topPages = await sql`
       SELECT 
@@ -218,7 +226,17 @@ export async function GET(request) {
     `;
 
     const spoofedTotal = spoofedStats.reduce((sum, r) => sum + parseInt(r.visit_count), 0);
-    const spoofedUniqueIps = spoofedStats.reduce((sum, r) => sum + parseInt(r.unique_ips), 0);
+
+    // ② unique_ipsの重複カウント問題 → SQLでDISTINCT集計
+    const spoofedUniqueIpsResult = await sql`
+      SELECT COUNT(DISTINCT ip_address) as unique_ips
+      FROM ai_crawler_visits
+      WHERE site_id = ${siteId}
+        AND visited_at >= ${sevenDaysAgo.toISOString()}
+        AND is_human = false
+        AND crawler_type IN ('spoofed-bot', 'search-engine', 'other-bot')
+    `;
+    const spoofedUniqueIps = parseInt(spoofedUniqueIpsResult[0]?.unique_ips || '0');
 
     const lastWeekSpoofed = await sql`
       SELECT COUNT(*) as total
@@ -253,7 +271,7 @@ export async function GET(request) {
     `;
 
     // ========================================
-    // 7日間の日別推移データ（AI確定 + 未確認AIシグナル + 人間）
+    // 7日間の日別推移データ
     // ========================================
     const dailyAI = await sql`
       SELECT 
@@ -280,7 +298,6 @@ export async function GET(request) {
       ORDER BY date ASC
     `;
 
-    // ★追加★ 未確認AIシグナルの日別
     const dailyUnknown = await sql`
       SELECT 
         TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD') as date,
@@ -294,7 +311,6 @@ export async function GET(request) {
       ORDER BY date ASC
     `;
 
-    // ★追加★ AI偽装シグナルの日別（spoofed-bot、confidence >= 85）
     const dailySpoofed = await sql`
       SELECT 
         TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM-DD') as date,
@@ -309,24 +325,26 @@ export async function GET(request) {
       ORDER BY date ASC
     `;
 
-    // 日別データをマージ（7日分を確実に埋める）
+    // ③ O(n²)のfind → Mapで高速化
+    const aiMap = new Map(dailyAI.map(d => [d.date, d]));
+    const humanMap = new Map(dailyHuman.map(d => [d.date, d]));
+    const unknownMap = new Map(dailyUnknown.map(d => [d.date, d]));
+    const spoofedMap = new Map(dailySpoofed.map(d => [d.date, d]));
+
     const dailyTrendFull = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      
-      const foundAI = dailyAI.find(d => d.date === dateStr);
-      const foundHuman = dailyHuman.find(d => d.date === dateStr);
-      const foundUnknown = dailyUnknown.find(d => d.date === dateStr);
-      const foundSpoofed = dailySpoofed.find(d => d.date === dateStr);
+      // JSTで日付文字列を生成
+      const dateStr = new Date(date.getTime() + 9 * 60 * 60 * 1000)
+        .toISOString().split('T')[0];
 
       dailyTrendFull.push({
         date: dateStr,
-        ai_visits: foundAI ? parseInt(foundAI.ai_visits) : 0,
-        human_visits: foundHuman ? parseInt(foundHuman.human_visits) : 0,
-        unknown_visits: foundUnknown ? parseInt(foundUnknown.unknown_visits) : 0,
-        spoofed_visits: foundSpoofed ? parseInt(foundSpoofed.spoofed_visits) : 0,
+        ai_visits: aiMap.has(dateStr) ? parseInt(aiMap.get(dateStr).ai_visits) : 0,
+        human_visits: humanMap.has(dateStr) ? parseInt(humanMap.get(dateStr).human_visits) : 0,
+        unknown_visits: unknownMap.has(dateStr) ? parseInt(unknownMap.get(dateStr).unknown_visits) : 0,
+        spoofed_visits: spoofedMap.has(dateStr) ? parseInt(spoofedMap.get(dateStr).spoofed_visits) : 0,
       });
     }
 
@@ -345,7 +363,7 @@ export async function GET(request) {
     `;
 
     // ========================================
-    // 最新10件の訪問履歴（20件→10件に削減）
+    // 最新10件の訪問履歴
     // ========================================
     const recentVisits = await sql`
       SELECT 
@@ -456,8 +474,6 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-
-    const sql = neon(process.env.DATABASE_URL);
 
     const now = new Date();
     const sevenDaysAgo = new Date();

@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Line } from 'react-chartjs-2';
@@ -12,7 +12,6 @@ import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
   PointElement,
   LineElement,
   Title,
@@ -21,6 +20,7 @@ import {
   Filler
 } from 'chart.js';
 
+// ⑤ BarElement削除（Line only）
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -32,26 +32,42 @@ ChartJS.register(
   Filler
 );
 
+// ⑤ 星空データをコンポーネント外に移動（レンダー毎に再生成しない）
+const STARS = [
+  { top: '10%', left: '20%', delay: '0s' },
+  { top: '30%', left: '60%', delay: '1s' },
+  { top: '50%', left: '80%', delay: '2s' },
+  { top: '70%', left: '40%', delay: '1.5s' },
+  { top: '20%', left: '90%', delay: '0.5s' },
+  { top: '85%', left: '15%', delay: '0.8s' },
+  { top: '60%', left: '5%', delay: '2.3s' },
+];
+
+const SKELETON_STARS = [
+  { top: '10%', left: '20%', delay: '0s', size: 'w-1 h-1' },
+  { top: '30%', left: '60%', delay: '0.5s', size: 'w-1 h-1' },
+  { top: '50%', left: '80%', delay: '1s', size: 'w-0.5 h-0.5' },
+  { top: '70%', left: '40%', delay: '1.5s', size: 'w-1 h-1' },
+  { top: '20%', left: '90%', delay: '2s', size: 'w-0.5 h-0.5' },
+];
+
 // ========================================
 // 課金セクション（予測ロック型）
 // ========================================
 function ProUpsellSection({ aiTotal }) {
-  // ダミーの予測値（将来はAIスコアから計算）
   const predictions = [
     { action: 'llms.txt を週1更新する', effect: '+23%', detail: 'GPTBotの訪問頻度が増加する見込み', icon: '📄' },
     { action: '構造化データを追加する', effect: '+15%', detail: 'Claude・Perplexityに認識されやすくなる', icon: '🧩' },
     { action: 'robots.txt を最適化する', effect: '+8%', detail: '未確認シグナルの正体判明率が上がる', icon: '🤖' },
   ];
 
-  const totalUplift = 46; // ダミー
+  const totalUplift = 46;
 
   return (
     <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#c084fc]/30 rounded-2xl p-6 shadow-xl mb-8 relative overflow-hidden">
-      {/* 背景グロー */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#c084fc]/5 to-[#4a9eff]/5 pointer-events-none" />
       <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-[#c084fc]/10 blur-3xl pointer-events-none" />
 
-      {/* ヘッダー */}
       <div className="relative z-10 flex items-start justify-between mb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -65,10 +81,8 @@ function ProUpsellSection({ aiTotal }) {
         </span>
       </div>
 
-      {/* ぼかしダミー予測データ */}
       <div className="relative mb-5">
         <div className="space-y-3 blur-sm select-none pointer-events-none" aria-hidden="true">
-          {/* 総合予測 */}
           <div className="bg-gradient-to-r from-[#c084fc]/10 to-[#4a9eff]/10 border border-[#c084fc]/20 rounded-xl p-4">
             <p className="text-xs text-gray-400 mb-1">改善を全て実施した場合の予測増加率</p>
             <p className="text-4xl font-bold text-[#c084fc]">+{totalUplift}%</p>
@@ -76,7 +90,6 @@ function ProUpsellSection({ aiTotal }) {
               現在 {(aiTotal ?? 0).toLocaleString()}回 → 予測 {Math.round((aiTotal ?? 0) * (1 + totalUplift / 100)).toLocaleString()}回/週
             </p>
           </div>
-          {/* 施策別 */}
           {predictions.map((p) => (
             <div key={p.action} className="bg-[#1a1e47]/50 rounded-xl p-3 border border-[#2a2f57] flex items-center gap-3">
               <span className="text-xl">{p.icon}</span>
@@ -89,7 +102,6 @@ function ProUpsellSection({ aiTotal }) {
           ))}
         </div>
 
-        {/* ロックオーバーレイ */}
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0e27]/70 backdrop-blur-[2px] rounded-xl">
           <div className="text-center px-6">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#c084fc]/20 to-[#4a9eff]/20 border border-[#c084fc]/40 flex items-center justify-center mx-auto mb-3">
@@ -101,7 +113,6 @@ function ProUpsellSection({ aiTotal }) {
         </div>
       </div>
 
-      {/* CTA */}
       <div className="relative z-10 flex items-center justify-between gap-4">
         <a
           href="#"
@@ -129,15 +140,16 @@ function DashboardContent() {
   const [manualSaved, setManualSaved] = useState(false);
   const [scData, setScData] = useState(null);
 
-  const fetchData = async () => {
+  // ② AbortController でメモリリーク防止
+  const fetchData = async (siteId, signal) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/visits?siteId=${siteId}&t=${Date.now()}`);
+      const res = await fetch(`/api/visits?siteId=${siteId}&t=${Date.now()}`, { signal });
       const json = await res.json();
       if (json.success) {
         setData(json);
         try {
-          const scRes = await fetch(`/api/search-console/fetch?siteId=${siteId}`);
+          const scRes = await fetch(`/api/search-console/fetch?siteId=${siteId}`, { signal });
           const scJson = await scRes.json();
           if (scJson.connected) setScData(scJson);
         } catch {}
@@ -150,6 +162,7 @@ function DashboardContent() {
         }
       }
     } catch (error) {
+      if (error.name === 'AbortError') return;
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
@@ -158,8 +171,13 @@ function DashboardContent() {
 
   useEffect(() => {
     if (!siteId) { setLoading(false); return; }
-    fetchData();
+    const controller = new AbortController();
+    fetchData(siteId, controller.signal);
+    return () => controller.abort();
   }, [siteId]);
+
+  // 手動更新ボタン用（AbortControllerなしでOK）
+  const handleRefresh = () => fetchData(siteId);
 
   const handleSaveManualData = async () => {
     if (!siteId) return;
@@ -179,7 +197,8 @@ function DashboardContent() {
       if (res.ok) {
         setManualSaved(true);
         setTimeout(() => setManualSaved(false), 3000);
-        window.location.reload();
+        // ① window.location.reload() → fetchData() に変更
+        await fetchData(siteId);
       }
     } catch (error) {
       console.error('Error saving manual data:', error);
@@ -217,7 +236,6 @@ function DashboardContent() {
   const spoofedSignal = spoofed_stats?.high_confidence_total ?? 0;
   const humanTotal = ai_stats.human_total ?? 0;
 
-  // 診断スコア関連
   const latestDiagnosis = diagnoses_history?.[0] ?? null;
   const latestScore = latestDiagnosis?.total_score ?? null;
   const prevDiagnosis = diagnoses_history?.[1] ?? null;
@@ -240,9 +258,6 @@ function DashboardContent() {
     return 'CRITICAL';
   }
 
-  // ========================================
-  // グラフ: 3本線（AI確定 / 未確認AIシグナル / 人間）
-  // ========================================
   const lineChartData = {
     labels: daily_trend?.map(d => {
       const date = new Date(d.date);
@@ -335,17 +350,9 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white">
-      {/* 星空背景 */}
+      {/* 星空背景（⑤ STARS定数を使用） */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[
-          { top: '10%', left: '20%', delay: '0s' },
-          { top: '30%', left: '60%', delay: '1s' },
-          { top: '50%', left: '80%', delay: '2s' },
-          { top: '70%', left: '40%', delay: '1.5s' },
-          { top: '20%', left: '90%', delay: '0.5s' },
-          { top: '85%', left: '15%', delay: '0.8s' },
-          { top: '60%', left: '5%', delay: '2.3s' },
-        ].map((s, i) => (
+        {STARS.map((s, i) => (
           <div key={i} className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
             style={{ top: s.top, left: s.left, animationDelay: s.delay }} />
         ))}
@@ -367,7 +374,7 @@ function DashboardContent() {
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <button
-              onClick={fetchData}
+              onClick={handleRefresh}
               className="px-3 py-1.5 bg-[#1a1e47] hover:bg-[#252a54] border border-[#2a2f57] rounded-lg transition-all duration-200 text-xs font-medium whitespace-nowrap"
             >
               🔄 更新
@@ -383,7 +390,6 @@ function DashboardContent() {
       </header>
 
       <main className="container mx-auto px-4 py-8 relative z-10 overflow-x-hidden">
-        {/* タイトル */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl md:text-5xl font-bold mb-2">
             <span className="bg-gradient-to-r from-white via-[#4a9eff] to-[#c084fc] bg-clip-text text-transparent">
@@ -463,9 +469,8 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* ② サブカード：AI訪問・人間訪問 */}
+        {/* サブカード：AI訪問・人間訪問 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {/* ✦ AI訪問（今週） */}
           <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 shadow-xl hover:border-[#4a9eff]/40 transition-all">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -496,7 +501,6 @@ function DashboardContent() {
             </div>
           </div>
 
-          {/* ● 人間訪問 */}
           <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 shadow-xl hover:border-yellow-500/40 transition-all">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -513,7 +517,7 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* ② 7日間推移グラフ（3本線） */}
+        {/* 7日間推移グラフ（④ daily_trend.length チェック追加） */}
         {daily_trend && daily_trend.length > 0 && (
           <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl mb-8">
             <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
@@ -526,25 +530,25 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* ④ よく見られたページ */}
+        {/* よく見られたページ */}
         <div className="mb-8">
           <PageRanking topPages={top_pages} scData={scData} />
         </div>
 
-        {/* ⑤ Search Console分析パネル */}
+        {/* Search Console分析パネル */}
         <div className="mb-8">
           <SearchConsolePanel siteId={siteId} />
         </div>
 
-        {/* ⑦ 課金セクション（予測ロック） */}
+        {/* 課金セクション（予測ロック） */}
         <ProUpsellSection aiTotal={ai_stats.total} />
 
-        {/* ⑧ ミミック検知（アコーディオン） */}
+        {/* ミミック検知（アコーディオン） */}
         <AccordionSection title="🛸 周期的アクセス検出（ミミッククローラー）" defaultOpen={false}>
           <MimicPanel siteId={siteId} spoofedStats={data?.spoofed_stats} />
         </AccordionSection>
 
-        {/* ⑧ 最新観測ログ（10件） */}
+        {/* 最新観測ログ（10件） */}
         <AccordionSection title="📋 最新観測ログ（10件）" defaultOpen={false} className="mt-8">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -556,7 +560,7 @@ function DashboardContent() {
                 </tr>
               </thead>
               <tbody>
-                {recent_visits.map((visit, idx) => (
+                {(recent_visits ?? []).map((visit, idx) => (
                   <tr key={idx} className="border-b border-[#1a1e47] hover:bg-[#1a1e47]/50 transition-colors">
                     <td className="py-3 px-4 text-gray-300 whitespace-nowrap text-xs">
                       {new Date(visit.visited_at).toLocaleString('ja-JP')}
@@ -615,14 +619,9 @@ function AccordionSection({ title, children, defaultOpen = false, className = ''
 function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white flex items-center justify-center">
+      {/* ⑤ SKELETON_STARS定数を使用 */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[
-          { top: '10%', left: '20%', delay: '0s', size: 'w-1 h-1' },
-          { top: '30%', left: '60%', delay: '0.5s', size: 'w-1 h-1' },
-          { top: '50%', left: '80%', delay: '1s', size: 'w-0.5 h-0.5' },
-          { top: '70%', left: '40%', delay: '1.5s', size: 'w-1 h-1' },
-          { top: '20%', left: '90%', delay: '2s', size: 'w-0.5 h-0.5' },
-        ].map((s, i) => (
+        {SKELETON_STARS.map((s, i) => (
           <div key={i} className={`absolute ${s.size} bg-white rounded-full animate-twinkle`}
             style={{ top: s.top, left: s.left, animationDelay: s.delay }} />
         ))}
