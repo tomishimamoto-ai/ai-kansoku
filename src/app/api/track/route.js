@@ -1,9 +1,13 @@
 /**
- * /api/track/route.js  (v5.3対応)
+ * /api/track/route.js  (v5.4対応)
  *
- * v5.2からの変更点:
- * - ua を ip の直後に移動（DB参照より前に定義）
- * - robots.txt判定SQLに crawler_type != 'human' を追加
+ * v5.3からの変更点:
+ * - IP取得にx-real-ipを追加
+ * - pathサニタイズ（try-catch + 最大200文字）
+ * - UAに長さ制限（500文字）
+ * - siteId検証追加
+ * - robots判定SQLに /llms.txt /sitemap.xml を追加
+ * - Cache-Control強化
  */
 
 import { detectCrawler } from '../../../lib/crawler-detection';
@@ -22,37 +26,48 @@ async function handleTrack(req) {
   try {
     const url    = new URL(req.url);
     const siteId = url.searchParams.get('siteId');
-    const path   = url.searchParams.get('path') || '/';
 
-    if (!siteId) {
-      return new Response('missing siteId', { status: 400 });
+    // ✅ siteId検証
+    if (!siteId || siteId.length > 100) {
+      return new Response('invalid siteId', { status: 400 });
     }
 
+    // ✅ pathサニタイズ（壊れたURLでクラッシュしない）
+    let rawPath = url.searchParams.get('path') || '/';
+    let path;
+    try {
+      path = decodeURIComponent(rawPath).slice(0, 200);
+    } catch {
+      path = '/';
+    }
+
+    // ✅ IP取得順序修正
     const ip = (
-      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || ''
+      req.headers.get('x-real-ip') ||
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      ''
     );
 
-    // ✅ ua を DB参照より前に定義
-    const ua = req.headers.get('user-agent') || '';
+    // ✅ UA長さ制限
+    const ua = (req.headers.get('user-agent') || '').slice(0, 500);
 
     // ── DB参照型セミセッション ──────────────────────────────
-    // 同IP+UAで直近5分以内にrobots.txtアクセスがあるか確認
-    // Serverlessではメモリが共有されないためDBで代替
+    // ✅ robots判定をAI準備アクセス3種に拡張
     let hadRobotsDb = false;
-    if (ip && path !== '/robots.txt') {
+    const AI_PREP_PATHS = ['/robots.txt', '/llms.txt', '/sitemap.xml'];
+    if (ip && !AI_PREP_PATHS.includes(path)) {
       try {
         const robotsCheck = await db`
           SELECT 1 FROM ai_crawler_visits
           WHERE ip_address = ${ip}
             AND user_agent = ${ua}
             AND crawler_type != 'human'
-            AND page_url = '/robots.txt'
+            AND page_url IN ('/robots.txt', '/llms.txt', '/sitemap.xml')
             AND visited_at > NOW() - INTERVAL '5 minutes'
           LIMIT 1
         `;
         hadRobotsDb = robotsCheck.length > 0;
       } catch {
-        // DBエラー時はスキップ（検知精度より安定性優先）
         hadRobotsDb = false;
       }
     }
@@ -113,7 +128,7 @@ async function handleTrack(req) {
       status: 200,
       headers: {
         'Content-Type': 'image/gif',
-        'Cache-Control': 'no-store, no-cache',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       },
     });
 
