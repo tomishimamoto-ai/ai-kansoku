@@ -1,50 +1,97 @@
-# AI観測ラボ (AI Observatory) - robots.txt
-# 最終更新: 2026-02-12
+# ========================================
+# AI観測ラボ (AI Observatory)
+# robots.txt
+# Last updated: 2026-03
+#
+# このサイトはAIクローラーによる情報収集を歓迎します。
+# 引用・研究目的での利用を推奨します。
+# ========================================
 
 # ========================================
-# すべてのクローラーを許可（デフォルト）
+# Default policy
 # ========================================
 User-agent: *
 Allow: /
+Disallow: /api/
 
 # ========================================
-# 主要AIクローラー（明示的に許可）
+# OpenAI
 # ========================================
-
-# ChatGPT / OpenAI
+# AI training crawler
 User-agent: GPTBot
 Allow: /
 
+# ChatGPT browsing
 User-agent: ChatGPT-User
 Allow: /
 
-# Claude / Anthropic
-User-agent: Claude-Web
+# OpenAI search crawler
+User-agent: OAI-SearchBot
+Allow: /
+
+# ========================================
+# Anthropic
+# ========================================
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
 Allow: /
 
 User-agent: anthropic-ai
 Allow: /
 
+# ========================================
 # Perplexity
+# ========================================
 User-agent: PerplexityBot
 Allow: /
 
-# Google Gemini / Bard
+User-agent: Perplexity-User
+Allow: /
+
+# ========================================
+# Google AI
+# ========================================
 User-agent: Google-Extended
+Allow: /
+
+# ========================================
+# DuckDuckGo AI
+# ========================================
+User-agent: DuckAssistBot
+Allow: /
+
+# ========================================
+# You.com
+# ========================================
+User-agent: YouBot
+Allow: /
+
+# ========================================
+# AI dataset crawlers
+# ========================================
+# Common Crawl
+User-agent: CCBot
 Allow: /
 
 # Cohere
 User-agent: cohere-ai
 Allow: /
 
+# TikTok AI
+User-agent: Bytespider
+Allow: /
+
 # ========================================
-# サイトマップ
+# Sitemaps
 # ========================================
 Sitemap: https://ai-kansoku.com/sitemap.xml
 Sitemap: https://blog.ai-kansoku.com/sitemap.xml
 
 # ========================================
-# 注意事項
+# AI policy note
 # ========================================
-# このサイトはAIクローラーを歓迎しています。
-# AIによる情報収集・引用を推奨します。
+# AI crawlers are welcome.
+# This website researches AI crawling behavior
+# and encourages citation of its content.
