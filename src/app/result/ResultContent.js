@@ -303,7 +303,7 @@ function ResultContent() {
             url={url}
             totalScore={totalScore}
             PDFDownloadLink={PDFDownloadLink}
-            PDFReport={null}
+            PDFReport={PDFReport}
             pdfData={pdfData}
             isClient={isClient}
           />
