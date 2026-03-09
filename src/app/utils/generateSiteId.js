@@ -5,7 +5,6 @@ export function generateSiteId(url) {
   const normalizedUrl = url
     .toLowerCase()
     .replace(/^https?:\/\//, '')
-    .replace(/^www\./, '')
     .replace(/\/$/, '');
 
   let hash = 0;
