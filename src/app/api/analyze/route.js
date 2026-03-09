@@ -62,11 +62,21 @@ async function resolvesToPrivate(hostname) {
   }
 }
 
-// siteId生成（SHA-256 hex 10桁）
+// siteId生成（フロントエンドと統一）
 function generateSiteId(url) {
-  const normalized = url.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const hash = crypto.createHash('sha256').update(normalized).digest('hex');
-  return hash.slice(0, 10);
+  if (!url) return '0000000000';
+  const normalizedUrl = url
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '');
+  let hash = 0;
+  for (let i = 0; i < normalizedUrl.length; i++) {
+    const char = normalizedUrl.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  const base36 = Math.abs(hash).toString(36);
+  return base36.slice(0, 10).padStart(10, '0');
 }
 
 export async function POST(request) {
@@ -119,13 +129,14 @@ export async function POST(request) {
     
     try {
       const response = await fetchWithTimeout(normalizedUrl, {
-        headers: { 
-          'User-Agent': 'AI-Observatory/1.0',
-          'Accept': 'text/html,application/xhtml+xml'
-        }
-      }, 15000);
+  headers: { 
+    'User-Agent': 'AI-Observatory/1.0',
+    'Accept': 'text/html,application/xhtml+xml'
+  },
+  redirect: 'manual'
+}, 15000);
       
-      if (!response.ok) {
+      if (!response.ok && !(response.status >= 300 && response.status < 400)) {
         if (response.status === 404) {
           return NextResponse.json(
             { error: 'ページが見つかりません。URLを確認してください。' },
@@ -223,14 +234,19 @@ export async function POST(request) {
       const siteId = generateSiteId(baseUrl);
       const db = neon(process.env.DATABASE_URL);
       await db`
-        INSERT INTO diagnoses (site_id, total_score, scores, diagnosed_at)
-        VALUES (
-          ${siteId},
-          ${results.totalScore},
-          ${JSON.stringify(results.scores)},
-          NOW()
-        )
-      `;
+  INSERT INTO diagnoses (site_id, total_score, scores, diagnosed_at)
+  VALUES (
+    ${siteId},
+    ${results.totalScore},
+    ${JSON.stringify(results.scores)},
+    NOW()
+  )
+  ON CONFLICT (site_id)
+  DO UPDATE SET
+    total_score = EXCLUDED.total_score,
+    scores = EXCLUDED.scores,
+    diagnosed_at = NOW()
+`;
     } catch (dbError) {
       console.error('[analyze] 診断履歴保存エラー:', dbError);
     }
@@ -286,7 +302,7 @@ async function checkRobotsTxt(baseUrl, results) {
             agentRules[currentUserAgent].allows.push(...currentRules.filter(r => r.type === 'allow').map(r => r.path));
             agentRules[currentUserAgent].disallows.push(...currentRules.filter(r => r.type === 'disallow').map(r => r.path));
           }
-          currentUserAgent = line.split(':')[1].trim().toLowerCase();
+          currentUserAgent = (line.split(':')[1] || '').trim().toLowerCase();
           currentRules = [];
         } 
         else if (lowerLine.startsWith('allow:')) {
@@ -496,7 +512,14 @@ async function checkStructuredData(html, results) {
       try {
         const jsonContent = match.replace(/<script[^>]*>/i, '').replace(/<\/script>/i, '');
         const parsed = JSON.parse(jsonContent);
-        const types = Array.isArray(parsed) ? parsed : [parsed];
+let types;
+if (parsed["@graph"]) {
+  types = parsed["@graph"];
+} else if (Array.isArray(parsed)) {
+  types = parsed;
+} else {
+  types = [parsed];
+}
         
         types.forEach(item => {
           if (item['@type']) {
