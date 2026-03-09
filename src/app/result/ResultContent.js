@@ -1,7 +1,6 @@
 // src/app/result/ResultContent.js
 'use client';
 
-import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -65,7 +64,19 @@ function NoDataError({ url }) {
 // ─── メインコンテンツ ──────────────────────────────────────
 function ResultContent() {
   const searchParams = useSearchParams();
-  const url = searchParams.get('url') || 'https://example.com';
+  const paramUrl = searchParams.get('url');
+  const [url, setUrl] = useState(paramUrl || null);
+
+  useEffect(() => {
+    if (!paramUrl) {
+      try {
+        const h = JSON.parse(localStorage.getItem('aiObservatoryHistory') || '[]');
+        setUrl(h[0]?.url || 'https://example.com');
+      } catch {
+        setUrl('https://example.com');
+      }
+    }
+  }, [paramUrl]);
 
   const {
     isClient,
@@ -129,13 +140,15 @@ function ResultContent() {
     };
   });
 
-  const crawlers = analyzedData?.details?.robotsTxt?.crawlers ? [
-    { name: 'ChatGPT',   agent: 'GPTBot',          ok: analyzedData.details.robotsTxt.crawlers.chatgpt },
-    { name: 'Claude',    agent: 'ClaudeBot',        ok: analyzedData.details.robotsTxt.crawlers.claude },
-    { name: 'Gemini',    agent: 'Google-Extended',  ok: analyzedData.details.robotsTxt.crawlers.gemini },
-    { name: 'Perplexity',agent: 'PerplexityBot',    ok: analyzedData.details.robotsTxt.crawlers.perplexity },
-    { name: 'Cohere',    agent: 'cohere-ai',        ok: analyzedData.details.robotsTxt.crawlers.cohere },
-  ] : [];
+const robots = analyzedData?.details?.robotsTxt?.crawlers || {};
+
+  const crawlers = [
+    { name: 'ChatGPT',    agent: 'GPTBot',          ok: robots.chatgpt },
+    { name: 'Claude',     agent: 'ClaudeBot',        ok: robots.claude },
+    { name: 'Gemini',     agent: 'Google-Extended',  ok: robots.gemini },
+    { name: 'Perplexity', agent: 'PerplexityBot',    ok: robots.perplexity },
+    { name: 'Cohere',     agent: 'cohere-ai',        ok: robots.cohere },
+  ];
 
   const totalPotentialGain = [...improvements.urgent, ...improvements.medium]
     .reduce((sum, item) => sum + (item.gain ?? 0), 0);
@@ -144,7 +157,7 @@ function ResultContent() {
   const urgentRest = improvements.urgent.slice(1);
   const mediumAll = improvements.urgent[0] ? improvements.medium : improvements.medium.slice(1);
 
-  const displayUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const displayUrl = (url || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   const pdfData = {
     url,
