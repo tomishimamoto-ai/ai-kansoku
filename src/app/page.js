@@ -133,6 +133,7 @@ export default function Home() {
     try {
       const urlObj = new URL(normalizedUrl);
       if (!urlObj.hostname.includes('.')) return { valid: false, error: '有効なドメインを入力してください' };
+      normalizedUrl = normalizedUrl.replace(/^(https?:\/\/)www\./, '$1');
       return { valid: true, url: normalizedUrl };
     } catch {
       return { valid: false, error: '有効なURLを入力してください（例: example.com）' };
