@@ -222,14 +222,14 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
         fill="none"
         stroke={c.color}
         strokeWidth={1}
-        strokeOpacity={0.15}
+        strokeOpacity={0.45}
         strokeDasharray="2 4"
       />
       <text x={x} y={y - 14}
         textAnchor="middle"
         fill={c.color}
         fontSize={8}
-        opacity={0.2}>
+        opacity={0.45}>
         {c.name}
       </text>
     </g>
@@ -253,7 +253,7 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
                     <circle cx={x} cy={y} r={b.size * 2.5}
                       fill={b.color} opacity={b.brightness * 0.15} />
                     <circle cx={x} cy={y} r={b.size * 1.8}
-                      fill={b.color} opacity={b.brightness * 0.2} />
+                      fill={b.color} opacity={b.brightness * 0.4} />
                     {isSel && (
                       <circle cx={x} cy={y} r={b.size + 7}
                         fill="none" stroke={b.color}
@@ -311,7 +311,7 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
                     style={{ background: b.color, boxShadow: `0 0 6px ${b.color}` }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold truncate" style={{ color: b.color }}>{b.name}</p>
-                    <p className="text-[9px] text-gray-600">{b.label} · {formatLastVisit(b.lastVisitHours)}</p>
+                    <p className="text-[1px] text-white-400">{b.label} · {formatLastVisit(b.lastVisitHours)}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
@@ -341,7 +341,7 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
                 ['最終観測', formatLastVisit(sel.lastVisitHours)],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between mb-2">
-                  <span className="text-[10px] text-gray-500">{k}</span>
+                  <span className="text-[11px] text-white/75">{k}</span>
                   <span className="text-[11px] text-white/75">{v}</span>
                 </div>
               ))}
@@ -357,7 +357,7 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
               </div>
             </div>
           ) : (
-            <div className="bg-white/[0.015] border border-dashed border-white/[0.07] rounded-xl p-4 text-center text-gray-600 text-xs leading-loose">
+            <div className="bg-white/[0.015] border border-dashed border-white/[0.07] rounded-xl p-4 text-center text-gray-400 text-sm leading-loose">
               天体をクリックして<br />詳細を表示
             </div>
           )}
