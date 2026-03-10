@@ -3,7 +3,6 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 
 import { useResultData } from './hooks/useResultData';
 import { useCountUp } from './hooks/useCountUp';
@@ -21,16 +20,6 @@ import TechDetails from './components/TechDetails';
 import TrackingCode from './components/TrackingCode';
 import ShareDropdown from '../components/ShareDropdown';
 import { useState, useEffect } from 'react';
-
-const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
-  { ssr: false }
-);
-
-const PDFReport = dynamic(
-  () => import('../components/PDFReport'),
-  { ssr: false }
-);
 
 // ─── ローディング ──────────────────────────────────────────
 function LoadingScreen() {
@@ -312,13 +301,13 @@ function ResultContent() {
             🔄 再診断する
           </Link>
           <ShareDropdown
-            url={url}
-            totalScore={totalScore}
-            PDFDownloadLink={PDFDownloadLink}
-            PDFReport={PDFReport}
-            pdfData={pdfData}
-            isClient={isClient}
-          />
+  url={url}
+  totalScore={totalScore}
+  PDFDownloadLink={null}
+  PDFReport={null}
+  pdfData={pdfData}
+  isClient={isClient}
+/>
         </div>
 
         {/* フッター */}
