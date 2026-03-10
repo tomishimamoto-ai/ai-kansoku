@@ -388,11 +388,19 @@ async function checkRobotsTxt(baseUrl, results) {
 // ② sitemap.xml チェック（fetchWithTimeout使用）
 async function checkSitemap(baseUrl, results) {
   try {
-    const response = await fetchWithTimeout(
-      `${baseUrl}/sitemap.xml`,
-      { headers: { 'User-Agent': 'AI-Observatory/1.0' } },
-      8000  // ② 8秒タイムアウト
-    );
+    let response = await fetchWithTimeout(
+  `${baseUrl}/sitemap.xml`,
+  { headers: { 'User-Agent': 'AI-Observatory/1.0' } },
+  8000
+);
+
+if (!response.ok) {
+  response = await fetchWithTimeout(
+    `${baseUrl}/sitemap_index.xml`,
+    { headers: { 'User-Agent': 'AI-Observatory/1.0' } },
+    8000
+  );
+}
 
     if (response.ok) {
       const content = await response.text();
