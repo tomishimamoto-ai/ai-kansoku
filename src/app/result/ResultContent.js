@@ -147,17 +147,6 @@ function ResultContent() {
 
   const displayUrl = (url || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
 
-  const pdfData = {
-    url,
-    totalScore,
-    scores: scoreCards,
-    improvements: {
-      high: improvements.urgent,
-      medium: improvements.medium,
-      completed: improvements.completed,
-    },
-  };
-
   return (
     <div className="min-h-screen text-white" style={{ background: '#080c1a' }}>
 
@@ -301,13 +290,9 @@ function ResultContent() {
             🔄 再診断する
           </Link>
           <ShareDropdown
-  url={url}
-  totalScore={totalScore}
-  PDFDownloadLink={null}
-  PDFReport={null}
-  pdfData={pdfData}
-  isClient={isClient}
-/>
+             url={url}
+             totalScore={totalScore}
+        />
         </div>
 
         {/* フッター */}
