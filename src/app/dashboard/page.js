@@ -455,6 +455,55 @@ function DashboardContent() {
         {/* 天体フィールド */}
        <SolarSystemChart crawlers={ai_stats.by_crawler} firstVisit={ai_stats.last_visit} />
 
+       {/* タイムライン */}
+<div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 mb-8 shadow-xl">
+  <h2 className="text-xl font-bold flex items-center gap-2 mb-5">
+    <span>📡</span>
+    <span>観測タイムライン</span>
+  </h2>
+  <div className="flex flex-col sm:flex-row gap-4">
+
+    {/* 初回観測 */}
+    <div className="flex-1 bg-white/[0.03] border border-white/[0.07] rounded-xl p-4">
+      <p className="text-[9px] tracking-[0.2em] text-gray-600 uppercase mb-2">First Contact</p>
+      <p className="text-lg font-bold text-white">
+        {ai_stats.first_visit
+          ? new Date(ai_stats.first_visit).toLocaleDateString('ja-JP')
+          : '—'}
+      </p>
+      <p className="text-xs text-gray-600 mt-1">初回観測日</p>
+    </div>
+
+    {/* 最終観測 */}
+    <div className="flex-1 bg-white/[0.03] border border-white/[0.07] rounded-xl p-4">
+      <p className="text-[9px] tracking-[0.2em] text-gray-600 uppercase mb-2">Last Seen</p>
+      <p className="text-lg font-bold text-[#4a9eff]">
+        {ai_stats.last_visit
+          ? new Date(ai_stats.last_visit).toLocaleString('ja-JP')
+          : '—'}
+      </p>
+      <p className="text-xs text-gray-600 mt-1">最終観測日時</p>
+    </div>
+
+    {/* 最新ステータス */}
+    {(() => {
+      const pages = ai_stats.recognized_pages ?? 0;
+      const status = getAiStatus(pages);
+      return (
+        <div className={`flex-1 ${status.bg} border ${status.border} rounded-xl p-4`}>
+          <p className="text-[9px] tracking-[0.2em] text-gray-600 uppercase mb-2">Current Status</p>
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${status.dot} animate-pulse`} />
+            <p className="text-lg font-bold" style={{ color: status.color }}>{status.label}</p>
+          </div>
+          <p className="text-xs text-gray-600 mt-1">過去7日間の判定</p>
+        </div>
+      );
+    })()}
+
+  </div>
+</div>
+
         {/* Search Console分析パネル */}
         <div className="mb-8">
           <SearchConsolePanel siteId={siteId} />
