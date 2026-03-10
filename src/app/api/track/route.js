@@ -26,6 +26,7 @@ async function handleTrack(req) {
   try {
     const url    = new URL(req.url);
     const siteId = url.searchParams.get('siteId');
+    console.log('ASN test:', req.headers.get?.('x-vercel-ip-as-number'));
 
     // ✅ siteId検証
     if (!siteId || siteId.length > 100) {

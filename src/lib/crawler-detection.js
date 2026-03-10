@@ -1,17 +1,18 @@
 /**
- * AI観測ラボ - クローラー検知ロジック v5.4
+ * AI観測ラボ - クローラー検知ロジック v5.5
  *
- * v5.3からの変更点:
- * 1. makeSessionId: ip + ua + 10分バケット（NAT環境のセッション混在を防止）
- * 2. isRapidAccess: 閾値 300ms → 1000ms（AI crawlerの実際のアクセス間隔に合わせる）
- * 3. analyzeBehavior: Cookie無しシグナルを追加（+3点）
+ * v5.4からの変更点:
+ * 1. Accept-Language: 3段階判定（+3/+2/+1/-1）
+ * 2. Accept詳細強化: text/html単独も+2
+ * 3. Sec-Fetch-*: 欠如+3、人間シグナル-1〜-3
+ * 4. sec-fetch-present: -1（headless Chrome対策）
+ * 5. スコア上限: 31 → 35
  */
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 1. 検索エンジン・Google系Bot（AIではない）
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const SEARCH_ENGINE_PATTERNS = [
-  // 検索エンジン
   'duckduckbot',
   'bingbot',
   'msnbot',
@@ -22,8 +23,7 @@ const SEARCH_ENGINE_PATTERNS = [
   'baiduspider',
   'ia_archiver',
   'lighthouse',
-  'vercel-screenshot', 
-  // SNS系
+  'vercel-screenshot',
   'facebookexternalhit',
   'twitterbot',
   'linkedinbot',
@@ -31,21 +31,18 @@ const SEARCH_ENGINE_PATTERNS = [
   'whatsapp',
   'telegrambot',
   'slackbot',
-  // Google系Bot（AI学習ではない）
-  'adsbot-google',        // Google広告クローラー
-  'chrome-lighthouse',    // PageSpeed Insights / Lighthouse
-  'googleother',          // Google汎用クローラー
-  'google-inspectiontool',// Search Console URL検査
-  'apis-google',          // Google API
-  'google-safety',        // Googleセーフブラウジング
+  'adsbot-google',
+  'chrome-lighthouse',
+  'googleother',
+  'google-inspectiontool',
+  'apis-google',
+  'google-safety',
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 2. AIクローラー定義
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const AI_CRAWLERS = [
-
-  // ── OpenAI ──────────────────────────────────────────────
   {
     name: 'GPTBot',
     purpose: 'training',
@@ -70,8 +67,6 @@ const AI_CRAWLERS = [
     officialDomains: ['openai.com'],
     ipRanges: [],
   },
-
-  // ── Anthropic (Claude) ──────────────────────────────────
   {
     name: 'ClaudeBot',
     purpose: 'training',
@@ -93,8 +88,6 @@ const AI_CRAWLERS = [
     officialDomains: ['anthropic.com'],
     ipRanges: [],
   },
-
-  // ── Perplexity ──────────────────────────────────────────
   {
     name: 'PerplexityBot',
     purpose: 'search-summary',
@@ -102,8 +95,6 @@ const AI_CRAWLERS = [
     officialDomains: ['perplexity.ai'],
     ipRanges: [],
   },
-
-  // ── Google Gemini（AI学習専用UAのみ）──────────────────
   {
     name: 'Gemini',
     purpose: 'training',
@@ -111,8 +102,6 @@ const AI_CRAWLERS = [
     officialDomains: ['google.com'],
     ipRanges: [],
   },
-
-  // ── Microsoft Copilot ───────────────────────────────────
   {
     name: 'Microsoft Copilot',
     purpose: 'search-summary',
@@ -120,8 +109,6 @@ const AI_CRAWLERS = [
     officialDomains: ['microsoft.com'],
     ipRanges: ['40.77.167.0/24', '207.46.13.0/24'],
   },
-
-  // ── Meta AI ─────────────────────────────────────────────
   {
     name: 'Meta AI',
     purpose: 'training',
@@ -129,8 +116,6 @@ const AI_CRAWLERS = [
     officialDomains: ['meta.com', 'facebook.com'],
     ipRanges: [],
   },
-
-  // ── xAI (Grok) ──────────────────────────────────────────
   {
     name: 'Grok',
     purpose: 'realtime',
@@ -138,8 +123,6 @@ const AI_CRAWLERS = [
     officialDomains: ['x.ai'],
     ipRanges: [],
   },
-
-  // ── Mistral ─────────────────────────────────────────────
   {
     name: 'Mistral',
     purpose: 'training',
@@ -147,8 +130,6 @@ const AI_CRAWLERS = [
     officialDomains: ['mistral.ai'],
     ipRanges: [],
   },
-
-  // ── DeepSeek ────────────────────────────────────────────
   {
     name: 'DeepSeek',
     purpose: 'training',
@@ -156,8 +137,6 @@ const AI_CRAWLERS = [
     officialDomains: ['deepseek.com'],
     ipRanges: [],
   },
-
-  // ── Cohere ──────────────────────────────────────────────
   {
     name: 'Cohere',
     purpose: 'training',
@@ -165,8 +144,6 @@ const AI_CRAWLERS = [
     officialDomains: ['cohere.com'],
     ipRanges: [],
   },
-
-  // ── You.com ─────────────────────────────────────────────
   {
     name: 'YouBot',
     purpose: 'search-summary',
@@ -174,8 +151,6 @@ const AI_CRAWLERS = [
     officialDomains: ['you.com'],
     ipRanges: [],
   },
-
-  // ── Phind ───────────────────────────────────────────────
   {
     name: 'Phind',
     purpose: 'search-summary',
@@ -183,8 +158,6 @@ const AI_CRAWLERS = [
     officialDomains: ['phind.com'],
     ipRanges: [],
   },
-
-  // ── Hugging Face ────────────────────────────────────────
   {
     name: 'HuggingFaceBot',
     purpose: 'academic',
@@ -192,8 +165,6 @@ const AI_CRAWLERS = [
     officialDomains: ['huggingface.co'],
     ipRanges: [],
   },
-
-  // ── Common Crawl ────────────────────────────────────────
   {
     name: 'CCBot',
     purpose: 'academic',
@@ -201,8 +172,6 @@ const AI_CRAWLERS = [
     officialDomains: ['commoncrawl.org'],
     ipRanges: [],
   },
-
-  // ── Apple ───────────────────────────────────────────────
   {
     name: 'AppleBot',
     purpose: 'training',
@@ -210,8 +179,6 @@ const AI_CRAWLERS = [
     officialDomains: ['applebot.apple.com'],
     ipRanges: [],
   },
-
-  // ── Amazon ──────────────────────────────────────────────
   {
     name: 'AmazonBot',
     purpose: 'training',
@@ -219,8 +186,6 @@ const AI_CRAWLERS = [
     officialDomains: ['amazon.com'],
     ipRanges: [],
   },
-
-  // ── Bytedance ───────────────────────────────────────────
   {
     name: 'ByteSpider',
     purpose: 'training',
@@ -231,7 +196,7 @@ const AI_CRAWLERS = [
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 3. メモリキャッシュ（Serverlessでは補助的）
+// 3. メモリキャッシュ
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const accessMap   = new Map();
 const robotsMap   = new Map();
@@ -243,9 +208,6 @@ export function isRapidAccess(ip) {
   const last = accessMap.get(ip);
   accessMap.set(ip, now);
   pruneMap(accessMap, 10000, now - 60_000);
-  // v5.4: 300ms → 1000ms
-  // AI crawlerの実際のアクセス間隔は0.3〜2秒が多い。
-  // 300msは厳しすぎて正規ブラウザ（スマホの低速回線等）を誤検知しやすかった。
   return last ? (now - last) < 1000 : false;
 }
 
@@ -289,16 +251,9 @@ function pruneMap(map, maxSize, cutoffTime) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 4. セッションID生成
-//
-// v5.4: ip + ua + 10分バケット
-// 理由: NAT環境（会社・大学・携帯キャリア）では複数ユーザーが同一IPを共有する。
-//       ip + ua だけだと同一IPの異なる人間がセッション混在する問題があった。
-//       10分バケットを加えることで、同じIP/UAであっても時間窓が変わればID変化し、
-//       「同じセッションの連続アクセス」と「別タイミングのアクセス」を区別できる。
+// 4. セッションID生成（ip + ua + 10分バケット）
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export function makeSessionId(ip, ua) {
-  // 10分単位のバケット（epoch ms / 10min）
   const bucket = Math.floor(Date.now() / (10 * 60 * 1000));
   const raw = `${ip}::${ua}::${bucket}`;
   let hash = 0;
@@ -312,8 +267,7 @@ export function makeSessionId(ip, ua) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 5. メイン検知関数
 //
-//   totalScore = uaScore(0-40) + ipScore(0-30) + behaviorScore(0-31) + rapidScore(0-10)
-//   ※ behaviorスコア上限を28→31に更新（cookie無しシグナル+3追加のため）
+//   totalScore = uaScore(0-40) + ipScore(0-30) + behaviorScore(0-35) + rapidScore(0-10)
 //   >= 70 → AI (confirmed)
 //   >= 40 → AI (suspicious)
 //   <  40 → Human
@@ -362,10 +316,30 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     req.headers['connection'] || ''
   ).toLowerCase();
 
-  // v5.4: cookie ヘッダーを追加取得
   const cookie = (
     req.headers.get?.('cookie') ||
     req.headers['cookie'] || ''
+  );
+
+  // v5.5: Sec-Fetch-* ヘッダー取得
+  const secFetchSite = (
+    req.headers.get?.('sec-fetch-site') ||
+    req.headers['sec-fetch-site'] || ''
+  ).toLowerCase();
+
+  const secFetchMode = (
+    req.headers.get?.('sec-fetch-mode') ||
+    req.headers['sec-fetch-mode'] || ''
+  ).toLowerCase();
+
+  const secFetchDest = (
+    req.headers.get?.('sec-fetch-dest') ||
+    req.headers['sec-fetch-dest'] || ''
+  ).toLowerCase();
+
+  const secFetchUser = (
+    req.headers.get?.('sec-fetch-user') ||
+    req.headers['sec-fetch-user'] || ''
   );
 
   const method    = req.method || 'GET';
@@ -393,7 +367,7 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     sessionId,
   };
 
-  // ── STEP 1: 検索エンジン・Google系Bot判定 ──────────────
+  // ── STEP 1: 検索エンジン判定 ────────────────────────────
   for (const pattern of SEARCH_ENGINE_PATTERNS) {
     if (ua.includes(pattern)) {
       return {
@@ -408,17 +382,10 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     }
   }
 
-  // ── STEP 1.5: 偽装UA・正規化ルール ──────────────────────
+  // ── STEP 1.5: 正規アプリ・偽装UA判定 ────────────────────
   const LEGITIMATE_APP_PATTERNS = [
-    'gsa/',          // Google Search App (iOS)
-    'yjapp-',        // Yahoo! JAPAN アプリ (Android)
-    'jp.co.yahoo',   // Yahoo! JAPAN アプリ識別子
-    'yahoojapan/',   // Yahoo Japan 関連
-    'com.yahoo.',    // Yahoo アプリ系 bundle ID
-    'yjtop',         // Yahoo! JAPANトップ
-    'line/',         // LINE アプリ内ブラウザ
-    'fbav/',         // Facebook アプリ内ブラウザ
-    'instagram',     // Instagram アプリ内ブラウザ
+    'gsa/', 'yjapp-', 'jp.co.yahoo', 'yahoojapan/',
+    'com.yahoo.', 'yjtop', 'line/', 'fbav/', 'instagram',
   ];
 
   const isLegitimateApp = LEGITIMATE_APP_PATTERNS.some(p => ua.includes(p));
@@ -435,71 +402,26 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
   }
 
   const iosMatch = ua.match(/iphone os (\d+)_/);
-  if (iosMatch) {
-    const majorVersion = parseInt(iosMatch[1]);
-    if (majorVersion >= 19) {
-      return {
-        ...base,
-        crawlerType: 'spoofed-bot',
-        crawlerName: 'Spoofed-iOS',
-        detectionMethod: 'ua-normalization',
-        confidence: 90,
-        totalScore: 90,
-      };
-    }
+  if (iosMatch && parseInt(iosMatch[1]) >= 19) {
+    return { ...base, crawlerType: 'spoofed-bot', crawlerName: 'Spoofed-iOS', detectionMethod: 'ua-normalization', confidence: 90, totalScore: 90 };
   }
 
   const ipadMatch = ua.match(/cpu os (\d+)_/);
-  if (ipadMatch) {
-    const majorVersion = parseInt(ipadMatch[1]);
-    if (majorVersion >= 19) {
-      return {
-        ...base,
-        crawlerType: 'spoofed-bot',
-        crawlerName: 'Spoofed-iOS',
-        detectionMethod: 'ua-normalization',
-        confidence: 90,
-        totalScore: 90,
-      };
-    }
+  if (ipadMatch && parseInt(ipadMatch[1]) >= 19) {
+    return { ...base, crawlerType: 'spoofed-bot', crawlerName: 'Spoofed-iOS', detectionMethod: 'ua-normalization', confidence: 90, totalScore: 90 };
   }
 
   if (ua.includes('android 10; k)')) {
-    return {
-      ...base,
-      isSearchEngine: true,
-      crawlerType: 'search-engine',
-      crawlerName: 'Googlebot-family',
-      detectionMethod: 'ua-normalization',
-      confidence: 90,
-      totalScore: 90,
-    };
+    return { ...base, isSearchEngine: true, crawlerType: 'search-engine', crawlerName: 'Googlebot-family', detectionMethod: 'ua-normalization', confidence: 90, totalScore: 90 };
   }
 
   const chromeMatch = ua.match(/chrome\/(\d+)\./);
-  if (chromeMatch) {
-    const chromeVersion = parseInt(chromeMatch[1]);
-    if (chromeVersion >= 200) {
-      return {
-        ...base,
-        crawlerType: 'spoofed-bot',
-        crawlerName: 'Spoofed-Chrome',
-        detectionMethod: 'ua-normalization',
-        confidence: 85,
-        totalScore: 85,
-      };
-    }
+  if (chromeMatch && parseInt(chromeMatch[1]) >= 200) {
+    return { ...base, crawlerType: 'spoofed-bot', crawlerName: 'Spoofed-Chrome', detectionMethod: 'ua-normalization', confidence: 85, totalScore: 85 };
   }
 
   if (ua.includes('vercel-screenshot')) {
-    return {
-      ...base,
-      crawlerType: 'other-bot',
-      crawlerName: 'Vercel-Screenshot',
-      detectionMethod: 'ua-normalization',
-      confidence: 99,
-      totalScore: 99,
-    };
+    return { ...base, crawlerType: 'other-bot', crawlerName: 'Vercel-Screenshot', detectionMethod: 'ua-normalization', confidence: 99, totalScore: 99 };
   }
 
   if (
@@ -507,15 +429,7 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     ua.includes('moto g (4)') ||
     ua.includes('cros x86_64 14541')
   ) {
-    return {
-      ...base,
-      isSearchEngine: true,
-      crawlerType: 'search-engine',
-      crawlerName: 'Googlebot-family',
-      detectionMethod: 'ua-normalization',
-      confidence: 90,
-      totalScore: 90,
-    };
+    return { ...base, isSearchEngine: true, crawlerType: 'search-engine', crawlerName: 'Googlebot-family', detectionMethod: 'ua-normalization', confidence: 90, totalScore: 90 };
   }
 
   // ── STEP 2 & 3: 統合スコア計算 ─────────────────────────
@@ -554,6 +468,7 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
   const behavior = analyzeBehavior({
     ua, acceptEncoding, acceptLang, accept, secChUa, connection,
     method, referer, robots, htmlOnly, cookie,
+    secFetchSite, secFetchMode, secFetchDest, secFetchUser,
   });
 
   const rapidScore = rapid ? 10 : 0;
@@ -622,19 +537,36 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 6. 行動パターン分析
 //
-// v5.4: cookie 引数を追加
-//       スコア上限: 28 → 31
+// v5.5: Sec-Fetch-* 判定追加
+//       Accept-Language 3段階判定
+//       Accept詳細強化
+//       スコア上限: 31 → 35
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function analyzeBehavior({
   ua, acceptEncoding, acceptLang, accept, secChUa, connection,
   method, referer, robots, htmlOnly, cookie,
+  secFetchSite, secFetchMode, secFetchDest, secFetchUser,
 }) {
   let score = 0;
   const reasons = [];
 
+  // Accept-Language: 3段階判定
   if (!acceptLang) {
-    score += 4;
+    score += 3;
     reasons.push('no-accept-language');
+  } else if (
+    /[^\x20-\x7E]/.test(acceptLang) ||
+    /q=[^01]/.test(acceptLang) ||
+    acceptLang.trim() === '*'
+  ) {
+    score += 2;
+    reasons.push('abnormal-accept-language');
+  } else if (/^[a-z]{2}(-[A-Z]{2})?$/.test(acceptLang.trim())) {
+    score += 1;
+    reasons.push('minimal-accept-language');
+  } else if (/ja/.test(acceptLang)) {
+    score -= 1;
+    reasons.push('ja-accept-language');
   }
 
   if (!acceptEncoding || acceptEncoding === 'identity') {
@@ -652,11 +584,7 @@ function analyzeBehavior({
 
   const hasBrowserUA =
     ua.includes('mozilla') &&
-    (
-      ua.includes('chrome') ||
-      ua.includes('firefox') ||
-      ua.includes('safari')
-    );
+    (ua.includes('chrome') || ua.includes('firefox') || ua.includes('safari'));
 
   if (!hasBrowserUA) {
     score += 4;
@@ -683,16 +611,18 @@ function analyzeBehavior({
     reasons.push('html-only');
   }
 
+  // Accept詳細強化
   if (accept === '*/*') {
     score += 3;
-    reasons.push('simple-accept');
+    reasons.push('accept-wildcard');
+  } else if (accept === 'text/html' || accept === 'text/html;charset=utf-8') {
+    score += 2;
+    reasons.push('accept-html-only');
   }
 
   const looksLikeChrome =
-    ua.includes("chrome") &&
-    ua.includes("mozilla") &&
-    !ua.includes("edg") &&
-    !ua.includes("opr");
+    ua.includes('chrome') && ua.includes('mozilla') &&
+    !ua.includes('edg') && !ua.includes('opr');
   if (!secChUa && looksLikeChrome) {
     score += 4;
     reasons.push('ua-spoofing-suspected');
@@ -706,18 +636,39 @@ function analyzeBehavior({
     reasons.push('connection-close');
   }
 
-  // v5.4: Cookie無し判定
-  // AIクローラーはセッションを維持しないためcookieを送らないことが多い。
-  // ただしブラウザUAを偽装している場合のみカウント（純粋なbot UAはno-browser-uaで加点済み）。
-  // 正規ブラウザの初回アクセスでも cookie='' になるため、
-  // 他のシグナル（no-accept-language等）との組み合わせで効果を発揮する設計。
   if (!cookie && hasBrowserUA) {
     score += 3;
     reasons.push('no-cookie-with-browser-ua');
   }
 
-  // スコア上限: v5.3=28 → v5.4=31（+3追加のため更新）
-  return { score: Math.min(score, 31), reasons };
+  // Sec-Fetch-* 判定
+  const hasSec = secFetchSite || secFetchMode || secFetchDest;
+
+  if (!hasSec && hasBrowserUA) {
+    // ブラウザUAなのにSec-Fetch完全欠如 → UA偽装bot疑い
+    score += 3;
+    reasons.push('sec-fetch-missing-with-browser-ua');
+  } else if (hasSec) {
+    if (
+      secFetchSite === 'none' &&
+      secFetchMode === 'navigate' &&
+      secFetchDest === 'document'
+    ) {
+      // ユーザー直接アクセスの強いシグナル
+      score -= 3;
+      reasons.push('sec-fetch-direct-navigation');
+      if (secFetchUser === '?1') {
+        score -= 1;
+        reasons.push('sec-fetch-user-gesture');
+      }
+    } else {
+      // Sec-Fetch一式存在（headless Chromeも付けるので-1に留める）
+      score -= 1;
+      reasons.push('sec-fetch-present');
+    }
+  }
+
+  return { score: Math.min(score, 35), reasons };
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
