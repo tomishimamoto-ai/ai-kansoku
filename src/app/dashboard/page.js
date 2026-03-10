@@ -117,9 +117,6 @@ function DashboardContent() {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [manualInput, setManualInput] = useState({ userCount: '', pageViews: '', sessions: '' });
-  const [saving, setSaving] = useState(false);
-  const [manualSaved, setManualSaved] = useState(false);
   const [scData, setScData] = useState(null);
 
   // ② AbortController でメモリリーク防止
@@ -135,13 +132,6 @@ function DashboardContent() {
           const scJson = await scRes.json();
           if (scJson.connected) setScData(scJson);
         } catch {}
-        if (json.manual_data) {
-          setManualInput({
-            userCount: json.manual_data.user_count || '',
-            pageViews: json.manual_data.page_views || '',
-            sessions: json.manual_data.sessions || ''
-          });
-        }
       }
     } catch (error) {
       if (error.name === 'AbortError') return;
@@ -160,34 +150,6 @@ function DashboardContent() {
 
   // 手動更新ボタン用（AbortControllerなしでOK）
   const handleRefresh = () => fetchData(siteId);
-
-  const handleSaveManualData = async () => {
-    if (!siteId) return;
-    setSaving(true);
-    try {
-      const res = await fetch('/api/visits', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          siteId,
-          userCount: manualInput.userCount ? parseInt(manualInput.userCount) : null,
-          pageViews: manualInput.pageViews ? parseInt(manualInput.pageViews) : null,
-          sessions: manualInput.sessions ? parseInt(manualInput.sessions) : null,
-          source: 'manual'
-        })
-      });
-      if (res.ok) {
-        setManualSaved(true);
-        setTimeout(() => setManualSaved(false), 3000);
-        // ① window.location.reload() → fetchData() に変更
-        await fetchData(siteId);
-      }
-    } catch (error) {
-      console.error('Error saving manual data:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (!siteId) {
     return (
@@ -213,122 +175,7 @@ function DashboardContent() {
     );
   }
 
-  const { ai_stats, spoofed_stats, top_pages, detection_methods, recent_visits, daily_trend, hourly_distribution, diagnoses_history } = data;
-  const unknownSignal = ai_stats.unknown_signal ?? 0;
-  const spoofedSignal = spoofed_stats?.high_confidence_total ?? 0;
-  const humanTotal = ai_stats.human_total ?? 0;
-
-  const latestDiagnosis = diagnoses_history?.[0] ?? null;
-  const latestScore = latestDiagnosis?.total_score ?? null;
-  const prevDiagnosis = diagnoses_history?.[1] ?? null;
-  const prevScore = prevDiagnosis?.total_score ?? null;
-  const scoreDiff = latestScore !== null && prevScore !== null ? latestScore - prevScore : null;
-  const diagnosedAt = latestDiagnosis?.diagnosed_at
-    ? new Date(latestDiagnosis.diagnosed_at).toLocaleDateString('ja-JP')
-    : null;
-
-  function getScoreColor(score) {
-    if (score >= 90) return '#00ffc8';
-    if (score >= 70) return '#4a9eff';
-    if (score >= 40) return '#f59e0b';
-    return '#ff5555';
-  }
-  function getScoreLabel(score) {
-    if (score >= 90) return 'OPTIMAL';
-    if (score >= 70) return 'STABLE';
-    if (score >= 40) return 'CAUTION';
-    return 'CRITICAL';
-  }
-
-  const lineChartData = {
-    labels: daily_trend?.map(d => {
-      const date = new Date(d.date);
-      return `${date.getMonth() + 1}/${date.getDate()}`;
-    }) || [],
-    datasets: [
-      {
-        label: 'AI確定訪問 ✦',
-        data: daily_trend?.map(d => d.ai_visits) || [],
-        borderColor: '#4a9eff',
-        backgroundColor: 'rgba(74, 158, 255, 0.08)',
-        pointBackgroundColor: '#4a9eff',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        tension: 0.4,
-        fill: true,
-        borderWidth: 2,
-      },
-      {
-        label: '未確認AIシグナル 🛸',
-        data: daily_trend?.map(d => d.unknown_visits || 0) || [],
-        borderColor: '#c084fc',
-        backgroundColor: 'rgba(192, 132, 252, 0.08)',
-        pointBackgroundColor: '#c084fc',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        tension: 0.4,
-        fill: true,
-        borderWidth: 2,
-        borderDash: [4, 3],
-      },
-      {
-        label: '人間訪問 ●',
-        data: daily_trend?.map(d => d.human_visits || 0) || [],
-        borderColor: '#ffd700',
-        backgroundColor: 'rgba(255, 215, 0, 0.06)',
-        pointBackgroundColor: '#ffd700',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        tension: 0.4,
-        fill: true,
-        borderWidth: 2,
-      }
-    ]
-  };
-
-  const lineChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top',
-        labels: {
-          color: '#cbd5e1',
-          font: { size: 11 },
-          padding: 16,
-          usePointStyle: true,
-          pointStyleWidth: 10,
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(10, 14, 39, 0.95)',
-        titleColor: '#fff',
-        bodyColor: '#cbd5e1',
-        borderColor: '#4a9eff',
-        borderWidth: 1,
-        padding: 12,
-        callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}回` }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(74, 158, 255, 0.08)', drawBorder: false },
-        ticks: { color: '#64748b', font: { size: 11 } }
-      },
-      x: {
-        grid: { color: 'rgba(74, 158, 255, 0.04)', drawBorder: false },
-        ticks: { color: '#64748b', font: { size: 11 } }
-      }
-    }
-  };
+  const { ai_stats, recent_visits } = data;
 
   return (
     <div className="dashboard-bg text-white">
