@@ -32,6 +32,13 @@ ChartJS.register(
   Filler
 );
 
+function getAiStatus(pageCount) {
+  if (pageCount === 0)  return { label: '未認知',   color: '#6b7280', bg: 'bg-gray-500/10',    border: 'border-gray-500/30',    dot: 'bg-gray-500'    };
+  if (pageCount <= 3)   return { label: '観測開始', color: '#f59e0b', bg: 'bg-yellow-500/10',  border: 'border-yellow-500/30',  dot: 'bg-yellow-400'  };
+  if (pageCount <= 10)  return { label: '認知済',   color: '#4a9eff', bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    };
+  return                       { label: '拡大中',   color: '#10b981', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', dot: 'bg-emerald-400' };
+}
+
 // ⑤ 星空データをコンポーネント外に移動（レンダー毎に再生成しない）
 const STARS = [
   { top: '10%', left: '20%', delay: '0s' },
@@ -401,121 +408,74 @@ function DashboardContent() {
           </p>
         </div>
 
-        {/* ① ヒーローカード：AI最適化スコア */}
-        <div className="bg-gradient-to-br from-[#0f1229] via-[#0d1535] to-[#1a1e47] border border-[#4a9eff]/40 rounded-2xl p-8 shadow-2xl shadow-[#4a9eff]/10 mb-6 relative overflow-hidden">
-          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[#4a9eff]/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-[#c084fc]/8 blur-2xl pointer-events-none" />
+       {/* KPI 4カード */}
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-2xl">🎯</span>
-                <span className="text-sm text-[#4a9eff] font-medium">AI最適化スコア</span>
-              </div>
-
-              {latestScore !== null ? (
-                <>
-                  <p className="text-7xl font-bold mb-2 leading-none"
-                    style={{ color: getScoreColor(latestScore) }}>
-                    {latestScore}
-                    <span className="text-3xl text-gray-400 ml-1">/100</span>
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-sm font-bold px-3 py-1 rounded-full border"
-                      style={{
-                        color: getScoreColor(latestScore),
-                        borderColor: `${getScoreColor(latestScore)}40`,
-                        background: `${getScoreColor(latestScore)}15`,
-                      }}>
-                      {getScoreLabel(latestScore)}
-                    </span>
-                    {scoreDiff !== null && (
-                      <span className={`text-sm font-semibold ${scoreDiff > 0 ? 'text-emerald-400' : scoreDiff < 0 ? 'text-red-400' : 'text-gray-500'}`}>
-                        {scoreDiff > 0 ? `▲ +${scoreDiff}点` : scoreDiff < 0 ? `▼ ${scoreDiff}点` : '→ 前回と同点'}
-                      </span>
-                    )}
-                  </div>
-                  {diagnosedAt && (
-                    <p className="text-xs text-gray-500 mt-2">最終診断: {diagnosedAt}</p>
-                  )}
-                </>
-              ) : (
-                <div>
-                  <p className="text-4xl font-bold text-gray-500 mb-2">未診断</p>
-                  <p className="text-sm text-gray-400">診断を実行するとスコアが表示されます</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-3 md:items-end">
-              {latestScore !== null && (
-                <div className="w-full md:w-48 h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-1000"
-                    style={{
-                      width: `${latestScore}%`,
-                      background: `linear-gradient(90deg, ${getScoreColor(latestScore)}, #4a9eff)`,
-                    }} />
-                </div>
-              )}
-              <Link href={`/?siteId=${siteId}`}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #4a9eff, #6366f1)' }}>
-                🔄 再診断する
-              </Link>
-              {diagnoses_history && diagnoses_history.length > 1 && (
-                <p className="text-xs text-gray-500">過去{diagnoses_history.length}回の診断履歴あり</p>
-              )}
-            </div>
-          </div>
+  {/* ① AI認知ステータス */}
+  {(() => {
+    const pages = ai_stats.recognized_pages ?? 0;
+    const status = getAiStatus(pages);
+    return (
+      <div className={`${status.bg} border ${status.border} rounded-2xl p-5 relative overflow-hidden`}>
+        <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20"
+          style={{ background: status.color }} />
+        <p className="text-xs text-gray-400 mb-3">AI認知ステータス</p>
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`w-2 h-2 rounded-full ${status.dot} animate-pulse`} />
+          <span className="text-xl font-bold" style={{ color: status.color }}>
+            {status.label}
+          </span>
         </div>
+        <p className="text-xs text-gray-500 mt-2">過去7日間の判定</p>
+      </div>
+    );
+  })()}
 
-        {/* サブカード：AI訪問・人間訪問 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 shadow-xl hover:border-[#4a9eff]/40 transition-all">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">✦</span>
-                <h3 className="text-xs text-gray-400">AI訪問（今週）</h3>
-              </div>
-              <span className={`text-xs px-1.5 py-0.5 rounded-full border ${
-                ai_stats.trend === 'up'
-                  ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                  : ai_stats.trend === 'down'
-                  ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                  : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-              }`}>
-                {ai_stats.trend === 'up' ? '+' : ''}{ai_stats.change_percent ?? 0}% 先週比
-              </span>
-            </div>
-            <p className="text-4xl font-bold text-[#4a9eff] mb-1">
-              {(ai_stats.total ?? 0).toLocaleString()}
-              <span className="text-lg text-gray-500 ml-1">回</span>
-            </p>
-            <div className="flex gap-2 mt-3 flex-wrap">
-              {(ai_stats.by_crawler ?? []).slice(0, 3).map((c) => (
-                <div key={c.crawler_name} className="text-center px-2.5 py-1 bg-[#1a1e47]/60 rounded-lg border border-[#2a2f57]">
-                  <p className="text-xs text-gray-400 truncate max-w-[60px]">{c.crawler_name}</p>
-                  <p className="text-xs font-bold text-[#4a9eff]">{c.visit_count}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+  {/* ② AI認知ページ数 */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 relative overflow-hidden hover:border-[#4a9eff]/40 transition-all">
+    <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-[#4a9eff]/10 blur-2xl" />
+    <p className="text-xs text-gray-400 mb-3">AI認知ページ数</p>
+    <p className="text-3xl font-bold text-[#4a9eff]">
+      {(ai_stats.recognized_pages ?? 0).toLocaleString()}
+      <span className="text-sm text-gray-500 ml-1">ページ</span>
+    </p>
+    <p className="text-xs text-gray-500 mt-2">過去7日間</p>
+  </div>
 
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 shadow-xl hover:border-yellow-500/40 transition-all">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">●</span>
-                <h3 className="text-xs text-gray-400">人間訪問（恒星）</h3>
-              </div>
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">確定</span>
-            </div>
-            <p className="text-4xl font-bold text-[#ffd700] mb-1">
-              {humanTotal.toLocaleString()}
-              <span className="text-lg text-gray-500 ml-1">人</span>
-            </p>
-            <p className="text-xs text-gray-500 mt-3">7日間の人間訪問数</p>
-          </div>
-        </div>
+  {/* ③ AI crawler visits */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 relative overflow-hidden hover:border-[#c084fc]/40 transition-all">
+    <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-[#c084fc]/10 blur-2xl" />
+    <div className="flex items-center justify-between mb-3">
+      <p className="text-xs text-gray-400">AI crawler visits</p>
+      <span className={`text-xs px-1.5 py-0.5 rounded-full border ${
+        ai_stats.trend === 'up'
+          ? 'bg-green-500/20 text-green-400 border-green-500/30'
+          : ai_stats.trend === 'down'
+          ? 'bg-red-500/20 text-red-400 border-red-500/30'
+          : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+      }`}>
+        {ai_stats.trend === 'up' ? '+' : ''}{ai_stats.change_percent ?? 0}%
+      </span>
+    </div>
+    <p className="text-3xl font-bold text-[#c084fc]">
+      {(ai_stats.total ?? 0).toLocaleString()}
+      <span className="text-sm text-gray-500 ml-1">回</span>
+    </p>
+    <p className="text-xs text-gray-500 mt-2">過去7日間</p>
+  </div>
+
+  {/* ④ 人間訪問 */}
+  <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-5 relative overflow-hidden hover:border-yellow-500/40 transition-all">
+    <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-yellow-500/10 blur-2xl" />
+    <p className="text-xs text-gray-400 mb-3">人間訪問</p>
+    <p className="text-3xl font-bold text-[#ffd700]">
+      {(ai_stats.human_total ?? 0).toLocaleString()}
+      <span className="text-sm text-gray-500 ml-1">人</span>
+    </p>
+    <p className="text-xs text-gray-500 mt-2">過去7日間</p>
+  </div>
+
+</div>
 
         {/* 7日間推移グラフ（④ daily_trend.length チェック追加） */}
         {daily_trend && daily_trend.length > 0 && (

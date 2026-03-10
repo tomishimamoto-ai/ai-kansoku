@@ -382,6 +382,22 @@ export async function GET(request) {
       LIMIT 10
     `;
 
+
+    // ========================================
+// AI認知ページ数（DISTINCT page_url）
+// ========================================
+const recognizedPagesResult = await sql`
+  SELECT COUNT(DISTINCT page_url) as recognized_pages
+  FROM ai_crawler_visits
+  WHERE site_id = ${siteId}
+    AND visited_at >= ${sevenDaysAgo.toISOString()}
+    AND is_human = false
+    AND crawler_type = 'ai'
+    AND page_url IS NOT NULL
+    AND page_url != ''
+`;
+const recognizedPagesCount = parseInt(recognizedPagesResult[0]?.recognized_pages || '0');
+
     // ========================================
     // レスポンス
     // ========================================
@@ -390,6 +406,7 @@ export async function GET(request) {
       
       ai_stats: {
         total: thisWeekTotal,
+        recognized_pages: recognizedPagesCount,
         unknown_signal: unknownSignalCount, 
         human_total: humanTotalCount,
         change_percent: totalChange,
@@ -400,6 +417,7 @@ export async function GET(request) {
         first_visit: totalStats[0]?.first_visit || null,
         last_visit: totalStats[0]?.last_visit || null
       },
+
 
       spoofed_stats: {
         total: spoofedTotal,
