@@ -133,10 +133,10 @@ export async function POST(request) {
     'User-Agent': 'AI-Observatory/1.0',
     'Accept': 'text/html,application/xhtml+xml'
   },
-  redirect: 'manual'
+  redirect: 'follow'
 }, 15000);
       
-      if (!response.ok && !(response.status >= 300 && response.status < 400)) {
+      if (!response.ok) {
         if (response.status === 404) {
           return NextResponse.json(
             { error: 'ページが見つかりません。URLを確認してください。' },
