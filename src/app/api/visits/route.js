@@ -41,6 +41,7 @@ export async function GET(request) {
         COUNT(*) as visit_count,
         COUNT(DISTINCT session_id) as unique_sessions,
         COUNT(DISTINCT ip_address) as unique_ips
+        MAX(visited_at) as last_visit
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
         AND visited_at >= ${sevenDaysAgo.toISOString()}
@@ -80,7 +81,8 @@ export async function GET(request) {
         unique_sessions: parseInt(row.unique_sessions),
         unique_ips: parseInt(row.unique_ips),
         change_percent: change,
-        trend: change > 0 ? 'up' : change < 0 ? 'down' : 'stable'
+        trend: change > 0 ? 'up' : change < 0 ? 'down' : 'stable',
+        last_visit: row.last_visit || null
       };
     });
 

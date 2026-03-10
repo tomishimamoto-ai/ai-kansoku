@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Line } from 'react-chartjs-2';
 import MimicPanel from '../components/MimicPanel';
 import SearchConsolePanel from '../components/SearchConsolePanel';
+import SolarSystemChart from '../components/SolarSystemChart';
 import PageRanking from '../components/PageRanking';
 import {
   Chart as ChartJS,
@@ -477,8 +478,8 @@ function DashboardContent() {
 
 </div>
 
-        {/* 7日間推移グラフ（だった場所） */}
-
+        {/* 天体フィールド */}
+       <SolarSystemChart crawlers={ai_stats.by_crawler} firstVisit={ai_stats.last_visit} />
 
         {/* よく見られたページ */}
         <div className="mb-8">
