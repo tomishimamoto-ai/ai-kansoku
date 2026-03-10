@@ -356,7 +356,7 @@ function DashboardContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0e27] text-white">
+    <div className="min-h-screen text-white">
       {/* 星空背景（⑤ STARS定数を使用） */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {STARS.map((s, i) => (
@@ -477,18 +477,8 @@ function DashboardContent() {
 
 </div>
 
-        {/* 7日間推移グラフ（④ daily_trend.length チェック追加） */}
-        {daily_trend && daily_trend.length > 0 && (
-          <div className="bg-gradient-to-br from-[#0f1229] to-[#1a1e47] border border-[#2a2f57] rounded-2xl p-6 shadow-xl mb-8">
-            <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-              <span className="text-2xl">📈</span>7日間の観測推移
-            </h2>
-            <p className="text-xs text-gray-500 mb-6">AI確定訪問・未確認AIシグナル・人間訪問の推移</p>
-            <div className="h-80">
-              <Line data={lineChartData} options={lineChartOptions} />
-            </div>
-          </div>
-        )}
+        {/* 7日間推移グラフ（だった場所） */}
+
 
         {/* よく見られたページ */}
         <div className="mb-8">
@@ -610,14 +600,25 @@ function DashboardSkeleton() {
           ))}
         </div>
       </div>
-      <style jsx global>{`
-        @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(1.4); opacity: 0; } }
-        @keyframes starPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-        @keyframes fadeInOut { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
-        @keyframes dotBounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-6px); opacity: 1; } }
-        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.5); } }
-        .animate-twinkle { animation: twinkle 3s ease-in-out infinite; }
-      `}</style>
+<style jsx global>{`
+  body {
+    background: linear-gradient(
+      to top,
+      #1a0800 0%,
+      #2d1040 20%,
+      #0d0a2e 50%,
+      #04051a 80%,
+      #000008 100%
+    );
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.5); }
+  }
+  .animate-twinkle { animation: twinkle 3s ease-in-out infinite; }
+`}</style>
     </div>
   );
 }
