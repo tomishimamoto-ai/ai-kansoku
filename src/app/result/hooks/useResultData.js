@@ -15,77 +15,66 @@ export function useResultData(url) {
 
   const siteId = useMemo(() => generateSiteId(url), [url]);
 
-  // ── localStorageからデータ読み込み ──
   useEffect(() => {
     if (typeof window === 'undefined') return;
     setIsClient(true);
     try {
       const raw = localStorage.getItem(`analysis_${siteId}`);
       if (raw) setAnalyzedData(JSON.parse(raw));
-
-      if (localStorage.getItem(`trackingInstalled_${siteId}`)) {
-        setIsTrackingInstalled(true);
-      }
-
+      if (localStorage.getItem(`trackingInstalled_${siteId}`)) setIsTrackingInstalled(true);
       const saved = localStorage.getItem(`checkedItems_${siteId}`);
       if (saved) setCheckedItems(JSON.parse(saved));
-
       const visitCount = localStorage.getItem(`visitCount_${siteId}`);
       setDashPreview(visitCount !== null ? parseInt(visitCount, 10) : null);
     } catch (e) {
-      // silent
     } finally {
       setDataLoaded(true);
     }
   }, [siteId]);
 
-  // ── 診断履歴の保存 & 前回スコア取得 ──
+  // ② siteIdで履歴管理
   useEffect(() => {
     if (!url || !analyzedData?.totalScore) return;
     try {
       const h = JSON.parse(localStorage.getItem('aiObservatoryHistory') || '[]');
-      const prev = h.find((i) => i.url === url);
+      const prev = h.find((i) => i.siteId === siteId);
       if (prev) {
         setPrevScore(prev.score);
         if (prev.data?.scores) setPrevScores(prev.data.scores);
       }
       const next = [
-        { url, score: analyzedData.totalScore, date: new Date().toISOString(), data: analyzedData },
-        ...h.filter((i) => i.url !== url),
+        { siteId, url, score: analyzedData.totalScore, date: new Date().toISOString(), data: analyzedData },
+        ...h.filter((i) => i.siteId !== siteId),
       ];
       localStorage.setItem('aiObservatoryHistory', JSON.stringify(next.slice(0, 10)));
-    } catch (e) {
-      // silent
-    }
-  }, [url, analyzedData]);
+    } catch (e) {}
+  }, [url, siteId, analyzedData]);
 
-  // ── チェック状態の更新 ──
+  // ① checkedItems依存いらない版
   const handleCheck = useCallback((id) => {
-    const next = { ...checkedItems, [id]: !checkedItems[id] };
-    setCheckedItems(next);
-    try {
-      localStorage.setItem(`checkedItems_${siteId}`, JSON.stringify(next));
-    } catch (e) {
-      // silent
-    }
-  }, [checkedItems, siteId]);
-
-  // ── トラッキングコードのコピー ──
-  const handleCopyTracking = useCallback(() => {
-    navigator.clipboard.writeText(
-      `<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>\n` +
-      `<a href="https://ai-kansoku.com/api/track/honeypot?siteId=${siteId}" style="display:none;position:absolute;left:-9999px;" aria-hidden="true" tabindex="-1"></a>`
-    );
-    try {
-      localStorage.setItem(`trackingInstalled_${siteId}`, 'true');
-    } catch (e) {
-      // silent
-    }
-    setIsTrackingInstalled(true);
-    alert('コピーしました！サイトのheadタグに貼り付けてください。');
+    setCheckedItems((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      try {
+        localStorage.setItem(`checkedItems_${siteId}`, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   }, [siteId]);
 
-  // ── 改善反映チェック ──
+  // ③ await追加 + honeypot削除
+  const handleCopyTracking = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(
+        `<script src="https://ai-kansoku.com/track.js" data-site="${siteId}"></script>`
+      );
+      localStorage.setItem(`trackingInstalled_${siteId}`, 'true');
+      setIsTrackingInstalled(true);
+      alert('コピーしました！サイトのheadタグに貼り付けてください。');
+    } catch {
+      alert('コピーに失敗しました');
+    }
+  }, [siteId]);
+
   const wasImproved = useCallback((id) => {
     if (!prevScores) return false;
     return !!checkedItems[id] && (analyzedData?.scores?.[id] || 0) > (prevScores[id] || 0);
@@ -93,9 +82,7 @@ export function useResultData(url) {
 
   const totalScore = analyzedData?.totalScore ?? 0;
 
-  const currentScores = useMemo(() => {
-    return analyzedData?.scores || {};
-  }, [analyzedData]);
+  const currentScores = useMemo(() => analyzedData?.scores || {}, [analyzedData]);
 
   const improvements = useMemo(() => {
     if (!analyzedData) return { urgent: [], medium: [], completed: [] };
