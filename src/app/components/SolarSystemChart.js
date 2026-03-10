@@ -211,7 +211,30 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
               fill="rgba(255,210,80,0.6)" fontSize={8} letterSpacing="1.5">
               YOUR SITE
             </text>
-
+            {/* ゴースト惑星（未観測） */}
+{undetected.map((c, i) => {
+  const cfg = CRAWLER_CONFIG[c.name] || CRAWLER_CONFIG['default'];
+  const angle = 45 + i * 90;
+  const { x, y } = toXY(cfg.orbitRadius, angle);
+  return (
+    <g key={c.name + '-ghost'}>
+      <circle cx={x} cy={y} r={8}
+        fill="none"
+        stroke={c.color}
+        strokeWidth={1}
+        strokeOpacity={0.15}
+        strokeDasharray="2 4"
+      />
+      <text x={x} y={y - 14}
+        textAnchor="middle"
+        fill={c.color}
+        fontSize={8}
+        opacity={0.2}>
+        {c.name}
+      </text>
+    </g>
+  );
+})}
             {bodies.map(b => {
               const isSel = selected === b.id;
               const { x, y } = toXY(b.orbitRadius, b.angle);
