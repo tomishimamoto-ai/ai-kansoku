@@ -17,6 +17,14 @@ const CRAWLER_CONFIG = {
   'default':          { color: '#aaaacc', orbitRadius: 185, label: '小惑星' },
 };
 
+// 未観測候補（代表的なクローラー）
+const UNDETECTED_CANDIDATES = [
+  { name: 'ClaudeBot',    color: '#7eb8ff', label: '海王星' },
+  { name: 'Gemini',       color: '#ffd4a3', label: '土星' },
+  { name: 'PerplexityBot',color: '#b8ffb8', label: '火星' },
+  { name: 'GPTBot',       color: '#f0e68c', label: '木星' },
+];
+
 const ORBIT_OFFSETS = [0, 22, -18, 30, -25, 15, -12];
 
 const STARS = Array.from({ length: 80 }, (_, i) => ({
@@ -74,7 +82,6 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
 
       const angle = (i * (360 / crawlers.length)) + 15;
 
-      // クローラー別last_visit（なければsite全体にフォールバック）
       const crawlerLastVisit = crawler.last_visit || lastVisit;
       const lastVisitHours = calcLastVisitHours(crawlerLastVisit);
       const brightness = getBrightness(lastVisitHours);
@@ -97,6 +104,10 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
       };
     });
   }, [crawlers, lastVisit]);
+
+  // 未観測クローラー（検知済みを除外）
+  const detectedNames = new Set(bodies.map(b => b.name));
+  const undetected = UNDETECTED_CANDIDATES.filter(c => !detectedNames.has(c.name));
 
   const total = bodies.reduce((s, b) => s + b.sessions, 0);
   const sel = bodies.find(b => b.id === selected);
@@ -125,7 +136,6 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
           </h2>
           <p className="text-xs text-gray-500">天体をクリックして詳細を表示</p>
         </div>
-        {/* ミニ凡例 */}
         <div className="flex flex-col gap-1 flex-shrink-0 bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[#7eb8ff]/60 border border-[#7eb8ff]/40" />
@@ -143,8 +153,7 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
         {/* SVGマップ */}
         <div className="relative flex-shrink-0 mx-auto lg:mx-0">
           <svg
-            width={SIZE}
-            height={SIZE}
+            width={SIZE} height={SIZE}
             viewBox={`0 0 ${SIZE} ${SIZE}`}
             style={{
               maxWidth: 'min(560px, 90vw)',
@@ -173,46 +182,36 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
               </filter>
             </defs>
 
-            {/* 星屑（30個に1個きらめき） */}
             {STARS.map((s, i) => (
               <circle key={i} cx={s.x} cy={s.y} r={s.r}
                 fill={`rgba(255,255,255,${s.o})`}>
                 {s.twinkle && (
-                  <animate
-                    attributeName="opacity"
+                  <animate attributeName="opacity"
                     values={`${s.o};1;${s.o}`}
                     dur={`${2 + (i % 3)}s`}
-                    repeatCount="indefinite"
-                  />
+                    repeatCount="indefinite" />
                 )}
               </circle>
             ))}
 
-            {/* 軌道リング（静止） */}
             {bodies.map(b => (
               <circle key={b.id + '-orbit'}
                 cx={CX} cy={CY} r={b.orbitRadius}
-                fill="none"
-                stroke="rgba(255,255,255,0.04)"
-                strokeWidth={1}
-                strokeDasharray="4 10"
-              />
+                fill="none" stroke="rgba(255,255,255,0.04)"
+                strokeWidth={1} strokeDasharray="4 10" />
             ))}
 
-            {/* 太陽コロナ */}
             {[4.2, 3.0, 2.0].map((m, i) => (
               <circle key={i} cx={CX} cy={CY} r={28 * m}
                 fill={`rgba(255,175,35,${0.028 - i * 0.007})`} />
             ))}
 
-            {/* 太陽（主役・r=28） */}
             <circle cx={CX} cy={CY} r={28} fill="url(#sc-sunGrad)" filter="url(#sc-sun-glow)" />
             <text x={CX} y={CY + 44} textAnchor="middle"
               fill="rgba(255,210,80,0.6)" fontSize={8} letterSpacing="1.5">
               YOUR SITE
             </text>
 
-            {/* 天体（超スロー軌道アニメーション） */}
             {bodies.map(b => {
               const isSel = selected === b.id;
               const { x, y } = toXY(b.orbitRadius, b.angle);
@@ -224,46 +223,32 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
                   style={{ cursor: 'pointer' }}>
                   <g>
                     <animateTransform
-                      attributeName="transform"
-                      type="rotate"
+                      attributeName="transform" type="rotate"
                       from={`${b.angle} ${CX} ${CY}`}
                       to={`${b.angle + 360} ${CX} ${CY}`}
-                      dur={dur}
-                      repeatCount="indefinite"
-                    />
-
-                    {/* グロー */}
+                      dur={dur} repeatCount="indefinite" />
                     <circle cx={x} cy={y} r={b.size * 2.5}
                       fill={b.color} opacity={b.brightness * 0.15} />
                     <circle cx={x} cy={y} r={b.size * 1.8}
                       fill={b.color} opacity={b.brightness * 0.2} />
-
-                    {/* 選択リング */}
                     {isSel && (
                       <circle cx={x} cy={y} r={b.size + 7}
                         fill="none" stroke={b.color}
                         strokeWidth={1} strokeOpacity={0.6}
                         strokeDasharray="3 4" />
                     )}
-
-                    {/* 天体本体 */}
                     <circle cx={x} cy={y} r={b.size}
                       fill={`url(#sc-body-${b.id})`}
                       opacity={0.5 + b.brightness * 0.5} />
-
-                    {/* 名前 */}
                     <text x={x} y={y - b.size - 7}
                       textAnchor="middle" fill={b.color}
                       fontSize={9} fontWeight="bold"
                       opacity={isSel ? 1 : 0.7}>
                       {b.name}
                     </text>
-
-                    {/* 訪問数 */}
                     <text x={x} y={y + b.size + 13}
                       textAnchor="middle"
-                      fill="rgba(255,255,255,0.28)"
-                      fontSize={8}>
+                      fill="rgba(255,255,255,0.28)" fontSize={8}>
                       {b.sessions}回
                     </text>
                   </g>
@@ -272,7 +257,6 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
             })}
           </svg>
 
-          {/* 合計バッジ */}
           <div style={{
             position: 'absolute', bottom: 14, left: '50%',
             transform: 'translateX(-50%)',
@@ -289,7 +273,7 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
         {/* 右パネル */}
         <div className="flex-1 flex flex-col gap-4 w-full min-w-0">
 
-          {/* 天体リスト */}
+          {/* 検知済みリスト */}
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4">
             <p className="text-[9px] tracking-[0.28em] text-[#3a6aee] mb-3 uppercase">Detected Bodies</p>
             {[...bodies].sort((a, b) => b.sessions - a.sessions).map(b => {
@@ -354,6 +338,30 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
               天体をクリックして<br />詳細を表示
             </div>
           )}
+
+          {/* 未観測クローラー候補 */}
+          {undetected.length > 0 && (
+            <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
+              <p className="text-[9px] tracking-[0.28em] text-gray-600 mb-3 uppercase">Undetected</p>
+              {undetected.map(c => (
+                <div key={c.name}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg mb-1">
+                  {/* グレーアウトのドット（点滅なし） */}
+                  <div className="w-2 h-2 rounded-full flex-shrink-0 border"
+                    style={{ borderColor: c.color + '30', background: 'transparent' }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate text-gray-600">{c.name}</p>
+                    <p className="text-[9px] text-gray-700">{c.label} · 未観測</p>
+                  </div>
+                  <span className="text-[9px] text-gray-700 flex-shrink-0">—</span>
+                </div>
+              ))}
+              <p className="text-[9px] text-gray-700 mt-2 px-1">
+                これらのAIはまだあなたのサイトを訪問していません
+              </p>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
