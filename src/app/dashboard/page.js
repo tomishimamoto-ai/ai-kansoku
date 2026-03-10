@@ -356,7 +356,7 @@ function DashboardContent() {
   };
 
   return (
-    <div className="min-h-screen text-white">
+    <div className="dashboard-bg text-white">
       {/* 星空背景（⑤ STARS定数を使用） */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {STARS.map((s, i) => (

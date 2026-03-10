@@ -24,3 +24,16 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.dashboard-bg {
+  background: linear-gradient(
+    to top,
+    #1a0800 0%,
+    #2d1040 20%,
+    #0d0a2e 50%,
+    #04051a 80%,
+    #000008 100%
+  );
+  background-attachment: fixed;
+  min-height: 100vh;
+}
