@@ -49,6 +49,12 @@ const IP_RANGE_SOURCES = [
     name: 'Perplexity',
     format: 'openai',
   },
+  // ⑤ perplexity-user.json 追加
+  {
+    url: 'https://www.perplexity.com/perplexity-user.json',
+    name: 'Perplexity',
+    format: 'openai',
+  },
 
   // ── DuckDuckGo ──────────────────────────────────────────
   {
@@ -59,10 +65,11 @@ const IP_RANGE_SOURCES = [
 
   // ── Microsoft / Bing ────────────────────────────────────
   // 公式: https://www.bing.com/toolbox/bingbot.json
+  // ※Bingのフォーマットは { prefixes: [{ ip_prefix: ... }] }
   {
     url: 'https://www.bing.com/toolbox/bingbot.json',
     name: 'Bing AI',
-    format: 'openai', // Bing も { prefixes: [{ ipv4Prefix: ... }] } 形式
+    format: 'openai',
   },
 
   // ── Apple ───────────────────────────────────────────────
@@ -76,6 +83,8 @@ const IP_RANGE_SOURCES = [
 
 // ========================================
 // CIDRマッチング（IPv4のみ）
+// ※IPv6は非対応（ip.includes(':') で事前スキップ）
+// ※不正なCIDRはtry/catchでfalseに倒す
 // ========================================
 function ipToInt(ip) {
   return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
@@ -113,12 +122,17 @@ async function fetchIpRanges() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const json = await res.json();
-        const items = json.prefixes || json.ipRanges || [];
+        // ② nullセーフ化
+        const items = json?.prefixes || json?.ipRanges || [];
 
         for (const item of items) {
-          const cidr = item.ipv4Prefix || item.ip_prefix;
+          // ③ ip_prefix（Bing形式）とipv6Prefixも拾う（IPv6は後段でスキップ）
+          const cidr =
+            item.ipv4Prefix ||
+            item.ip_prefix ||
+            item.ipv6Prefix;
           if (cidr && cidr.includes('.')) {
-            // IPv4のみ
+            // IPv4のみ使用
             prefixes.push({ cidr, name: source.name });
           }
         }
@@ -145,31 +159,29 @@ export async function getAiIpRanges() {
   }
 
   // 取得失敗時のフォールバック
-  // ── 公式に掲載されているハードコード値（最終更新: 2026年2月）──
+  // ── 公式に掲載されているハードコード値（最終更新: 2026年3月）──
   const FALLBACK_RANGES = [
-    // OpenAI / ChatGPT
+    // OpenAI / ChatGPT - https://openai.com/gptbot.json
     { cidr: '23.102.140.112/28', name: 'ChatGPT' },
     { cidr: '13.65.240.240/28',  name: 'ChatGPT' },
     { cidr: '40.83.2.64/28',     name: 'ChatGPT' },
     { cidr: '20.97.188.144/28',  name: 'ChatGPT' },
-    // Anthropic / Claude
+    // Anthropic / Claude - 公式IPレンジ非公開のため観測値
     { cidr: '160.79.104.0/23',   name: 'Claude'  },
-    // Google / Gemini
+    // Google / Gemini - https://developers.google.com/static/search/apis/ipranges/googlebot.json
     { cidr: '66.249.64.0/19',    name: 'Gemini'  },
     { cidr: '66.249.80.0/20',    name: 'Gemini'  },
-    // Perplexity
+    // Perplexity - https://www.perplexity.com/perplexitybot.json
     { cidr: '52.7.25.0/24',      name: 'Perplexity' },
-    // Bing / Microsoft ──────────────────────────────────────────
-    // 公式 bingbot.json から抜粋（代表レンジ）
+    // Bing / Microsoft - https://www.bing.com/toolbox/bingbot.json
     { cidr: '157.55.39.0/24',    name: 'Bing AI' },
     { cidr: '157.56.93.0/24',    name: 'Bing AI' },
     { cidr: '157.56.94.0/24',    name: 'Bing AI' },
     { cidr: '40.77.167.0/24',    name: 'Bing AI' },
     { cidr: '65.55.210.0/24',    name: 'Bing AI' },
     { cidr: '207.46.13.0/24',    name: 'Bing AI' },
-    // Apple Applebot ────────────────────────────────────────────
-    // 公式 applebot.json から抜粋（代表レンジ）
-    { cidr: '17.0.0.0/8',        name: 'Apple AI' }, // Apple 全体の割り当て
+    // Apple Applebot - https://search.developer.apple.com/applebot.json
+    // ① 17.0.0.0/8 は広すぎ（Apple全社トラフィックにマッチ）のため削除
     { cidr: '17.172.224.0/24',   name: 'Apple AI' },
     { cidr: '17.142.160.0/24',   name: 'Apple AI' },
   ];
@@ -182,19 +194,22 @@ export async function getAiIpRanges() {
       console.log(`📦 IP range cache updated: ${prefixes.length} ranges`);
       return prefixes;
     } else {
-      // 全部失敗した場合はフォールバック
+      // 全fetch失敗 → フォールバックをキャッシュして無駄なリトライを防ぐ
       console.warn('⚠️ Using fallback IP ranges');
       cache = { prefixes: FALLBACK_RANGES, fetchedAt: now };
       return FALLBACK_RANGES;
     }
   } catch (err) {
+    // ④ 障害時もフォールバックをキャッシュ（毎回外部fetchを防ぐ）
     console.error('❌ IP range fetch error:', err);
+    cache = { prefixes: FALLBACK_RANGES, fetchedAt: now };
     return FALLBACK_RANGES;
   }
 }
 
 // ========================================
 // IPがAIクローラーかチェック（メイン検索関数）
+// ※IPv6は非対応のためスキップ
 // ========================================
 export async function checkIpRangeDynamic(ip) {
   if (!ip || ip === 'unknown' || ip.includes(':')) return null; // IPv6スキップ
