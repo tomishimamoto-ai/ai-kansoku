@@ -1,37 +1,11 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Line } from 'react-chartjs-2';
-import MimicPanel from '../components/MimicPanel';
 import SearchConsolePanel from '../components/SearchConsolePanel';
 import SolarSystemChart from '../components/SolarSystemChart';
-import PageRanking from '../components/PageRanking';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
-
-// ⑤ BarElement削除（Line only）
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
 
 function getAiStatus(pageCount) {
   if (pageCount === 0)  return { label: '未認知',   color: '#6b7280', bg: 'bg-gray-500/10',    border: 'border-gray-500/30',    dot: 'bg-gray-500'    };
@@ -481,23 +455,10 @@ function DashboardContent() {
         {/* 天体フィールド */}
        <SolarSystemChart crawlers={ai_stats.by_crawler} firstVisit={ai_stats.last_visit} />
 
-        {/* よく見られたページ */}
-        <div className="mb-8">
-          <PageRanking topPages={top_pages} scData={scData} />
-        </div>
-
         {/* Search Console分析パネル */}
         <div className="mb-8">
           <SearchConsolePanel siteId={siteId} />
         </div>
-
-        {/* 課金セクション（予測ロック） */}
-        <ProUpsellSection aiTotal={ai_stats.total} />
-
-        {/* ミミック検知（アコーディオン） */}
-        <AccordionSection title="🛸 周期的アクセス検出（ミミッククローラー）" defaultOpen={false}>
-          <MimicPanel siteId={siteId} spoofedStats={data?.spoofed_stats} />
-        </AccordionSection>
 
         {/* 最新観測ログ（10件） */}
         <AccordionSection title="📋 最新観測ログ（10件）" defaultOpen={false} className="mt-8">
@@ -527,6 +488,10 @@ function DashboardContent() {
             </table>
           </div>
         </AccordionSection>
+
+        {/* 課金セクション（予測ロック） */}
+        <ProUpsellSection aiTotal={ai_stats.total} />
+
       </main>
 
       <footer className="border-t border-[#1a1e47] bg-[#0f1229]/80 backdrop-blur-xl mt-16">
