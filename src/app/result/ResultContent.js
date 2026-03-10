@@ -27,6 +27,11 @@ const PDFDownloadLink = dynamic(
   { ssr: false }
 );
 
+const PDFReport = dynamic(
+  () => import('../components/PDFReport'),
+  { ssr: false }
+);
+
 // ─── ローディング ──────────────────────────────────────────
 function LoadingScreen() {
   return (
@@ -71,9 +76,9 @@ function ResultContent() {
     if (!paramUrl) {
       try {
         const h = JSON.parse(localStorage.getItem('aiObservatoryHistory') || '[]');
-        setUrl(h[0]?.url || 'https://example.com');
+        setUrl(h[0]?.url || null);
       } catch {
-        setUrl('https://example.com');
+        setUrl(null);
       }
     }
   }, [paramUrl]);
@@ -106,12 +111,6 @@ function ResultContent() {
     checkedItems,
   });
 
-  const [PDFReport, setPDFReport] = useState(null);
-
-  useEffect(() => {
-  import('../components/PDFReport').then((mod) => setPDFReport(() => mod.default));
-}, []);
-
   // ── ローディング ──
   if (!dataLoaded) return <LoadingScreen />;
 
@@ -140,14 +139,14 @@ function ResultContent() {
     };
   });
 
-const robots = analyzedData?.details?.robotsTxt?.crawlers || {};
+  const robots = analyzedData?.details?.robotsTxt?.crawlers ?? {};
 
   const crawlers = [
-    { name: 'ChatGPT',    agent: 'GPTBot',          ok: robots.chatgpt },
-    { name: 'Claude',     agent: 'ClaudeBot',        ok: robots.claude },
-    { name: 'Gemini',     agent: 'Google-Extended',  ok: robots.gemini },
-    { name: 'Perplexity', agent: 'PerplexityBot',    ok: robots.perplexity },
-    { name: 'Cohere',     agent: 'cohere-ai',        ok: robots.cohere },
+  { name: 'ChatGPT',    agent: 'GPTBot',         ok: !!robots.chatgpt },
+  { name: 'Claude',     agent: 'ClaudeBot',       ok: !!robots.claude },
+  { name: 'Gemini',     agent: 'Google-Extended', ok: !!robots.gemini },
+  { name: 'Perplexity', agent: 'PerplexityBot',   ok: !!robots.perplexity },
+  { name: 'Cohere',     agent: 'cohere-ai',       ok: !!robots.cohere },
   ];
 
   const totalPotentialGain = [...improvements.urgent, ...improvements.medium]
@@ -157,7 +156,7 @@ const robots = analyzedData?.details?.robotsTxt?.crawlers || {};
   const urgentRest = improvements.urgent.slice(1);
   const mediumAll = improvements.urgent[0] ? improvements.medium : improvements.medium.slice(1);
 
-  const displayUrl = (url || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const displayUrl = (url || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
 
   const pdfData = {
     url,
