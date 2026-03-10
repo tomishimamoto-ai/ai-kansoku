@@ -40,7 +40,7 @@ export async function GET(request) {
         crawler_name,
         COUNT(*) as visit_count,
         COUNT(DISTINCT session_id) as unique_sessions,
-        COUNT(DISTINCT ip_address) as unique_ips
+        COUNT(DISTINCT ip_address) as unique_ips,
         MAX(visited_at) as last_visit
       FROM ai_crawler_visits
       WHERE site_id = ${siteId}
