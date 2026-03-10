@@ -8,6 +8,9 @@ const nextConfig = {
     // ビルド時のESLintエラーを無視
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    serverComponentsExternalPackages: ['@react-pdf/renderer'],
+  },
 };
 
 export default nextConfig;
