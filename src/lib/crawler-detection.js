@@ -321,6 +321,8 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     req.headers['cookie'] || ''
   );
 
+   const asn = req.headers.get?.('x-vercel-ip-as-number') || '';
+
   // v5.5: Sec-Fetch-* ヘッダー取得
   const secFetchSite = (
     req.headers.get?.('sec-fetch-site') ||
@@ -466,10 +468,11 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
   }
 
   const behavior = analyzeBehavior({
-    ua, acceptEncoding, acceptLang, accept, secChUa, connection,
-    method, referer, robots, htmlOnly, cookie,
-    secFetchSite, secFetchMode, secFetchDest, secFetchUser,
-  });
+  ua, acceptEncoding, acceptLang, accept, secChUa, connection,
+  method, referer, robots, htmlOnly, cookie,
+  secFetchSite, secFetchMode, secFetchDest, secFetchUser,
+  asn,
+});
 
   const rapidScore = rapid ? 10 : 0;
   const totalScore = uaScore + ipScore + behavior.score + rapidScore;
@@ -635,6 +638,13 @@ function analyzeBehavior({
     score += 2;
     reasons.push('connection-close');
   }
+
+  // ASN判定: データセンター系 = botの可能性高い
+const DATACENTER_ASN = ['15169','396982','16509','8075','14061','13335'];
+if (asn && DATACENTER_ASN.includes(asn)) {
+  score += 2;
+  reasons.push('datacenter-asn');
+}
 
   if (!cookie && hasBrowserUA) {
     score += 3;
