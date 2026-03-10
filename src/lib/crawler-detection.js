@@ -224,11 +224,12 @@ export function hadRobotsAccess(ip) {
 
 export function trackHtmlOnly(ip, path) {
   const isHtml = !path.match(/\.(css|js|png|jpg|webp|svg|woff|woff2|ico|gif|mp4|pdf)$/i);
-  if (!htmlOnlyMap.has(ip)) htmlOnlyMap.set(ip, { html: 0, total: 0 });
+  if (!htmlOnlyMap.has(ip)) htmlOnlyMap.set(ip, { html: 0, total: 0, updatedAt: Date.now() });
   const entry = htmlOnlyMap.get(ip);
   entry.total++;
   if (isHtml) entry.html++;
-  pruneMap(htmlOnlyMap, 10000, null);
+  entry.updatedAt = Date.now();
+  pruneMap(htmlOnlyMap, 10000, Date.now() - 60_000);
 }
 
 export function isHtmlOnly(ip) {
@@ -278,12 +279,12 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
     req.headers['user-agent'] || ''
   ).toLowerCase();
 
-  const ip = (
-    req.headers.get?.('cf-connecting-ip') ||
-    req.headers.get?.('x-real-ip') ||
-    req.headers.get?.('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-    req.ip || ''
+  const ip = normalizeIp(
+  req.headers.get?.('cf-connecting-ip') ||
+  req.headers.get?.('x-real-ip') ||
+  req.headers.get?.('x-forwarded-for')?.split(',')[0]?.trim() ||
+  req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+  req.ip || ''
   );
 
   const referer = (
@@ -347,11 +348,12 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
   const method    = req.method || 'GET';
   const rapid     = isRapidAccess(ip);
   const robots    = hadRobotsDb || hadRobotsAccess(ip);
-  const htmlOnly  = isHtmlOnly(ip);
   const sessionId = makeSessionId(ip, ua);
 
   if (path === '/robots.txt') markRobotsAccess(ip);
   trackHtmlOnly(ip, path);
+
+  const htmlOnly  = isHtmlOnly(ip);
 
   const base = {
     isAI: false,
@@ -548,7 +550,7 @@ export function detectCrawler(req, { path = '/', hadRobotsDb = false } = {}) {
 function analyzeBehavior({
   ua, acceptEncoding, acceptLang, accept, secChUa, connection,
   method, referer, robots, htmlOnly, cookie,
-  secFetchSite, secFetchMode, secFetchDest, secFetchUser,
+  secFetchSite, secFetchMode, secFetchDest, secFetchUser,asn,
 }) {
   let score = 0;
   const reasons = [];
@@ -564,10 +566,10 @@ function analyzeBehavior({
   ) {
     score += 2;
     reasons.push('abnormal-accept-language');
-  } else if (/^[a-z]{2}(-[A-Z]{2})?$/.test(acceptLang.trim())) {
+  } else if (/^[a-z]{2}(-[A-Z]{2})?$/.test(acceptLang.trim()) && !ua.includes('mozilla')) {
     score += 1;
     reasons.push('minimal-accept-language');
-  } else if (/ja/.test(acceptLang)) {
+  } else if (acceptLang.includes('ja') && acceptLang.includes(',')) {
     score -= 1;
     reasons.push('ja-accept-language');
   }
@@ -623,6 +625,11 @@ function analyzeBehavior({
     reasons.push('accept-html-only');
   }
 
+  else if (accept.startsWith('text/html') && !accept.includes('image')) {
+  score += 1;
+  reasons.push('accept-html-limited');
+  }
+
   const looksLikeChrome =
     ua.includes('chrome') && ua.includes('mozilla') &&
     !ua.includes('edg') && !ua.includes('opr');
@@ -634,13 +641,24 @@ function analyzeBehavior({
     reasons.push('no-sec-ch-ua');
   }
 
-  if (connection === 'close') {
+  if (connection.includes('close')) {
     score += 2;
     reasons.push('connection-close');
   }
 
   // ASN判定: データセンター系 = botの可能性高い
-const DATACENTER_ASN = ['15169','396982','16509','8075','14061','13335'];
+const DATACENTER_ASN = [
+  '15169','396982',
+  '16509','14618',
+  '8075',
+  '14061','63949',
+  '13335',
+  '24940',
+  '16276',
+  '9009',
+  '20473',
+];
+
 if (asn && DATACENTER_ASN.includes(asn)) {
   score += 2;
   reasons.push('datacenter-asn');
@@ -711,4 +729,8 @@ function formatName(pattern) {
     'apis-google': 'APIs-Google',     'google-safety': 'Google-Safety',
   };
   return map[pattern] || pattern.charAt(0).toUpperCase() + pattern.slice(1);
+}
+
+function normalizeIp(ip = '') {
+  return ip.replace(/^::ffff:/, '').trim();
 }
