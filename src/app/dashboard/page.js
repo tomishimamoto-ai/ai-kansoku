@@ -191,9 +191,18 @@ function DashboardContent() {
       <header className="border-b border-[#1a1e47] bg-[#0f1229]/80 backdrop-blur-xl sticky top-0 z-50 shadow-lg shadow-[#4a9eff]/5">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-[#4a9eff]/50">
-              <span className="text-base">🔭</span>
-            </div>
+            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 shrink-0">
+  <defs>
+    <linearGradient id="logo-g3" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#4a9eff"/>
+      <stop offset="100%" stopColor="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <circle cx="18" cy="18" r="14" stroke="url(#logo-g3)" strokeWidth="1.5" opacity="0.7"/>
+  <circle cx="18" cy="18" r="9" stroke="url(#logo-g3)" strokeWidth="1" strokeDasharray="3 2" opacity="0.4"/>
+  <circle cx="18" cy="18" r="2" fill="url(#logo-g3)"/>
+  <circle cx="28" cy="18" r="1.5" fill="#4a9eff" opacity="0.9"/>
+</svg>
             <div className="min-w-0">
               <Link href="/" className="text-base font-bold bg-gradient-to-r from-[#4a9eff] to-[#6eb5ff] bg-clip-text text-transparent block truncate">
                 AI観測ラボ
@@ -480,6 +489,24 @@ function DashboardSkeleton() {
     50% { opacity: 1; transform: scale(1.5); }
   }
   .animate-twinkle { animation: twinkle 3s ease-in-out infinite; }
+
+  @keyframes dotBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50% { transform: translateY(-6px); opacity: 1; }
+}
+@keyframes pulseRing {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+@keyframes starPulse {
+  0%, 100% { box-shadow: 0 0 30px #4a9eff, 0 0 60px #4a9eff40; }
+  50% { box-shadow: 0 0 50px #4a9eff, 0 0 100px #4a9eff60; }
+}
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+  
 `}</style>
     </div>
   );

@@ -1024,12 +1024,24 @@ export default function Home() {
             flexWrap: 'wrap', gap: 16,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{
-                width: 28, height: 28,
-                background: 'linear-gradient(135deg, var(--blue), var(--purple))',
-                borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.85rem',
-              }}>✦</div>
+              <div style={{ width: 34, height: 34 }}>
+  <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 34, height: 34 }}>
+    <defs>
+      <linearGradient id="logo-g" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#4a9eff"/>
+        <stop offset="100%" stopColor="#a855f7"/>
+      </linearGradient>
+      <linearGradient id="logo-scan" x1="18" y1="18" x2="32" y2="18" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#4a9eff" stopOpacity="0.8"/>
+        <stop offset="100%" stopColor="#4a9eff" stopOpacity="0"/>
+      </linearGradient>
+    </defs>
+    <circle cx="18" cy="18" r="14" stroke="url(#logo-g)" strokeWidth="1.5" opacity="0.7"/>
+    <circle cx="18" cy="18" r="9" stroke="url(#logo-g)" strokeWidth="1" strokeDasharray="3 2" opacity="0.4"/>
+    <circle cx="18" cy="18" r="2" fill="url(#logo-g)"/>
+    <circle cx="28" cy="18" r="1.5" fill="#4a9eff" opacity="0.9"/>
+  </svg>
+</div>
               <span style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif", fontSize: '0.9rem', fontWeight: 700 }}>AI観測ラボ</span>
             </div>
             <div style={{ display: 'flex', gap: 20 }}>

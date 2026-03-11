@@ -165,7 +165,22 @@ function ResultContent() {
         {/* ヘッダー */}
         <div className="flex items-center justify-between py-5 border-b border-white/8 mb-8 gap-3">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-70 transition-opacity shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600" />
+            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8">
+  <defs>
+    <linearGradient id="logo-g2" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#4a9eff"/>
+      <stop offset="100%" stopColor="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="logo-scan2" x1="18" y1="18" x2="32" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#4a9eff" stopOpacity="0.8"/>
+      <stop offset="100%" stopColor="#4a9eff" stopOpacity="0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="18" cy="18" r="14" stroke="url(#logo-g2)" strokeWidth="1.5" opacity="0.7"/>
+  <circle cx="18" cy="18" r="9" stroke="url(#logo-g2)" strokeWidth="1" strokeDasharray="3 2" opacity="0.4"/>
+  <circle cx="18" cy="18" r="2" fill="url(#logo-g2)"/>
+  <circle cx="28" cy="18" r="1.5" fill="#4a9eff" opacity="0.9"/>
+</svg>
             <span className="font-bold text-base tracking-wide">AI観測ラボ</span>
           </Link>
           <div className="flex items-center gap-3 min-w-0">
