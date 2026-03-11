@@ -55,20 +55,20 @@ export const metadata = {
   },
 
   // Favicon
-  icons: {
-    icon: [
-      {
-        url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔍</text></svg>',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: [
-      {
-        url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔍</text></svg>',
-        type: 'image/svg+xml',
-      },
-    ],
-  },
+icons: {
+  icon: [
+    {
+      url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><linearGradient id="g" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse"><stop offset="0%25" stop-color="%234a9eff"/><stop offset="100%25" stop-color="%23a855f7"/></linearGradient></defs><circle cx="18" cy="18" r="14" stroke="url(%23g)" stroke-width="1.5" opacity="0.9" fill="none"/><circle cx="18" cy="18" r="9" stroke="url(%23g)" stroke-width="1" stroke-dasharray="3 2" opacity="0.6" fill="none"/><circle cx="18" cy="18" r="2.5" fill="url(%23g)"/><circle cx="28" cy="18" r="1.8" fill="%234a9eff"/></svg>',
+      type: 'image/svg+xml',
+    },
+  ],
+  apple: [
+    {
+      url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><linearGradient id="g" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse"><stop offset="0%25" stop-color="%234a9eff"/><stop offset="100%25" stop-color="%23a855f7"/></linearGradient></defs><circle cx="18" cy="18" r="14" stroke="url(%23g)" stroke-width="1.5" opacity="0.9" fill="none"/><circle cx="18" cy="18" r="9" stroke="url(%23g)" stroke-width="1" stroke-dasharray="3 2" opacity="0.6" fill="none"/><circle cx="18" cy="18" r="2.5" fill="url(%23g)"/><circle cx="28" cy="18" r="1.8" fill="%234a9eff"/></svg>',
+      type: 'image/svg+xml',
+    },
+  ],
+},
 
   robots: {
     index: true,
