@@ -187,7 +187,7 @@ function ResultContent() {
         }
       `}</style>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-24">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-24">
 
         {/* ─── ヘッダー ─── */}
         <div className="flex items-center justify-between py-5 mb-10"

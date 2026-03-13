@@ -4,7 +4,6 @@ import { generateSiteId } from '../../utils/generateSiteId';
 import { getImprovements } from '../constants/improvements';
 
 export function useResultData(url) {
-  const [isClient, setIsClient] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [analyzedData, setAnalyzedData] = useState(null);
   const [prevScore, setPrevScore] = useState(null);
@@ -13,28 +12,39 @@ export function useResultData(url) {
   const [isTrackingInstalled, setIsTrackingInstalled] = useState(false);
   const [dashPreview, setDashPreview] = useState(null);
 
-  const siteId = useMemo(() => generateSiteId(url), [url]);
+  // ① urlがnullでも安全
+  const siteId = useMemo(() => {
+    if (!url) return null;
+    return generateSiteId(url);
+  }, [url]);
 
+  // localStorage読み込み
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    setIsClient(true);
+    if (typeof window === 'undefined' || !siteId) return;
     try {
       const raw = localStorage.getItem(`analysis_${siteId}`);
-      if (raw) setAnalyzedData(JSON.parse(raw));
-      if (localStorage.getItem(`trackingInstalled_${siteId}`)) setIsTrackingInstalled(true);
+      setAnalyzedData(raw ? JSON.parse(raw) : null);
+
       const saved = localStorage.getItem(`checkedItems_${siteId}`);
-      if (saved) setCheckedItems(JSON.parse(saved));
+      setCheckedItems(saved ? JSON.parse(saved) : {});
+
+      setIsTrackingInstalled(!!localStorage.getItem(`trackingInstalled_${siteId}`));
+
       const visitCount = localStorage.getItem(`visitCount_${siteId}`);
       setDashPreview(visitCount !== null ? parseInt(visitCount, 10) : null);
-    } catch (e) {
+    } catch {
+      setAnalyzedData(null);
+      setCheckedItems({});
+      setIsTrackingInstalled(false);
+      setDashPreview(null);
     } finally {
       setDataLoaded(true);
     }
   }, [siteId]);
 
-  // ② siteIdで履歴管理
+  // 履歴管理 ③ totalScore=0でも保存される
   useEffect(() => {
-    if (!url || !analyzedData?.totalScore) return;
+    if (!url || !siteId || !analyzedData) return;
     try {
       const h = JSON.parse(localStorage.getItem('aiObservatoryHistory') || '[]');
       const prev = h.find((i) => i.siteId === siteId);
@@ -47,10 +57,9 @@ export function useResultData(url) {
         ...h.filter((i) => i.siteId !== siteId),
       ];
       localStorage.setItem('aiObservatoryHistory', JSON.stringify(next.slice(0, 10)));
-    } catch (e) {}
+    } catch {}
   }, [url, siteId, analyzedData]);
 
-  // ① checkedItems依存いらない版
   const handleCheck = useCallback((id) => {
     setCheckedItems((prev) => {
       const next = { ...prev, [id]: !prev[id] };
@@ -61,7 +70,6 @@ export function useResultData(url) {
     });
   }, [siteId]);
 
-  // ③ await追加 + honeypot削除
   const handleCopyTracking = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(
@@ -81,16 +89,13 @@ export function useResultData(url) {
   }, [prevScores, checkedItems, analyzedData]);
 
   const totalScore = analyzedData?.totalScore ?? 0;
-
   const currentScores = useMemo(() => analyzedData?.scores || {}, [analyzedData]);
-
   const improvements = useMemo(() => {
     if (!analyzedData) return { urgent: [], medium: [], completed: [] };
     return getImprovements(analyzedData);
   }, [analyzedData]);
 
   return {
-    isClient,
     dataLoaded,
     analyzedData,
     siteId,

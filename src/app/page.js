@@ -665,7 +665,7 @@ const validateUrl = (inputUrl) => {
                   <span style={{
                     fontFamily: M, fontSize: 13, color: 'var(--ink-xlight)',
                     padding: '14px 10px 14px 18px', userSelect: 'none', whiteSpace: 'nowrap',
-                  }}>https://</span>
+                  }}>URL://</span>
                   <input
                     ref={inputRef}
                     type="text"
