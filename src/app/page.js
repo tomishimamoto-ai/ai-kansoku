@@ -284,6 +284,7 @@ const validateUrl = (inputUrl) => {
       });
       clearTimeout(timeoutId);
       if (response.ok) {
+      const data = await response.json();
       setLoadingStep('診断完了！');
       saveAnalysisToStorage(siteId, data);
 
@@ -293,7 +294,8 @@ const validateUrl = (inputUrl) => {
 
       } else {
         setLoading(false);
-        let msg = data.error || '診断中にエラーが発生しました';
+        const data = await response.json().catch(() => null);
+        let msg = data?.error || '診断中にエラーが発生しました';
         if (response.status === 404) msg = 'サイトが見つかりませんでした。URLを確認してください。';
         else if (response.status === 403) msg = 'アクセスが拒否されました。クロールを許可していない可能性があります。';
         setError(msg);
@@ -307,7 +309,7 @@ const validateUrl = (inputUrl) => {
 
   return (
     <>
-    <script                          // ← ここに追加
+    <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
