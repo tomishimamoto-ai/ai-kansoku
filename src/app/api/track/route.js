@@ -98,6 +98,8 @@ async function handleTrack(req) {
         had_robots_access,
         is_html_only,
         page_url,
+        accept_header,
+        accept_language,
         visited_at
       ) VALUES (
         ${siteId},
@@ -115,6 +117,8 @@ async function handleTrack(req) {
         ${detection.robots   ?? false},
         ${detection.htmlOnly ?? false},
         ${path},
+        ${req.headers.get('accept') || null},
+        ${req.headers.get('accept-language') || null},
         NOW()
       )
     `;
