@@ -19,7 +19,7 @@ import RadarSection from './components/RadarSection';
 import TechDetails from './components/TechDetails';
 import TrackingCode from './components/TrackingCode';
 import ShareDropdown from '../components/ShareDropdown';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 // ─── ローディング ──────────────────────────────────────────
 function LoadingScreen() {
@@ -69,24 +69,20 @@ function NoDataError({ url }) {
 function ResultContent() {
   const searchParams = useSearchParams();
   const paramUrl = searchParams.get('url');
-  const [url, setUrl] = useState(null);
+  const [url] = useState(() => {
+  if (paramUrl) return paramUrl;
 
-useEffect(() => {
-  if (paramUrl) {
-    setUrl(paramUrl);
-    return;
-  }
+  if (typeof window === 'undefined') return null;
 
   try {
     const h = JSON.parse(localStorage.getItem('aiObservatoryHistory') || '[]');
-    setUrl(h[0]?.url || null);
+    return h[0]?.url || null;
   } catch {
-    setUrl(null);
+    return null;
   }
-}, [paramUrl]);
+});
 
   const {
-    isClient,
     dataLoaded,
     analyzedData,
     siteId,
