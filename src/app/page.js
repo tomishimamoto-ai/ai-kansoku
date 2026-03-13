@@ -1,13 +1,12 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Noto_Sans_JP, Plus_Jakarta_Sans, DM_Mono } from 'next/font/google';
+import { Noto_Sans_JP } from 'next/font/google';
 import { generateSiteId } from './utils/generateSiteId';
 import { useRouter } from 'next/navigation';
 
-const router = useRouter();
 const notoSansJP = Noto_Sans_JP({ subsets: ['latin'], weight: ['300', '400', '500', '700'] });
-const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
-const dmMono = DM_Mono({ subsets: ['latin'], weight: ['300', '400', '500'] });
+const plusJakarta = { style: { fontFamily: "'Plus Jakarta Sans', sans-serif" } };
+const dmMono = { style: { fontFamily: "'DM Mono', monospace" } };
 
 const BLOG_POSTS = [
   {
@@ -202,6 +201,7 @@ function saveAnalysisToStorage(siteId, data) {
 
 // ═══════════════════════════════════════════════════════════════
 export default function Home() {
+  const router = useRouter();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);
