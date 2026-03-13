@@ -283,13 +283,14 @@ const validateUrl = (inputUrl) => {
         body: JSON.stringify({ url: normalizedUrl, siteId }),
       });
       clearTimeout(timeoutId);
-      const data = await response.json();
       if (response.ok) {
-        setLoadingStep('診断完了！');
-        saveAnalysisToStorage(siteId, data);
+      setLoadingStep('診断完了！');
+      saveAnalysisToStorage(siteId, data);
+
         const params = new URLSearchParams({ url: normalizedUrl, siteId });
-        setLoading(false);
+
         router.push(`/result?${params.toString()}`);
+
       } else {
         setLoading(false);
         let msg = data.error || '診断中にエラーが発生しました';

@@ -109,10 +109,9 @@ function ResultContent() {
     checkedItems,
   });
   
-  if (!url) return <LoadingScreen />;
-
-  // ── ローディング ──
-  if (!dataLoaded) return <LoadingScreen />;
+  if (!url || !dataLoaded) {
+  return <LoadingScreen />;
+  }
 
   // ── データなし ──
   if (!analyzedData) return <NoDataError url={url} />;
