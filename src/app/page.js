@@ -306,6 +306,20 @@ const validateUrl = (inputUrl) => {
 
   return (
     <>
+    <script                          // ← ここに追加
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "AI観測ラボ",
+        "url": "https://ai-kansoku.com",
+        "description": "ChatGPT・Claude・PerplexityなどのAIクローラーに対するサイトの可視性を診断するツール。robots.txt・sitemap.xmlなど8項目を無料で分析。",
+        "applicationCategory": "WebApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
+        "inLanguage": "ja"
+      }) }}
+    />
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
