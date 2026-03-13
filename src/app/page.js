@@ -233,21 +233,28 @@ export default function Home() {
   };
 
   // ── validateUrl ──────────────────────────────────────────────
-  const validateUrl = (inputUrl) => {
-    if (!inputUrl.trim()) return { valid: false, error: 'URLを入力してください' };
-    let normalizedUrl = inputUrl.trim();
-    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
-      normalizedUrl = 'https://' + normalizedUrl;
+const validateUrl = (inputUrl) => {
+  if (!inputUrl.trim()) return { valid: false, error: 'URLを入力してください' };
+
+  let normalizedUrl = inputUrl.trim();
+
+  normalizedUrl = normalizedUrl.replace(/^https?:\/\//, '');
+  normalizedUrl = 'https://' + normalizedUrl;
+
+  try {
+    const urlObj = new URL(normalizedUrl);
+
+    if (!urlObj.hostname.includes('.')) {
+      return { valid: false, error: '有効なドメインを入力してください' };
     }
-    try {
-      const urlObj = new URL(normalizedUrl);
-      if (!urlObj.hostname.includes('.')) return { valid: false, error: '有効なドメインを入力してください' };
-      normalizedUrl = normalizedUrl.replace(/^(https?:\/\/)www\./, '$1');
-      return { valid: true, url: normalizedUrl };
-    } catch {
-      return { valid: false, error: '有効なURLを入力してください（例: example.com）' };
-    }
-  };
+
+    normalizedUrl = normalizedUrl.replace(/^(https?:\/\/)www\./, '$1');
+
+    return { valid: true, url: normalizedUrl };
+  } catch {
+    return { valid: false, error: '有効なURLを入力してください（例: example.com）' };
+  }
+};
 
   const diagnoseFromHistory = (historyUrl) => {
     setUrl(historyUrl);
@@ -281,6 +288,7 @@ export default function Home() {
         setLoadingStep('診断完了！');
         saveAnalysisToStorage(siteId, data);
         const params = new URLSearchParams({ url: normalizedUrl, siteId });
+        setLoading(false);
         router.push(`/result?${params.toString()}`);
       } else {
         setLoading(false);
@@ -650,7 +658,12 @@ export default function Home() {
                     onChange={e => { setUrl(e.target.value); setError(null); }}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
-                    onKeyDown={e => e.key === 'Enter' && handleAnalyze()}
+                    onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAnalyze();
+                      }
+                    }}
                     placeholder="example.com を入力"
                     style={{
                       flex: 1, minWidth: 0, border: 'none', outline: 'none',
