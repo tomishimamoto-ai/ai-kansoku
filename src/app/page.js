@@ -425,6 +425,7 @@ const validateUrl = (inputUrl) => {
           color: var(--ink-mid);
           text-decoration: none;
           transition: color .15s;
+          font-weight: 600;
         }
         .nav-a:hover { color: var(--ink); }
 
@@ -512,7 +513,7 @@ const validateUrl = (inputUrl) => {
         </a>
 
         {/* PC nav */}
-        <ul className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 28, listStyle: 'none' }}>
+        <ul className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 28, listStyle: 'none',fontWeight: '600'  }}>
           {[['使い方', '/how-to-use'], ['改善ガイド', '/guide'], ['FAQ', '/faq'], ['ブログ', 'https://blog.ai-kansoku.com']].map(([l, h]) => (
             <li key={l}><a href={h} className="nav-a" style={{ fontFamily: No }}>{l}</a></li>
           ))}
