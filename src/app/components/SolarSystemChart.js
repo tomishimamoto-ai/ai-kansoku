@@ -1,9 +1,9 @@
 'use client';
 import { useState, useMemo } from 'react';
 
-const CX = 280;
-const CY = 280;
-const SIZE = 560;
+const CX = 260;
+const CY = 260;
+const SIZE = 520;
 
 const CRAWLER_CONFIG = {
   'GPTBot':           { color: '#f0e68c', orbitRadius: 100, label: '木星' },
@@ -14,15 +14,15 @@ const CRAWLER_CONFIG = {
   'Gemini':           { color: '#ffd4a3', orbitRadius: 205, label: '土星' },
   'PerplexityBot':    { color: '#b8ffb8', orbitRadius: 248, label: '火星' },
   'Perplexity':       { color: '#b8ffb8', orbitRadius: 248, label: '火星' },
+  'ByteSpider':       { color: '#ff6eb4', orbitRadius: 130, label: '金星' },
   'default':          { color: '#aaaacc', orbitRadius: 185, label: '小惑星' },
 };
 
-// 未観測候補（代表的なクローラー）
 const UNDETECTED_CANDIDATES = [
-  { name: 'ClaudeBot',    color: '#7eb8ff', label: '海王星' },
-  { name: 'Gemini',       color: '#ffd4a3', label: '土星' },
-  { name: 'PerplexityBot',color: '#b8ffb8', label: '火星' },
-  { name: 'GPTBot',       color: '#f0e68c', label: '木星' },
+  { name: 'ClaudeBot',     color: '#7eb8ff', label: '海王星' },
+  { name: 'Gemini',        color: '#ffd4a3', label: '土星' },
+  { name: 'PerplexityBot', color: '#b8ffb8', label: '火星' },
+  { name: 'GPTBot',        color: '#f0e68c', label: '木星' },
 ];
 
 const ORBIT_OFFSETS = [0, 22, -18, 30, -25, 15, -12];
@@ -41,8 +41,8 @@ function toXY(r, deg) {
 }
 
 function getBodySize(sessions, maxSessions) {
-  if (maxSessions === 0) return 8;
-  return 7 + (sessions / maxSessions) * 18;
+  if (maxSessions === 0) return 6;
+  return 6 + (sessions / maxSessions) * 14;
 }
 
 function getBrightness(lastVisitHours) {
@@ -105,7 +105,6 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
     });
   }, [crawlers, lastVisit]);
 
-  // 未観測クローラー（検知済みを除外）
   const detectedNames = new Set(bodies.map(b => b.name));
   const undetected = UNDETECTED_CANDIDATES.filter(c => !detectedNames.has(c.name));
 
@@ -131,7 +130,7 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
           <h2 className="text-xl font-bold flex items-center gap-2 mb-1">
             <span>🌌</span>
             <span className="bg-gradient-to-r from-[#7eb8ff] via-white to-[#ffd4a3] bg-clip-text text-transparent">
-              クローラー惑星系
+              AIクローラー観測マップ
             </span>
           </h2>
           <p className="text-xs text-gray-500">天体をクリックして詳細を表示</p>
@@ -150,13 +149,13 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-        {/* SVGマップ */}
+        {/* SVGマップ（無変更） */}
         <div className="relative flex-shrink-0 mx-auto lg:mx-0">
           <svg
             width={SIZE} height={SIZE}
             viewBox={`0 0 ${SIZE} ${SIZE}`}
             style={{
-              maxWidth: 'min(560px, 90vw)',
+              maxWidth: 'min(520px, 95vw)',
               height: 'auto',
               display: 'block',
               borderRadius: '50%',
@@ -211,33 +210,27 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
               fill="rgba(255,210,80,0.6)" fontSize={8} letterSpacing="1.5">
               YOUR SITE
             </text>
-            {/* ゴースト惑星（未観測） */}
-{undetected.map((c, i) => {
-  const cfg = CRAWLER_CONFIG[c.name] || CRAWLER_CONFIG['default'];
-  const angle = 45 + i * 90;
-  const { x, y } = toXY(cfg.orbitRadius, angle);
-  return (
-    <g key={c.name + '-ghost'}>
-      <circle cx={x} cy={y} r={8}
-        fill="none"
-        stroke={c.color}
-        strokeWidth={1}
-        strokeOpacity={0.45}
-        strokeDasharray="2 4"
-      />
-      <text x={x} y={y - 14}
-        textAnchor="middle"
-        fill={c.color}
-        fontSize={8}
-        opacity={0.45}>
-        {c.name}
-      </text>
-    </g>
-  );
-})}
+
+            {undetected.map((c, i) => {
+              const cfg = CRAWLER_CONFIG[c.name] || CRAWLER_CONFIG['default'];
+              const angle = 45 + i * 90;
+              const { x, y } = toXY(cfg.orbitRadius, angle);
+              return (
+                <g key={c.name + '-ghost'}>
+                  <circle cx={x} cy={y} r={8}
+                    fill="none" stroke={c.color}
+                    strokeWidth={1} strokeOpacity={0.45} strokeDasharray="2 4" />
+                  <text x={x} y={y - 14} textAnchor="middle"
+                    fill={c.color} fontSize={8} opacity={0.45}>
+                    {c.name}
+                  </text>
+                </g>
+              );
+            })}
+
             {bodies.map(b => {
               const isSel = selected === b.id;
-              const { x, y } = toXY(b.orbitRadius, b.angle);
+              const { x, y } = toXY(b.orbitRadius, 0); // angle=0で固定位置
               const dur = `${180 + (b.orbitRadius % 60)}s`;
 
               return (
@@ -245,11 +238,15 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
                   onClick={() => setSelected(p => p === b.id ? null : b.id)}
                   style={{ cursor: 'pointer' }}>
                   <g>
+                    {/* 太陽中心で軌道を回る正しいアニメーション */}
                     <animateTransform
-                      attributeName="transform" type="rotate"
+                      attributeName="transform"
+                      type="rotate"
                       from={`${b.angle} ${CX} ${CY}`}
                       to={`${b.angle + 360} ${CX} ${CY}`}
-                      dur={dur} repeatCount="indefinite" />
+                      dur={dur}
+                      repeatCount="indefinite"
+                    />
                     <circle cx={x} cy={y} r={b.size * 2.5}
                       fill={b.color} opacity={b.brightness * 0.15} />
                     <circle cx={x} cy={y} r={b.size * 1.8}
@@ -257,8 +254,7 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
                     {isSel && (
                       <circle cx={x} cy={y} r={b.size + 7}
                         fill="none" stroke={b.color}
-                        strokeWidth={1} strokeOpacity={0.6}
-                        strokeDasharray="3 4" />
+                        strokeWidth={1} strokeOpacity={0.6} strokeDasharray="3 4" />
                     )}
                     <circle cx={x} cy={y} r={b.size}
                       fill={`url(#sc-body-${b.id})`}
@@ -293,35 +289,43 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
           </div>
         </div>
 
-        {/* 右パネル */}
+        {/* 右パネル（視認性改善） */}
         <div className="flex-1 flex flex-col gap-4 w-full min-w-0">
 
           {/* 検知済みリスト */}
-          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4">
-            <p className="text-[9px] tracking-[0.28em] text-[#3a6aee] mb-3 uppercase">Detected Bodies</p>
+          <div className="rounded-xl p-4"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <p className="text-[9px] tracking-[0.28em] mb-3 uppercase" style={{ color: '#7eb8ff' }}>Detected Bodies</p>
             {[...bodies].sort((a, b) => b.sessions - a.sessions).map(b => {
               const isSel = selected === b.id;
               return (
                 <div key={b.id}
                   onClick={() => setSelected(p => p === b.id ? null : b.id)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer mb-1 transition-all border ${
-                    isSel ? 'bg-white/5 border-white/10' : 'bg-transparent border-transparent hover:bg-white/[0.03]'
-                  }`}>
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer mb-1 transition-all"
+                  style={{
+                    background: isSel ? 'rgba(255,255,255,0.07)' : 'transparent',
+                    border: `1px solid ${isSel ? 'rgba(255,255,255,0.1)' : 'transparent'}`,
+                  }}>
                   <div className="w-2 h-2 rounded-full flex-shrink-0"
                     style={{ background: b.color, boxShadow: `0 0 6px ${b.color}` }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold truncate" style={{ color: b.color }}>{b.name}</p>
-                    <p className="text-[1px] text-white-400">{b.label} · {formatLastVisit(b.lastVisitHours)}</p>
+                    {/* ← text-[1px]バグ修正 → text-[10px] */}
+                    <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                      {b.label} · {formatLastVisit(b.lastVisitHours)}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                      b.trend === 'up' ? 'bg-green-500/20 text-green-400' :
+                      b.trend === 'up'   ? 'bg-green-500/20 text-green-400' :
                       b.trend === 'down' ? 'bg-red-500/20 text-red-400' :
-                      'bg-gray-500/20 text-gray-400'
+                                          'bg-gray-500/20 text-gray-400'
                     }`}>
                       {b.trend === 'up' ? '+' : ''}{b.change}%
                     </span>
-                    <span className="text-sm font-bold text-white/75">{b.sessions}</span>
+                    <span className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                      {b.sessions}
+                    </span>
                   </div>
                 </div>
               );
@@ -330,24 +334,24 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
 
           {/* 詳細パネル */}
           {sel ? (
-            <div className="bg-white/[0.03] rounded-xl p-4"
-              style={{ border: `1px solid ${sel.color}22` }}>
+            <div className="rounded-xl p-4"
+              style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${sel.color}33` }}>
               <p className="text-[9px] tracking-[0.28em] mb-3 uppercase" style={{ color: sel.color }}>Details</p>
               <p className="text-sm font-bold mb-4" style={{ color: sel.color }}>{sel.name}</p>
               {[
-                ['訪問数', `${sel.sessions} 回`],
+                ['訪問数',   `${sel.sessions} 回`],
                 ['ユニーク', `${sel.uniqueSessions} セッション`],
-                ['先週比', `${sel.change > 0 ? '+' : ''}${sel.change}%`],
+                ['先週比',   `${sel.change > 0 ? '+' : ''}${sel.change}%`],
                 ['最終観測', formatLastVisit(sel.lastVisitHours)],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between mb-2">
-                  <span className="text-[11px] text-white/75">{k}</span>
-                  <span className="text-[11px] text-white/75">{v}</span>
+                  <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{k}</span>
+                  <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.9)' }}>{v}</span>
                 </div>
               ))}
               <div className="mt-3">
-                <p className="text-[9px] text-gray-600 mb-1">観測輝度</p>
-                <div className="bg-white/[0.07] rounded-full h-1">
+                <p className="text-[9px] mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>観測輝度</p>
+                <div className="rounded-full h-1" style={{ background: 'rgba(255,255,255,0.08)' }}>
                   <div className="h-full rounded-full transition-all"
                     style={{
                       width: `${sel.brightness * 100}%`,
@@ -357,29 +361,35 @@ export default function SolarSystemChart({ crawlers = [], lastVisit = null }) {
               </div>
             </div>
           ) : (
-            <div className="bg-white/[0.015] border border-dashed border-white/[0.07] rounded-xl p-4 text-center text-gray-400 text-sm leading-loose">
+            <div className="rounded-xl p-4 text-center leading-loose"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px dashed rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.35)',
+                fontSize: 13,
+              }}>
               天体をクリックして<br />詳細を表示
             </div>
           )}
 
           {/* 未観測クローラー候補 */}
           {undetected.length > 0 && (
-            <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
-              <p className="text-[9px] tracking-[0.28em] text-gray-600 mb-3 uppercase">Undetected</p>
+            <div className="rounded-xl p-4"
+              style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[9px] tracking-[0.28em] mb-3 uppercase"
+                style={{ color: 'rgba(255,255,255,0.35)' }}>Undetected</p>
               {undetected.map(c => (
-                <div key={c.name}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg mb-1">
-                  {/* グレーアウトのドット（点滅なし） */}
+                <div key={c.name} className="flex items-center gap-3 px-3 py-2 rounded-lg mb-1">
                   <div className="w-2 h-2 rounded-full flex-shrink-0 border"
-                    style={{ borderColor: c.color + '30', background: 'transparent' }} />
+                    style={{ borderColor: c.color + '40', background: 'transparent' }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate text-gray-600">{c.name}</p>
-                    <p className="text-[9px] text-gray-700">{c.label} · 未観測</p>
+                    <p className="text-xs font-medium truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>{c.name}</p>
+                    <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.28)' }}>{c.label} · 未観測</p>
                   </div>
-                  <span className="text-[9px] text-gray-700 flex-shrink-0">—</span>
+                  <span className="text-[9px] flex-shrink-0" style={{ color: 'rgba(255,255,255,0.28)' }}>—</span>
                 </div>
               ))}
-              <p className="text-[9px] text-gray-700 mt-2 px-1">
+              <p className="text-[10px] mt-2 px-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
                 これらのAIはまだあなたのサイトを訪問していません
               </p>
             </div>

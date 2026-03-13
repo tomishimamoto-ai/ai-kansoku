@@ -294,7 +294,7 @@ function DashboardContent() {
 
       {/* ── Header ──────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50" style={{ background: 'rgba(255,255,255,0.92)', borderBottom: '1px solid #e8e8e8', backdropFilter: 'blur(12px)' }}>
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-70 transition-opacity shrink-0">
@@ -356,7 +356,7 @@ function DashboardContent() {
       </header>
 
       {/* ── Main ────────────────────────────────────────────────── */}
-      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-10 space-y-4">
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-10 space-y-4">
 
         {/* Page title */}
         <div className="mb-8">
@@ -544,7 +544,7 @@ function DashboardContent() {
 
       {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className="mt-16" style={{ borderTop: '1px solid #e8e8e8' }}>
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-xs" style={{ color: '#bbbbbb' }}>© 2026 AI観測ラボ</span>
           <div className="flex items-center gap-4 text-xs" style={{ color: '#bbbbbb' }}>
             <Link href="/guide" className="hover:underline transition-colors" style={{ color: '#888888' }}>改善ガイド</Link>
