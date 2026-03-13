@@ -13,69 +13,70 @@ export default function TechDetails({ analyzedData }) {
   const performance = analyzedData.details?.performance;
 
   return (
-    <div className="mb-8">
-      {/* トグルヘッダー */}
+    <div className="mb-3">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border border-white/8 bg-white/3 hover:bg-white/5 transition-all">
+        className="w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all text-left"
+        style={{ background: '#ffffff', border: '1px solid var(--border)' }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-sub)'}
+        onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}>
         <div className="flex items-center gap-3">
           <span>🔬</span>
-          <span className="text-sm text-gray-300 font-medium">技術的な詳細内訳</span>
-          <span className="text-xs text-gray-600">上級者向け</span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>技術的な詳細内訳</span>
+          <span className="text-xs" style={{ color: 'var(--ink-xlight)' }}>上級者向け</span>
         </div>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16" height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`text-gray-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <span className="text-xs transition-transform duration-200"
+          style={{ color: 'var(--ink-xlight)', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>
+          ▼
+        </span>
       </button>
 
       {open && (
-        <div className="mt-1.5 space-y-3">
+        <div className="mt-1.5 space-y-2.5">
 
           {/* メタタグ詳細 */}
           {metaTags?.exists && (
-            <div className="p-5 rounded-2xl border border-white/8 bg-white/2">
-              <h5 className="font-bold mb-4 flex items-center gap-2">🏷️ メタタグ詳細</h5>
+            <div className="p-5 rounded-2xl" style={{ background: '#ffffff', border: '1px solid var(--border)' }}>
+              <h5 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--ink)' }}>
+                🏷️ メタタグ詳細
+              </h5>
               <div className="space-y-2.5">
-                <div className="p-3.5 rounded-xl bg-black/20 border border-white/6">
+                <div className="p-3.5 rounded-xl" style={{ background: 'var(--bg-sub)', border: '1px solid var(--border)' }}>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-gray-400">Title</span>
-                    <span className={metaTags?.basic?.titleOptimal ? 'text-emerald-400' : 'text-amber-400'}>
+                    <span style={{ color: 'var(--ink-light)' }}>Title</span>
+                    <span style={{ color: metaTags?.basic?.titleOptimal ? 'var(--green)' : 'var(--yellow)' }}>
                       {metaTags?.basic?.titleLength ?? 0}文字
                     </span>
                   </div>
-                  <p className="text-sm text-gray-300 break-words">{metaTags?.basic?.title ?? '—'}</p>
+                  <p className="text-sm break-words" style={{ color: 'var(--ink-mid)' }}>
+                    {metaTags?.basic?.title ?? '—'}
+                  </p>
                 </div>
-                <div className="p-3.5 rounded-xl bg-black/20 border border-white/6">
+                <div className="p-3.5 rounded-xl" style={{ background: 'var(--bg-sub)', border: '1px solid var(--border)' }}>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-gray-400">Description</span>
-                    <span className={metaTags?.basic?.descriptionOptimal ? 'text-emerald-400' : 'text-amber-400'}>
+                    <span style={{ color: 'var(--ink-light)' }}>Description</span>
+                    <span style={{ color: metaTags?.basic?.descriptionOptimal ? 'var(--green)' : 'var(--yellow)' }}>
                       {metaTags?.basic?.descriptionLength ?? 0}文字
                     </span>
                   </div>
-                  <p className="text-sm text-gray-300 break-words">{metaTags?.basic?.description ?? '—'}</p>
+                  <p className="text-sm break-words" style={{ color: 'var(--ink-mid)' }}>
+                    {metaTags?.basic?.description ?? '—'}
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="p-3 rounded-xl bg-black/15 border border-white/6 text-center">
-                    <div className="text-xs text-gray-500 mb-1">OGP</div>
-                    <span className={`font-bold ${(metaTags?.ogp?.completeness || 0) >= 4 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {metaTags?.ogp?.completeness ?? 0}/5項目
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-black/15 border border-white/6 text-center">
-                    <div className="text-xs text-gray-500 mb-1">Twitter Card</div>
-                    <span className={`font-bold ${(metaTags?.twitter?.completeness || 0) >= 3 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {metaTags?.twitter?.completeness ?? 0}/4項目
-                    </span>
-                  </div>
+                  {[
+                    ['OGP', metaTags?.ogp?.completeness ?? 0, 5, 4],
+                    ['Twitter Card', metaTags?.twitter?.completeness ?? 0, 4, 3],
+                  ].map(([label, val, max, threshold]) => (
+                    <div key={label} className="p-3 rounded-xl text-center"
+                      style={{ background: 'var(--bg-sub)', border: '1px solid var(--border)' }}>
+                      <div className="text-xs mb-1" style={{ color: 'var(--ink-light)' }}>{label}</div>
+                      <span className="font-bold text-sm"
+                        style={{ color: val >= threshold ? 'var(--green)' : 'var(--yellow)' }}>
+                        {val}/{max}項目
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -83,8 +84,8 @@ export default function TechDetails({ analyzedData }) {
 
           {/* セマンティックHTML詳細 */}
           {semanticHTML?.exists && (
-            <div className="p-5 rounded-2xl border border-white/8 bg-white/2">
-              <h5 className="font-bold mb-4">🏗️ セマンティックHTML詳細</h5>
+            <div className="p-5 rounded-2xl" style={{ background: '#ffffff', border: '1px solid var(--border)' }}>
+              <h5 className="font-bold mb-4" style={{ color: 'var(--ink)' }}>🏗️ セマンティックHTML詳細</h5>
               <div className="grid grid-cols-3 sm:grid-cols-7 gap-1.5 mb-4">
                 {[
                   ['header',  semanticHTML.semanticTags?.hasHeader],
@@ -95,15 +96,14 @@ export default function TechDetails({ analyzedData }) {
                   ['aside',   semanticHTML.semanticTags?.hasAside],
                   ['footer',  semanticHTML.semanticTags?.hasFooter],
                 ].map(([name, used], i) => (
-                  <div
-                    key={name + i}
-                    className="flex flex-col items-center p-2 rounded-lg border text-center"
+                  <div key={name + i}
+                    className="flex flex-col items-center p-2 rounded-lg text-center"
                     style={{
-                      borderColor: used ? '#4ade8030' : '#f8717130',
-                      background: used ? '#4ade8008' : '#f8717108',
+                      background: used ? '#f0fdf4' : '#fff5f5',
+                      border: `1px solid ${used ? '#bbf7d0' : '#fecaca'}`,
                     }}>
-                    <code className="text-xs">{name}</code>
-                    <span className="text-sm mt-0.5" style={{ color: used ? '#4ade80' : '#f87171' }}>
+                    <code className="text-xs" style={{ color: 'var(--ink-mid)' }}>{name}</code>
+                    <span className="text-sm mt-0.5" style={{ color: used ? 'var(--green)' : 'var(--red)' }}>
                       {used ? '✓' : '✗'}
                     </span>
                   </div>
@@ -116,9 +116,12 @@ export default function TechDetails({ analyzedData }) {
                   ['H3', semanticHTML.headingStructure?.h3Count],
                   ['H4', semanticHTML.headingStructure?.h4Count],
                 ].map(([h, c]) => (
-                  <div key={h} className="p-3 rounded-xl bg-black/20 border border-white/6">
-                    <div className="text-xs text-gray-500 mb-0.5">{h}</div>
-                    <div className="text-lg font-bold">{c ?? 0}</div>
+                  <div key={h} className="p-3 rounded-xl"
+                    style={{ background: 'var(--bg-sub)', border: '1px solid var(--border)' }}>
+                    <div className="text-xs mb-0.5" style={{ color: 'var(--ink-light)' }}>{h}</div>
+                    <div className="text-lg font-bold" style={{ color: 'var(--ink)', fontFamily: "'DM Mono', monospace" }}>
+                      {c ?? 0}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -127,55 +130,60 @@ export default function TechDetails({ analyzedData }) {
 
           {/* パフォーマンス詳細 */}
           {performance?.exists && (
-            <div className="p-5 rounded-2xl border border-white/8 bg-white/2">
-              <h5 className="font-bold mb-4">⚡ パフォーマンス詳細</h5>
+            <div className="p-5 rounded-2xl" style={{ background: '#ffffff', border: '1px solid var(--border)' }}>
+              <h5 className="font-bold mb-4" style={{ color: 'var(--ink)' }}>⚡ パフォーマンス詳細</h5>
               <div className="grid grid-cols-3 gap-2.5 mb-3">
                 {[
                   ['総画像数',  performance.images?.totalCount    ?? 0],
                   ['遅延読込',  `${performance.images?.lazyLoadRatio ?? 0}%`],
                   ['ALT設定',   `${performance.images?.altTextRatio  ?? 0}%`],
                 ].map(([label, val]) => (
-                  <div key={label} className="p-3.5 rounded-xl bg-black/20 border border-white/6 text-center">
-                    <div className="text-xs text-gray-500 mb-1.5">{label}</div>
-                    <div className="font-bold text-base">{val}</div>
+                  <div key={label} className="p-3.5 rounded-xl text-center"
+                    style={{ background: 'var(--bg-sub)', border: '1px solid var(--border)' }}>
+                    <div className="text-xs mb-1.5" style={{ color: 'var(--ink-light)' }}>{label}</div>
+                    <div className="font-bold text-base" style={{ color: 'var(--ink)', fontFamily: "'DM Mono', monospace" }}>
+                      {val}
+                    </div>
                   </div>
                 ))}
               </div>
-              {/* スクリプト詳細 */}
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {[
                   ['scripts', performance.scripts?.totalCount  ?? 0],
                   ['defer',   performance.scripts?.deferCount  ?? 0],
                   ['async',   performance.scripts?.asyncCount  ?? 0],
                 ].map(([label, val]) => (
-                  <div key={label} className="p-3 rounded-xl bg-black/15 border border-white/6 text-center">
-                    <div className="text-xs text-gray-500 mb-1">
-                      <code>{label}</code>
+                  <div key={label} className="p-3 rounded-xl text-center"
+                    style={{ background: 'var(--bg-sub)', border: '1px solid var(--border)' }}>
+                    <div className="text-xs mb-1" style={{ color: 'var(--ink-light)' }}>
+                      <code style={{ fontFamily: "'DM Mono', monospace" }}>{label}</code>
                     </div>
-                    <div className="font-bold text-base">{val}</div>
+                    <div className="font-bold" style={{ color: 'var(--ink)', fontFamily: "'DM Mono', monospace" }}>{val}</div>
                   </div>
                 ))}
               </div>
               <div className="flex gap-2 flex-wrap">
                 {performance.scripts?.hasDeferScripts && (
-                  <span className="text-sm px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+                  <span className="text-sm px-3 py-1.5 rounded-lg font-medium"
+                    style={{ background: '#f0fdf4', color: 'var(--green)', border: '1px solid #bbf7d0' }}>
                     defer ✓
                   </span>
                 )}
                 {performance.scripts?.hasAsyncScripts && (
-                  <span className="text-sm px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+                  <span className="text-sm px-3 py-1.5 rounded-lg font-medium"
+                    style={{ background: '#f0fdf4', color: 'var(--green)', border: '1px solid #bbf7d0' }}>
                     async ✓
                   </span>
                 )}
                 {!performance.scripts?.hasDeferScripts && !performance.scripts?.hasAsyncScripts && (
-                  <span className="text-sm px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/15">
+                  <span className="text-sm px-3 py-1.5 rounded-lg font-medium"
+                    style={{ background: '#fff5f5', color: 'var(--red)', border: '1px solid #fecaca' }}>
                     非同期読込 未使用
                   </span>
                 )}
               </div>
             </div>
           )}
-
         </div>
       )}
     </div>

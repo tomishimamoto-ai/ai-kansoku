@@ -9,44 +9,53 @@ export default function CrawlerStatus({ crawlers }) {
   if (!crawlers || crawlers.length === 0) return null;
 
   const allowedCount = crawlers.filter((c) => c.ok).length;
+  const allOk = allowedCount === crawlers.length;
 
   return (
     <div className="mb-3">
-      {/* トグルヘッダー */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border border-white/8 bg-white/3 hover:bg-white/5 transition-all">
+        className="w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all text-left"
+        style={{ background: '#ffffff', border: '1px solid var(--border)' }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-sub)'}
+        onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}>
         <div className="flex items-center gap-3">
           <span>🤖</span>
-          <span className="text-sm text-gray-300 font-medium">AIクローラーのアクセス許可</span>
-          <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border
-            ${allowedCount === crawlers.length
-              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
-              : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25'}`}>
+          <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+            AIクローラーのアクセス許可
+          </span>
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold"
+            style={allOk ? {
+              background: '#f0fdf4', color: 'var(--green)', border: '1px solid #bbf7d0',
+            } : {
+              background: '#fffbeb', color: 'var(--yellow)', border: '1px solid #fde68a',
+            }}>
             {allowedCount}/{crawlers.length} 許可
           </span>
         </div>
-        <span className={`text-gray-500 text-xs transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+        <span className="text-xs transition-transform duration-200"
+          style={{ color: 'var(--ink-xlight)', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>
           ▼
         </span>
       </button>
 
-      {/* クローラーリスト */}
       {open && (
-        <div className="mt-1.5 px-5 py-4 rounded-2xl border border-white/8 bg-white/2 space-y-2.5">
+        <div className="mt-1.5 px-5 py-4 rounded-2xl space-y-2.5"
+          style={{ background: '#ffffff', border: '1px solid var(--border)' }}>
           {crawlers.map((c) => (
-            <div
-              key={c.agent}
-              className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+            <div key={c.agent}
+              className="flex items-center justify-between py-1.5 last:border-0"
+              style={{ borderBottom: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2.5">
-                <div
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: c.ok ? '#4ade80' : '#f87171' }}
-                />
-                <span className="text-sm font-medium">{c.name}</span>
-                <span className="text-xs text-gray-600 font-mono">({c.agent})</span>
+                <div className="w-2 h-2 rounded-full"
+                  style={{ background: c.ok ? 'var(--green)' : 'var(--red)' }} />
+                <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{c.name}</span>
+                <span className="text-xs font-mono" style={{ color: 'var(--ink-xlight)', fontFamily: "'DM Mono', monospace" }}>
+                  ({c.agent})
+                </span>
               </div>
-              <span className={`text-sm font-medium ${c.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+              <span className="text-sm font-semibold"
+                style={{ color: c.ok ? 'var(--green)' : 'var(--red)' }}>
                 {c.ok ? '✅ 許可' : '❌ ブロック'}
               </span>
             </div>

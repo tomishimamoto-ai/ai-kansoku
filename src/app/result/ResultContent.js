@@ -24,10 +24,14 @@ import { useState, useEffect } from 'react';
 // ─── ローディング ──────────────────────────────────────────
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#080c1a' }}>
+    <div className="min-h-screen flex items-center justify-center"
+      style={{ background: 'var(--bg, #ffffff)' }}>
       <div className="flex flex-col items-center gap-4">
-        <div className="w-14 h-14 rounded-full border-2 border-blue-500/30 border-t-blue-400 animate-spin" />
-        <span className="text-base text-gray-500">観測データを読み込み中...</span>
+        <div className="w-10 h-10 rounded-full border-2 border-[#2d5be3]/30 border-t-[#2d5be3] animate-spin" />
+        <span className="text-sm text-[#888888]"
+          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          観測データを読み込み中...
+        </span>
       </div>
     </div>
   );
@@ -36,18 +40,24 @@ function LoadingScreen() {
 // ─── データなしエラー ──────────────────────────────────────
 function NoDataError({ url }) {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#080c1a' }}>
+    <div className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: '#ffffff' }}>
       <div className="max-w-md w-full text-center">
-        <div className="text-6xl mb-6">🔭</div>
-        <h2 className="text-xl font-bold text-white mb-3">診断データが見つかりません</h2>
-        <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+        <div className="w-16 h-16 rounded-2xl bg-[#e8edfb] flex items-center justify-center text-3xl mx-auto mb-6">
+          🔭
+        </div>
+        <h2 className="text-xl font-bold text-[#111111] mb-3"
+          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          診断データが見つかりません
+        </h2>
+        <p className="text-sm text-[#888888] mb-8 leading-relaxed">
           診断データの有効期限が切れたか、別のブラウザでアクセスした可能性があります。<br />
           もう一度診断してください。
         </p>
         <Link
           href={url ? `/?url=${encodeURIComponent(url)}` : '/'}
-          className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm transition-all hover:opacity-90"
-          style={{ background: 'linear-gradient(135deg, #4a9eff, #6366f1)' }}>
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90"
+          style={{ background: '#2d5be3', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           🔄 再診断する
         </Link>
       </div>
@@ -59,18 +69,21 @@ function NoDataError({ url }) {
 function ResultContent() {
   const searchParams = useSearchParams();
   const paramUrl = searchParams.get('url');
-  const [url, setUrl] = useState(paramUrl || null);
+  const [url, setUrl] = useState(null);
 
-  useEffect(() => {
-    if (!paramUrl) {
-      try {
-        const h = JSON.parse(localStorage.getItem('aiObservatoryHistory') || '[]');
-        setUrl(h[0]?.url || null);
-      } catch {
-        setUrl(null);
-      }
-    }
-  }, [paramUrl]);
+useEffect(() => {
+  if (paramUrl) {
+    setUrl(paramUrl);
+    return;
+  }
+
+  try {
+    const h = JSON.parse(localStorage.getItem('aiObservatoryHistory') || '[]');
+    setUrl(h[0]?.url || null);
+  } catch {
+    setUrl(null);
+  }
+}, [paramUrl]);
 
   const {
     isClient,
@@ -99,6 +112,8 @@ function ResultContent() {
     currentScores,
     checkedItems,
   });
+  
+  if (!url) return <LoadingScreen />;
 
   // ── ローディング ──
   if (!dataLoaded) return <LoadingScreen />;
@@ -148,83 +163,104 @@ function ResultContent() {
   const displayUrl = (url || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
 
   return (
-    <div className="min-h-screen text-white" style={{ background: '#080c1a' }}>
+    <div className="min-h-screen" style={{ background: '#f7f7f5', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
-      {/* 背景 */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-15%] left-[-5%] w-[55vw] h-[55vw] rounded-full opacity-15"
-          style={{ background: `radial-gradient(circle, ${health.color}44, transparent 70%)` }} />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[40vw] h-[40vw] rounded-full opacity-8"
-          style={{ background: 'radial-gradient(circle, #4a9eff22, transparent 70%)' }} />
-        <div className="absolute inset-0"
-          style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-      </div>
+      {/* Google Fonts読み込み */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pb-20">
+        :root {
+          --bg: #ffffff;
+          --bg-sub: #f7f7f5;
+          --accent: #2d5be3;
+          --accent-light: #e8edfb;
+          --ink: #111111;
+          --ink-mid: #444444;
+          --ink-light: #888888;
+          --ink-xlight: #bbbbbb;
+          --border: #e8e8e8;
+          --border-dark: #d0d0d0;
+          --green: #16a34a;
+          --yellow: #ca8a04;
+          --red: #dc2626;
+        }
 
-        {/* ヘッダー */}
-        <div className="flex items-center justify-between py-5 border-b border-white/8 mb-8 gap-3">
+        @keyframes badgePop {
+          0% { transform: scale(0.7); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-24">
+
+        {/* ─── ヘッダー ─── */}
+        <div className="flex items-center justify-between py-5 mb-10"
+          style={{ borderBottom: '1px solid var(--border)' }}>
+
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-70 transition-opacity shrink-0">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8">
-  <defs>
-    <linearGradient id="logo-g2" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stopColor="#4a9eff"/>
-      <stop offset="100%" stopColor="#a855f7"/>
-    </linearGradient>
-    <linearGradient id="logo-scan2" x1="18" y1="18" x2="32" y2="18" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stopColor="#4a9eff" stopOpacity="0.8"/>
-      <stop offset="100%" stopColor="#4a9eff" stopOpacity="0"/>
-    </linearGradient>
-  </defs>
-  <circle cx="18" cy="18" r="14" stroke="url(#logo-g2)" strokeWidth="1.5" opacity="0.7"/>
-  <circle cx="18" cy="18" r="9" stroke="url(#logo-g2)" strokeWidth="1" strokeDasharray="3 2" opacity="0.4"/>
-  <circle cx="18" cy="18" r="2" fill="url(#logo-g2)"/>
-  <circle cx="28" cy="18" r="1.5" fill="#4a9eff" opacity="0.9"/>
-</svg>
-            <span className="font-bold text-base tracking-wide">AI観測ラボ</span>
+            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7">
+              <defs>
+                <linearGradient id="logo-g2" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#2d5be3"/>
+                  <stop offset="100%" stopColor="#6366f1"/>
+                </linearGradient>
+              </defs>
+              <circle cx="18" cy="18" r="14" stroke="url(#logo-g2)" strokeWidth="1.5" opacity="0.7"/>
+              <circle cx="18" cy="18" r="9" stroke="url(#logo-g2)" strokeWidth="1" strokeDasharray="3 2" opacity="0.4"/>
+              <circle cx="18" cy="18" r="2" fill="url(#logo-g2)"/>
+              <circle cx="28" cy="18" r="1.5" fill="#2d5be3" opacity="0.9"/>
+            </svg>
+            <span className="font-bold text-base tracking-tight" style={{ color: 'var(--ink)', fontWeight: 700 }}>
+              AI観測ラボ
+            </span>
           </Link>
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/12 bg-white/5 min-w-0">
-              <span className="text-xs text-gray-500 shrink-0">診断中</span>
-              <span className="text-xs text-gray-200 font-mono truncate max-w-[180px]">{displayUrl}</span>
+
+          <div className="flex items-center gap-2 min-w-0">
+            {/* URL pill */}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg min-w-0"
+              style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+              <span className="text-xs shrink-0" style={{ color: 'var(--ink-xlight)', fontFamily: "'DM Mono', monospace" }}>
+                ◎
+              </span>
+              <span className="text-xs font-medium truncate max-w-[200px]"
+                style={{ color: 'var(--ink-mid)', fontFamily: "'DM Mono', monospace" }}>
+                {displayUrl}
+              </span>
             </div>
+            {/* ダッシュボードリンク */}
             <Link href={`/dashboard?siteId=${siteId}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 transition-all shrink-0">
-              <span className="text-sm">📊</span>
-              <span className="text-xs text-purple-300 hidden md:block">ダッシュボード</span>
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all hover:opacity-80"
+              style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid #c5d3f5' }}>
+              <span>📊</span>
+              <span className="hidden sm:block">ダッシュボード</span>
             </Link>
           </div>
         </div>
 
         {/* SP用URL */}
-        <div className="sm:hidden mb-4 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/10 bg-white/4">
-          <span className="text-xs text-gray-500 shrink-0">診断中</span>
-          <span className="text-xs text-gray-200 font-mono truncate">{displayUrl}</span>
+        <div className="sm:hidden mb-6 flex items-center gap-1.5 px-3 py-2 rounded-lg"
+          style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+          <span className="text-xs shrink-0" style={{ color: 'var(--ink-xlight)', fontFamily: "'DM Mono', monospace" }}>◎</span>
+          <span className="text-xs truncate" style={{ color: 'var(--ink-mid)', fontFamily: "'DM Mono', monospace" }}>
+            {displayUrl}
+          </span>
         </div>
 
         {/* ブランドコピー */}
-        <div className="mb-7 text-center">
-          <p className="text-xs tracking-[0.25em] uppercase font-medium"
-            style={{ color: health.color, opacity: 0.7 }}>
+        <div className="mb-8">
+          <p className="text-xs tracking-[0.2em] uppercase font-semibold" style={{ color: 'var(--accent)' }}>
             改善を、観測で証明する。
           </p>
         </div>
 
-        <style>{`
-          @keyframes badgePop {
-            0% { transform: scale(0.7); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-          }
-        `}</style>
-
-        {/* 成果演出 */}
+        {/* 成果演出バッジ */}
         {achievements.length > 0 && (
           <div className="mb-6 space-y-2">
             {achievements.map((a, i) => (
               <div key={i}
-                className="flex items-center gap-3 px-5 py-3.5 rounded-2xl border text-base font-medium"
-                style={{ background: 'rgba(0,255,136,0.07)', borderColor: 'rgba(0,255,136,0.2)', color: '#4ade80' }}>
-                <span className="text-xl">{a.emoji}</span>
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold"
+                style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a' }}>
+                <span className="text-base">{a.emoji}</span>
                 <span>{a.text}</span>
               </div>
             ))}
@@ -249,7 +285,7 @@ function ResultContent() {
 
         {/* ③ TodaysMission */}
         {todaysMission ? (
-          <div className="mb-6">
+          <div className="mb-5">
             <TodaysMission
               item={todaysMission}
               isChecked={!!checkedItems[todaysMission.id]}
@@ -260,10 +296,11 @@ function ResultContent() {
             />
           </div>
         ) : (
-          <div className="mb-6 p-7 rounded-2xl border border-emerald-500/25 bg-emerald-500/8 text-center">
-            <div className="text-4xl mb-3">🎉</div>
-            <p className="text-emerald-300 font-bold text-lg">すべての改善が完了しています</p>
-            <p className="text-sm text-gray-500 mt-1.5">引き続き定期的な観測を続けましょう</p>
+          <div className="mb-5 p-6 rounded-2xl text-center"
+            style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+            <div className="text-3xl mb-2">🎉</div>
+            <p className="font-bold text-base" style={{ color: '#16a34a' }}>すべての改善が完了しています</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-light)' }}>引き続き定期的な観測を続けましょう</p>
           </div>
         )}
 
@@ -298,26 +335,25 @@ function ResultContent() {
         />
 
         {/* アクションボタン */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 mt-8">
           <Link href="/"
-            className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base transition-all hover:opacity-90 hover:scale-[1.02]"
-            style={{ background: 'linear-gradient(135deg, #4a9eff, #6366f1)', boxShadow: '0 4px 24px rgba(74,158,255,0.25)' }}>
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90"
+            style={{ background: 'var(--accent)' }}>
             🔄 再診断する
           </Link>
-          <ShareDropdown
-             url={url}
-             totalScore={totalScore}
-        />
+          <ShareDropdown url={url} totalScore={totalScore} />
         </div>
 
         {/* フッター */}
-        <div className="mt-12 text-center text-sm text-gray-700">
-          <Link href="/guide" className="hover:text-gray-500 transition-colors">改善ガイド</Link>
-          <span className="mx-3">·</span>
-          <Link href="/faq" className="hover:text-gray-500 transition-colors">FAQ</Link>
-          <span className="mx-3">·</span>
-          <Link href="/how-to-use" className="hover:text-gray-500 transition-colors">使い方</Link>
+        <div className="mt-16 pt-6 text-center text-xs"
+          style={{ borderTop: '1px solid var(--border)', color: 'var(--ink-xlight)' }}>
+          <Link href="/guide" className="hover:underline transition-colors" style={{ color: 'var(--ink-light)' }}>改善ガイド</Link>
+          <span className="mx-3" style={{ color: 'var(--border-dark)' }}>·</span>
+          <Link href="/faq" className="hover:underline transition-colors" style={{ color: 'var(--ink-light)' }}>FAQ</Link>
+          <span className="mx-3" style={{ color: 'var(--border-dark)' }}>·</span>
+          <Link href="/how-to-use" className="hover:underline transition-colors" style={{ color: 'var(--ink-light)' }}>使い方</Link>
         </div>
+
       </div>
     </div>
   );

@@ -11,18 +11,24 @@ export default function MissionDetail({ item }) {
 
   return (
     <div className="mb-5 space-y-2.5">
-      <p className="text-sm text-amber-200/70">⚠ {item.why}</p>
-      <div className="flex items-start gap-2 p-3.5 rounded-xl bg-black/20 border border-white/6">
-        <span className="text-gray-500 shrink-0 mt-0.5">→</span>
-        <p className="text-sm text-gray-300">{item.howSimple}</p>
+      <p className="text-sm" style={{ color: 'var(--yellow)' }}>⚠ {item.why}</p>
+      <div className="flex items-start gap-2 p-3.5 rounded-xl" style={{ background: 'var(--bg-sub)', border: '1px solid var(--border)' }}>
+        <span className="shrink-0 mt-0.5" style={{ color: 'var(--ink-xlight)' }}>→</span>
+        <p className="text-sm" style={{ color: 'var(--ink-mid)' }}>{item.howSimple}</p>
       </div>
       {hasTemplate && (
         <button
           onClick={() => setShowCode(!showCode)}
-          className={`flex items-center gap-2 text-xs px-3.5 py-2 rounded-lg border font-medium transition-all
-            ${showCode
-              ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400'
-              : 'bg-white/6 border-white/12 text-gray-300 hover:bg-white/10 hover:text-white'}`}>
+          className="flex items-center gap-2 text-xs px-3.5 py-2 rounded-lg font-medium transition-all"
+          style={showCode ? {
+            background: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            color: 'var(--green)',
+          } : {
+            background: 'var(--bg-sub)',
+            border: '1px solid var(--border)',
+            color: 'var(--ink-mid)',
+          }}>
           <span>{showCode ? '▲' : '▼'}</span>
           {showCode ? 'コードを隠す' : '📋 コピペ用コードを見る'}
         </button>
