@@ -559,6 +559,7 @@ if (parsed["@graph"]) {
       exists: true,
       schemaCount: jsonLdMatches.length,
       schemaTypes: Array.from(schemaTypes),
+      detectedTypes: Array.from(schemaTypes).join(', '),
       totalProperties,
       schemas: schemas.slice(0, 5),
       hasImportantType,

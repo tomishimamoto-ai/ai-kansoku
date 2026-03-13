@@ -128,6 +128,45 @@ export default function TechDetails({ analyzedData }) {
             </div>
           )}
 
+          {/* 構造化データ詳細 */}
+          {analyzedData.details?.structuredData?.exists && (
+            <div className="p-5 rounded-2xl" style={{ background: '#ffffff', border: '1px solid var(--border)' }}>
+              <h5 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--ink)' }}>
+                📊 構造化データ詳細
+              </h5>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="p-3.5 rounded-xl text-center"
+                  style={{ background: 'var(--bg-sub)', border: '1px solid var(--border)' }}>
+                  <div className="text-xs mb-1" style={{ color: 'var(--ink-light)' }}>検出数</div>
+                  <div className="font-bold text-lg" style={{ color: 'var(--ink)', fontFamily: "'DM Mono', monospace" }}>
+                    {analyzedData.details.structuredData.schemaCount ?? 0}
+                  </div>
+                </div>
+                <div className="p-3.5 rounded-xl text-center"
+                  style={{ background: 'var(--bg-sub)', border: '1px solid var(--border)' }}>
+                  <div className="text-xs mb-1" style={{ color: 'var(--ink-light)' }}>プロパティ数</div>
+                  <div className="font-bold text-lg" style={{ color: 'var(--ink)', fontFamily: "'DM Mono', monospace" }}>
+                    {analyzedData.details.structuredData.totalProperties ?? 0}
+                  </div>
+                </div>
+              </div>
+              {analyzedData.details.structuredData.schemaTypes?.length > 0 && (
+                <div>
+                  <div className="text-xs mb-2" style={{ color: 'var(--ink-light)' }}>検出されたスキーマ</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {analyzedData.details.structuredData.schemaTypes.map((type) => (
+                      <span key={type}
+                        className="text-xs px-2.5 py-1 rounded-lg font-medium"
+                        style={{ background: '#e8edfb', color: 'var(--accent)', border: '1px solid #c5d3f5' }}>
+                        {type}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* パフォーマンス詳細 */}
           {performance?.exists && (
             <div className="p-5 rounded-2xl" style={{ background: '#ffffff', border: '1px solid var(--border)' }}>
