@@ -218,7 +218,7 @@ export default function FAQPage() {
             </span>
           </Link>
           <ul style={{ display: 'flex', alignItems: 'center', gap: 24, listStyle: 'none' }}>
-            {[['使い方', '/how-to-use', false], ['改善ガイド', '/guide', false], ['FAQ', '/faq', true], ['ブログ', 'https://blog.ai-kansoku.com', false]].map(([l, h, active]) => (
+            {[['使い方', '/how-to-use', false], ['改善ガイド', '/guide', false], ['FAQ', '/faq', false], ['ブログ', 'https://blog.ai-kansoku.com', false]].map(([l, h, active]) => (
               <li key={l}><Link href={h} className={`nav-a${active ? ' active' : ''}`}>{l}</Link></li>
             ))}
           </ul>
