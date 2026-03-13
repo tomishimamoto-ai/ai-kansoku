@@ -301,9 +301,12 @@ const validateUrl = (inputUrl) => {
         setError(msg);
       }
     } catch (e) {
-      clearTimeout(timeoutId);
-      setLoading(false);
-      setError('診断に失敗しました。URLを確認して再度お試しください。');
+        clearTimeout(timeoutId);
+      if (e?.message?.includes('Navigation') || e?.digest) {
+      return;
+      }
+         setLoading(false);
+         setError('診断に失敗しました。URLを確認して再度お試しください。');
     }
   };
 
