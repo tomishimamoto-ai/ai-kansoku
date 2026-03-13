@@ -1103,10 +1103,10 @@ const validateUrl = (inputUrl) => {
               // Start Observation
             </p>
             <h2 style={{ fontFamily: J, fontWeight: 700, fontSize: 'clamp(26px,4vw,44px)', letterSpacing: '-.02em', color: '#fff', lineHeight: 1.2, marginBottom: 16 }}>
-              まず、診断から<br />はじめましょう。
+              AIに見つけられていますか？
             </h2>
             <p style={{ fontFamily: No, fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.8, marginBottom: 36, fontWeight: 300 }}>
-              URLを入力するだけ。30秒で結果が出ます。<br />アカウント登録・クレジットカード不要。
+              URLを入力するだけ。30秒でAI可視性を診断します。<br />アカウント登録不要。
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={() => { inputRef.current?.focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{

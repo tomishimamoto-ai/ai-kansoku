@@ -32,7 +32,7 @@ export default function HowToUsePage() {
           {/* Header */}
           <div className="mb-8 md:mb-12 text-center">
             <div className="text-5xl md:text-6xl mb-4">📖</div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4">使い方ガイド</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4">AI観測ラボの使い方</h1>
             <p className="text-sm md:text-base text-gray-400">AI観測ラボの基本的な使い方を解説します</p>
           </div>
 
