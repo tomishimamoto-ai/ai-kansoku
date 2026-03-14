@@ -688,10 +688,10 @@ export default function GuidePage() {
           {/* 目次 */}
           <div style={{
             background: 'var(--bg-sub)', border: '1px solid var(--border)',
-            borderRadius: 10, padding: 20, marginBottom: 40,
+            borderRadius: 10, padding: 20, marginBottom: 40,overflow: 'hidden'
           }}>
             <p style={{ fontFamily: M, fontSize: 10, color: 'var(--ink-xlight)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: 14 }}>目次</p>
-            <div className="toc-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+            <div className="toc-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', overflow: 'hidden', gap: 4 }}>
               {guides.map(g => {
                 const lv = levelConfig[g.level] || levelConfig.medium;
                 return (
