@@ -175,39 +175,6 @@ export default function HowToUsePage() {
 
       <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
 
-        {/* ── NAV ── */}
-        <nav style={{
-          position: 'sticky', top: 0, zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 48px', height: 60,
-          background: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid var(--border)',
-        }} className="nav-wrap">
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <circle cx="14" cy="14" r="12" stroke="#2d5be3" strokeWidth="0.8" opacity="0.3" />
-              <circle cx="14" cy="14" r="7" stroke="#2d5be3" strokeWidth="0.8" opacity="0.5" />
-              <circle cx="14" cy="14" r="2.5" fill="#2d5be3" />
-              <circle cx="14" cy="3.5" r="1.2" fill="#2d5be3" opacity="0.6" />
-              <line x1="2" y1="14" x2="26" y2="14" stroke="#2d5be3" strokeWidth="0.5" opacity="0.2" />
-              <line x1="14" y1="2" x2="14" y2="26" stroke="#2d5be3" strokeWidth="0.5" opacity="0.2" />
-            </svg>
-            <span style={{ fontFamily: J, fontWeight: 700, fontSize: 15, color: 'var(--ink)', letterSpacing: '-.02em' }}>
-              AI観測<span style={{ color: 'var(--accent)' }}>ラボ</span>
-            </span>
-          </Link>
-          <ul style={{ display: 'flex', alignItems: 'center', gap: 24, listStyle: 'none' }}>
-            {[['使い方', '/how-to-use', true], ['改善ガイド', '/guide', false], ['FAQ', '/faq', false], ['ブログ', 'https://blog.ai-kansoku.com', false]].map(([l, h, active]) => (
-              <li key={l}>
-                <Link href={h} className={`nav-a${active ? ' active' : ''}`} style={{ fontFamily: N }}>
-                  {l}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
         {/* ── CONTENT ── */}
         <div className="page-inner" style={{ maxWidth: 760, margin: '0 auto', padding: '64px 48px 100px' }}>
 

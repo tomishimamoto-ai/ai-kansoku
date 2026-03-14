@@ -1,6 +1,7 @@
 import { Noto_Sans_JP } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import Header from "@/components/Header";
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
@@ -97,6 +98,7 @@ export default function RootLayout({ children }) {
         <meta name="google-site-verification" content="ziqmb14N0-99w0COc_sqVhQNeStU1qdGrv5COcNmD_s" />
       </head>
       <body className={`${notoSansJP.variable} font-sans antialiased`}>
+           <Header />
         {children}
 
         {/* ① JSON-LD構造化データ - beforeInteractiveでHTMLロード直後に出力 */}

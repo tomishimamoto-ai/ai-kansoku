@@ -37,3 +37,8 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
 }
+
+@media (max-width: 768px) {
+  .nav-desktop { display: none !important; }
+  .nav-hamburger { display: flex !important; }
+}

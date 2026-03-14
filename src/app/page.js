@@ -209,7 +209,6 @@ export default function Home() {
   const [loadingStep, setLoadingStep] = useState('');
   const [history, setHistory] = useState([]);
   const [openFaq, setOpenFaq] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const inputRef = useRef(null);
 
   const J = plusJakarta.style.fontFamily;
@@ -494,97 +493,6 @@ const validateUrl = (inputUrl) => {
 
       {/* ── Canvas ─────────────────────────────────────────────── */}
       <ObsCanvas />
-
-      {/* ── NAV ────────────────────────────────────────────────── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 48px', height: 60,
-        background: 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid var(--border)',
-      }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <circle cx="14" cy="14" r="12" stroke="#2d5be3" strokeWidth="0.8" opacity="0.3" />
-            <circle cx="14" cy="14" r="7" stroke="#2d5be3" strokeWidth="0.8" opacity="0.5" />
-            <circle cx="14" cy="14" r="2.5" fill="#2d5be3" />
-            <circle cx="14" cy="3.5" r="1.2" fill="#2d5be3" opacity="0.6" />
-            <line x1="2" y1="14" x2="26" y2="14" stroke="#2d5be3" strokeWidth="0.5" opacity="0.2" />
-            <line x1="14" y1="2" x2="14" y2="26" stroke="#2d5be3" strokeWidth="0.5" opacity="0.2" />
-          </svg>
-          <span style={{ fontFamily: J, fontWeight: 700, fontSize: 15, color: 'var(--ink)', letterSpacing: '-.02em' }}>
-            AI観測<span style={{ color: 'var(--accent)' }}>ラボ</span>
-          </span>
-        </a>
-
-        {/* PC nav */}
-        <ul className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 28, listStyle: 'none',fontWeight: '600'  }}>
-          {[['使い方', '/how-to-use'], ['改善ガイド', '/guide'], ['FAQ', '/faq'], ['ブログ', 'https://blog.ai-kansoku.com']].map(([l, h]) => (
-            <li key={l}><a href={h} className="nav-a" style={{ fontFamily: No }}>{l}</a></li>
-          ))}
-          <li>
-            <button
-              onClick={() => { inputRef.current?.focus(); inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
-              style={{
-                fontFamily: J, fontWeight: 600, fontSize: 13,
-                background: 'var(--accent)', color: '#fff',
-                padding: '8px 20px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                transition: 'opacity .15s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '.85'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-            >無料で診断する</button>
-          </li>
-        </ul>
-
-        {/* Hamburger */}
-        <button
-          className="nav-hamburger"
-          onClick={() => setMenuOpen(!menuOpen)}
-          style={{
-            display: 'none', flexDirection: 'column', gap: 4, alignItems: 'center', justifyContent: 'center',
-            background: 'none', border: '1px solid var(--border)', borderRadius: 6,
-            padding: '7px 10px', cursor: 'pointer',
-          }}
-          aria-label="メニュー"
-        >
-          {[0, 1, 2].map(i => (
-            <span key={i} style={{
-              display: 'block', width: 18, height: 1.5,
-              background: 'var(--ink)', borderRadius: 2, transition: 'all .25s',
-              transform: menuOpen
-                ? (i === 0 ? 'rotate(45deg) translate(2px,4px)' : i === 2 ? 'rotate(-45deg) translate(2px,-4px)' : 'scaleX(0)')
-                : 'none',
-              opacity: menuOpen && i === 1 ? 0 : 1,
-            }} />
-          ))}
-        </button>
-
-        {menuOpen && (
-          <div className="mobile-menu" style={{
-            position: 'fixed', top: 60, left: 0, right: 0,
-            background: '#fff', borderBottom: '1px solid var(--border)',
-            padding: '8px 20px 20px', zIndex: 200,
-            boxShadow: '0 10px 30px rgba(0,0,0,.08)',
-          }}>
-            {[['使い方', '/how-to-use'], ['改善ガイド', '/guide'], ['FAQ', '/faq'], ['ブログ', 'https://blog.ai-kansoku.com']].map(([l, h]) => (
-              <a key={l} href={h} onClick={() => setMenuOpen(false)} style={{
-                display: 'block', fontFamily: No, fontSize: '0.95rem', color: 'var(--ink-mid)',
-                textDecoration: 'none', padding: '13px 4px', borderBottom: '1px solid var(--border)',
-              }}>{l}</a>
-            ))}
-            <button onClick={() => {
-              setMenuOpen(false);
-              setTimeout(() => { inputRef.current?.focus(); inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
-            }} style={{
-              width: '100%', marginTop: 14, fontFamily: J, fontWeight: 600, fontSize: '0.95rem',
-              background: 'var(--accent)', color: '#fff',
-              padding: 13, borderRadius: 8, border: 'none', cursor: 'pointer',
-            }}>無料で診断する</button>
-          </div>
-        )}
-      </nav>
 
       {/* ─── MAIN ─────────────────────────────────────────────── */}
       <div className={notoSansJP.className} style={{ background: 'var(--bg)', position: 'relative', minHeight: '100vh' }}>
