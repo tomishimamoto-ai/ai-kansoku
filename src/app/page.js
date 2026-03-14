@@ -529,7 +529,7 @@ const validateUrl = (inputUrl) => {
                 lineHeight: 1.12, letterSpacing: '-.03em',
                 color: 'var(--ink)', marginBottom: 16,
               }}>
-                あなたのサイトは<br />
+                あなたのサイトは
                 AIに<span style={{ color: 'var(--accent)' }}>見つけられて</span>いますか？
               </h1>
 
