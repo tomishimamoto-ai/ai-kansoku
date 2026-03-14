@@ -42,3 +42,9 @@ body {
   .nav-desktop { display: none !important; }
   .nav-hamburger { display: flex !important; }
 }
+
+@media (max-width: 768px) {
+  .toc-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
