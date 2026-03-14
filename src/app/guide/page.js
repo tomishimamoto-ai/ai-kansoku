@@ -685,31 +685,6 @@ export default function GuidePage() {
             </p>
           </div>
 
-          {/* 目次 */}
-          <div style={{
-            background: 'var(--bg-sub)', border: '1px solid var(--border)',
-            borderRadius: 10, padding: 20, marginBottom: 40,overflow: 'hidden'
-          }}>
-            <p style={{ fontFamily: M, fontSize: 10, color: 'var(--ink-xlight)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: 14 }}>目次</p>
-            <div className="toc-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', overflow: 'hidden', gap: 4 }}>
-              {guides.map(g => {
-                const lv = levelConfig[g.level] || levelConfig.medium;
-                return (
-                  <button
-                    key={g.id}
-                    onClick={() => handleTocClick(g.id)}
-                    className="toc-link"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
-                  >
-                    <span style={{ fontSize: '1rem' }}>{g.icon}</span>
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.title}</span>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: lv.color, flexShrink: 0 }} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* ガイド一覧 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {guides.map(g => <GuideCard key={g.id} guide={g} openGuide={openGuide} setOpenGuide={setOpenGuide} />)}
