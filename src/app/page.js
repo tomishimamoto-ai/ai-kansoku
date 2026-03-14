@@ -545,9 +545,9 @@ const validateUrl = (inputUrl) => {
               {/* 3ステップ */}
               <div className="fu4" style={{ display: 'flex', flexDirection: 'column', marginBottom: 36 }}>
                 {[
-                  { n: '01', title: 'URL診断（30秒）', desc: 'robots.txt・llms.txt・構造化データなど8項目をスコアリング' },
-                  { n: '02', title: '観測タグを設置（1行）', desc: 'サイトに1行追加するだけで、AIクローラーの検知を開始' },
-                  { n: '03', title: 'AI訪問ログを観測', desc: 'どのAIが・いつ・どのページを見たかをダッシュボードで確認' },
+                  { n: '01', title: 'URL診断（30秒）', desc: '最適化すべき8項目をスコアリング' },
+                  { n: '02', title: '観測タグを設置（1行）', desc: '1行追加するだけで、AIクローラーの検知を開始' },
+                  { n: '03', title: 'AI訪問ログを観測', desc: 'AIが・いつ・どのページを見たかを確認' },
                 ].map((step, i, arr) => (
                   <div key={step.n} style={{
                     display: 'flex', alignItems: 'flex-start', gap: 14,
