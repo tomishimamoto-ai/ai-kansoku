@@ -1,7 +1,7 @@
 import { Noto_Sans_JP } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import Header from "@/components/Header";
+import Header from "@/app/components/Header";
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
