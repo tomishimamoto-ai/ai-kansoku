@@ -53,14 +53,17 @@
 
   // Phase 4: JS capability fingerprint（headless/bot検出）
   try {
-    const fingerprint = {
-      webdriver: navigator.webdriver || false,
-      languages: navigator.languages || [],
-      platform:  navigator.platform  || '',
-      plugins:   navigator.plugins ? navigator.plugins.length : 0,
-      touch:     navigator.maxTouchPoints || 0,
-      screen:    window.screen ? `${screen.width}x${screen.height}` : '',
-    };
+       const fingerprint = {
+       webdriver:           navigator.webdriver || false,
+       languages:           navigator.languages || [],
+       platform:            navigator.platform  || '',
+       plugins:             navigator.plugins ? navigator.plugins.length : 0,
+       touch:               navigator.maxTouchPoints || 0,
+       screen:              window.screen ? `${screen.width}x${screen.height}` : '',
+       viewport:            { w: window.innerWidth, h: window.innerHeight },
+       hardwareConcurrency: navigator.hardwareConcurrency || 0,
+       deviceMemory:        navigator.deviceMemory || 0,
+       };
     fetch(`${baseUrl}/capability`, {
       method: 'POST',
       mode: 'no-cors',
