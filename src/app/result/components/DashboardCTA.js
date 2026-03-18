@@ -63,26 +63,21 @@ export default function DashboardCTA({ siteId, dashPreview, totalScore }) {
         </div>
 
         {/* アクションボタン */}
-        <div className="flex flex-col sm:flex-row gap-2.5">
-          <Link href="/"
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-80"
-            style={{ background: '#ffffff', border: '1px solid #c5d3f5', color: 'var(--ink-mid)' }}>
-            🔄 改善後に再診断
-          </Link>
-          {isUnlocked ? (
-            <Link href={`/dashboard?siteId=${siteId}`}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
-              style={{ background: 'var(--accent)' }}>
-              📊 観測ダッシュボードへ →
-            </Link>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-xl text-sm font-medium"
-              style={{ background: '#f7f7f5', border: '1px solid #e8e8e8', color: '#bbbbbb', cursor: 'not-allowed' }}>
-              <span>🔒 ダッシュボードはスコア70点以上で開放</span>
-              <span className="text-xs" style={{ color: 'var(--accent)' }}>あと{70 - totalScore}点</span>
-            </div>
-          )}
-        </div>
+       <div className="mt-2">
+        {isUnlocked ? (
+         <Link href={`/dashboard?siteId=${siteId}`}
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+        style={{ background: 'var(--accent)' }}>
+        📊 観測ダッシュボードへ →
+        </Link>
+        ) : (
+    <div className="w-full flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-xl text-sm font-medium"
+      style={{ background: '#f7f7f5', border: '1px solid #e8e8e8', color: '#bbbbbb', cursor: 'not-allowed' }}>
+      <span>🔒 ダッシュボードはスコア70点以上で開放</span>
+      <span className="text-xs" style={{ color: 'var(--accent)' }}>あと{70 - totalScore}点</span>
+    </div>
+        )}
+    </div>
 
       </div>
     </div>
