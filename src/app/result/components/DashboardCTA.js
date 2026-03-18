@@ -3,7 +3,9 @@
 
 import Link from 'next/link';
 
-export default function DashboardCTA({ siteId, dashPreview }) {
+export default function DashboardCTA({ siteId, dashPreview, totalScore }) {
+  const isUnlocked = totalScore >= 70;
+
   return (
     <div className="mb-5 rounded-2xl overflow-hidden"
       style={{ background: 'var(--accent-light)', border: '1px solid #c5d3f5' }}>
@@ -45,11 +47,18 @@ export default function DashboardCTA({ siteId, dashPreview }) {
                 </div>
               )}
             </div>
-            <Link href={`/dashboard?siteId=${siteId}`}
-              className="text-xs font-semibold shrink-0 whitespace-nowrap transition-opacity hover:opacity-70"
-              style={{ color: 'var(--accent)' }}>
-              詳細 →
-            </Link>
+            {isUnlocked ? (
+              <Link href={`/dashboard?siteId=${siteId}`}
+                className="text-xs font-semibold shrink-0 whitespace-nowrap transition-opacity hover:opacity-70"
+                style={{ color: 'var(--accent)' }}>
+                詳細 →
+              </Link>
+            ) : (
+              <span className="text-xs font-semibold shrink-0 whitespace-nowrap"
+                style={{ color: '#bbbbbb' }}>
+                🔒 ロック中
+              </span>
+            )}
           </div>
         </div>
 
@@ -60,12 +69,21 @@ export default function DashboardCTA({ siteId, dashPreview }) {
             style={{ background: '#ffffff', border: '1px solid #c5d3f5', color: 'var(--ink-mid)' }}>
             🔄 改善後に再診断
           </Link>
-          <Link href={`/dashboard?siteId=${siteId}`}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
-            style={{ background: 'var(--accent)' }}>
-            📊 観測ダッシュボードへ →
-          </Link>
+          {isUnlocked ? (
+            <Link href={`/dashboard?siteId=${siteId}`}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+              style={{ background: 'var(--accent)' }}>
+              📊 観測ダッシュボードへ →
+            </Link>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-xl text-sm font-medium"
+              style={{ background: '#f7f7f5', border: '1px solid #e8e8e8', color: '#bbbbbb', cursor: 'not-allowed' }}>
+              <span>🔒 ダッシュボードはスコア70点以上で開放</span>
+              <span className="text-xs" style={{ color: 'var(--accent)' }}>あと{70 - totalScore}点</span>
+            </div>
+          )}
         </div>
+
       </div>
     </div>
   );

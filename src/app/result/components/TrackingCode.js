@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 
-export default function TrackingCode({ siteId, isInstalled, onCopy }) {
+export default function TrackingCode({ siteId, isInstalled, onCopy, totalScore }) {
   const [copied, setCopied] = useState(false);
 
   if (!siteId) return null;
@@ -21,6 +21,7 @@ export default function TrackingCode({ siteId, isInstalled, onCopy }) {
   };
 
   const dashboardUrl = `/dashboard?siteId=${encodeURIComponent(siteId)}`;
+  const isUnlocked = totalScore >= 70;
 
   if (isInstalled) {
     return (
@@ -103,11 +104,27 @@ export default function TrackingCode({ siteId, isInstalled, onCopy }) {
           {copied ? '✅ コピーしました！' : '📋 コードをコピーして設置する'}
         </button>
 
-        <Link href={dashboardUrl}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-80"
-          style={{ background: '#ffffff', border: '1px solid #c5d3f5', color: 'var(--ink-mid)' }}>
-          🔭 設置できたら観測を確認する →
-        </Link>
+        {isUnlocked ? (
+          <Link href={dashboardUrl}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-80"
+            style={{ background: '#ffffff', border: '1px solid #c5d3f5', color: 'var(--ink-mid)' }}>
+            🔭 設置できたら観測を確認する →
+          </Link>
+        ) : (
+          <div className="w-full">
+            <div className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
+              style={{ background: '#f7f7f5', border: '1px solid #e8e8e8', color: '#bbbbbb', cursor: 'not-allowed' }}>
+              🔒 ダッシュボードはスコア70点以上で開放
+            </div>
+            <p className="text-center text-xs mt-2" style={{ color: 'var(--ink-light)' }}>
+              改善項目を完了してあと
+              <span className="font-bold mx-1" style={{ color: 'var(--accent)' }}>
+                {70 - totalScore}点
+              </span>
+              獲得しましょう
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -119,6 +119,7 @@ function ResultContent() {
   // ── 確定後の変数 ──
   const health = getHealthStatus(totalScore);
   const nextTarget = getNextTarget(totalScore);
+  const isUnlocked = totalScore >= 70;
 
   const scoreCards = [
     { icon: '📊', name: '構造化データ', key: 'structuredData' },
@@ -223,12 +224,20 @@ function ResultContent() {
               </span>
             </div>
             {/* ダッシュボードリンク */}
-            <Link href={`/dashboard?siteId=${siteId}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all hover:opacity-80"
-              style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid #c5d3f5' }}>
-              <span>📊</span>
-              <span className="hidden sm:block">ダッシュボード</span>
-            </Link>
+            {isUnlocked ? (
+  <Link href={`/dashboard?siteId=${siteId}`}
+    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all hover:opacity-80"
+    style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid #c5d3f5' }}>
+    <span>📊</span>
+    <span className="hidden sm:block">ダッシュボード</span>
+  </Link>
+) : (
+  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
+    style={{ background: '#f7f7f5', color: '#bbbbbb', border: '1px solid #e8e8e8', cursor: 'not-allowed' }}>
+    <span>🔒</span>
+    <span className="hidden sm:block">ダッシュボード</span>
+  </div>
+)}
           </div>
         </div>
 
@@ -311,7 +320,7 @@ function ResultContent() {
         />
 
         {/* ⑤ DashboardCTA */}
-        <DashboardCTA siteId={siteId} dashPreview={dashPreview} />
+        <DashboardCTA siteId={siteId} dashPreview={dashPreview} totalScore={totalScore} />
 
         {/* ⑥ CrawlerStatus */}
         <CrawlerStatus crawlers={crawlers} />
@@ -324,9 +333,10 @@ function ResultContent() {
 
         {/* ⑨ TrackingCode */}
         <TrackingCode
-          siteId={siteId}
-          isInstalled={isTrackingInstalled}
-          onCopy={handleCopyTracking}
+        siteId={siteId}
+        isInstalled={isTrackingInstalled}
+        onCopy={handleCopyTracking}
+        totalScore={totalScore}
         />
 
         {/* アクションボタン */}
