@@ -7,10 +7,8 @@ const AI_REFERRER_DOMAINS = new Set([
   'perplexity.ai', 'perplexity.com', 'gemini.google.com',
   'bard.google.com', 'copilot.microsoft.com', 'copilot.com',
   'you.com', 'phind.com', 'poe.com',
-  // bing.com削除（通常検索流入が混入するため）
 ]);
 
-// レート制限
 const _rateCache = new Map();
 const RATE_LIMIT_MS = 60 * 1000;
 const RATE_CACHE_MAX = 5000;
@@ -76,23 +74,22 @@ export async function GET(request) {
     try { path = decodeURIComponent(pathRaw).slice(0, 200); }
     catch { path = '/'; }
 
-    // レート制限
     if (isRateLimited(ip, path)) return sendGif();
 
     const referrer = (
+      searchParams.get('ai_ref') ||
       searchParams.get('referrer') ||
       request.headers.get('referer') ||
       ''
     ).slice(0, 500).replace(/[\r\n]/g, '');
 
-    // AI経由でなければスキップ
     const aiDomain = detectAiReferrer(referrer);
     if (!aiDomain) return sendGif();
 
     const ua = (request.headers.get('user-agent') || '').slice(0, 500);
-    const accept = (request.headers.get('accept') || '').slice(0, 200);
+    const accept = (request.headers.get('accept') || '').slice(0, 100);
+    const sessionId = searchParams.get('sid') || randomUUID();
 
-    // awaitなし（バックグラウンド書き込み）
     sql`
       INSERT INTO ai_crawler_visits (
         site_id, user_agent, ip_address, referrer, page_url,
@@ -100,7 +97,7 @@ export async function GET(request) {
         is_human, visited_at
       ) VALUES (
         ${siteId}, ${ua}, ${ip}, ${referrer}, ${path},
-        ${randomUUID()}, ${'AI-Referral(' + aiDomain + ')'},
+        ${sessionId}, ${'AI-Referral(' + aiDomain + ')'},
         'javascript', ${accept}, false, CURRENT_TIMESTAMP
       )
     `.catch(e => console.error('js-active insert fail', e));
