@@ -119,6 +119,14 @@ async function handleTrack(req) {
       return gifResponse();
     }
 
+    if (detection.crawlerType === 'unknown' && detection.totalScore === 0) {
+    return gifResponse();
+    }
+
+    if (detection.crawlerType === 'spoofed-bot' && detection.confidence < 85) {
+    return gifResponse();
+    }
+
     // ── DB INSERT（AIのみ）──────────────────────────────────
     await db`
       INSERT INTO ai_crawler_visits (
