@@ -259,6 +259,18 @@ function DashboardContent() {
   const { ai_stats, recent_visits } = data;
   const status = getAiStatus(ai_stats.recognized_pages ?? 0);
 
+  // ── AI影響度スコア計算 ────────────────────────────────────────
+  const interactions     = ai_stats.total ?? 0;
+  const spoofCount       = data.spoofed_stats?.high_confidence_total ?? 0;
+  const dailyInteractions  = interactions / 7;
+  const MAX_DAILY          = 20;
+  const interactionScore   = Math.min(1, Math.log10(dailyInteractions + 1) / Math.log10(MAX_DAILY + 1));
+  const statusScore        = status.step / 3;
+  const aiScore            = interactions === 0
+    ? 0
+    : Math.round(100 * (0.5 * interactionScore + 0.5 * statusScore));
+  const scoreLabel         = aiScore >= 70 ? '高' : aiScore >= 40 ? '中' : '低';
+
   // ── render ────────────────────────────────────────────────────
 
   return (
@@ -371,36 +383,48 @@ function DashboardContent() {
         {/* ── KPI 上段：主役2枚（大） ─────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-          {/* AI crawler visits */}
+          {/* ① AI影響度スコア */}
           <div className="relative rounded-2xl p-6 overflow-hidden transition-all hover:border-[#d0d0d0]"
             style={{ background: '#ffffff', border: '1px solid #e8e8e8' }}>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#888888' }}>
-                AIクロール回数
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ color: '#888888' }}>
+              AI影響度スコア
+            </p>
+            <div className="flex items-end gap-2 mb-4">
+              <p className="text-4xl font-bold tabular-nums leading-none" style={{ color: '#2d5be3' }}>
+                {aiScore}
               </p>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold ${
-                ai_stats.trend === 'up'   ? '' :
-                ai_stats.trend === 'down' ? '' : ''
-              }`} style={{
-                background: ai_stats.trend === 'up'   ? '#f0fdf4' :
-                            ai_stats.trend === 'down' ? '#fef2f2' : '#f7f7f5',
-                color:      ai_stats.trend === 'up'   ? '#16a34a' :
-                            ai_stats.trend === 'down' ? '#dc2626' : '#888888',
-                border: `1px solid ${
-                  ai_stats.trend === 'up'   ? '#bbf7d0' :
-                  ai_stats.trend === 'down' ? '#fecaca' : '#e8e8e8'
-                }`,
+              <p className="text-sm font-normal mb-0.5" style={{ color: '#888888' }}>/100</p>
+              <span className="mb-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-md" style={{
+                background: aiScore >= 70 ? '#f0fdf4' : aiScore >= 40 ? '#e8edfb' : '#fefce8',
+                color:      aiScore >= 70 ? '#16a34a' : aiScore >= 40 ? '#2d5be3' : '#ca8a04',
               }}>
-                {ai_stats.trend === 'up' ? '+' : ''}{ai_stats.change_percent ?? 0}%
+                {scoreLabel}
               </span>
             </div>
-            <p className="text-4xl font-bold tabular-nums" style={{ color: '#2d5be3' }}>
-              {(ai_stats.total ?? 0).toLocaleString()}
-              <span className="text-sm font-normal ml-1.5" style={{ color: '#888888' }}>回 / 7日</span>
+            {/* スコアバー */}
+            <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: '#e8e8e8' }}>
+              <div
+                className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+                style={{
+                  width: `${aiScore}%`,
+                  background: aiScore >= 70 ? '#16a34a' : aiScore >= 40 ? '#2d5be3' : '#ca8a04',
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-[10px]" style={{ color: '#bbbbbb' }}>
+                接触密度 {(dailyInteractions).toFixed(1)}回/日
+              </p>
+              <p className="text-[10px]" style={{ color: '#bbbbbb' }}>
+                累計 {interactions}回
+              </p>
+            </div>
+            <p className="text-[10px] mt-2" style={{ color: '#bbbbbb' }}>
+              接触量 × 認知状態から算出
             </p>
           </div>
 
-          {/* AI認知ステータス */}
+          {/* ② AI認知ステータス */}
           <div className="relative rounded-2xl p-6 overflow-hidden transition-all hover:border-[#d0d0d0]"
             style={{ background: '#ffffff', border: '1px solid #e8e8e8' }}>
             <div className="flex items-center gap-2 mb-4">
@@ -421,24 +445,32 @@ function DashboardContent() {
         {/* ── KPI 下段：サブ2枚（小） ─────────────────────────── */}
         <div className="grid grid-cols-2 gap-4">
 
-          {/* Pages */}
-          <div className="rounded-2xl p-5 transition-all hover:border-[#d0d0d0]" style={{ background: '#ffffff', border: '1px solid #e8e8e8' }}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#888888' }}>認知ページ</p>
-            <p className="text-2xl font-bold tabular-nums" style={{ color: '#111111' }}>
-              {(ai_stats.recognized_pages ?? 0).toLocaleString()}
-              <span className="text-xs font-normal ml-1" style={{ color: '#888888' }}>ページ</span>
+          {/* ③ AIインタラクション数 */}
+          <div className="rounded-2xl p-5 transition-all hover:border-[#d0d0d0]"
+            style={{ background: '#ffffff', border: '1px solid #e8e8e8' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#888888' }}>
+              AIインタラクション数
             </p>
-            <p className="text-xs mt-2" style={{ color: '#bbbbbb' }}>AI認知ページ数</p>
+            <p className="text-2xl font-bold tabular-nums" style={{ color: '#111111' }}>
+              {(interactions).toLocaleString()}
+              <span className="text-xs font-normal ml-1" style={{ color: '#888888' }}>回</span>
+            </p>
+            <p className="text-xs mt-2" style={{ color: '#bbbbbb' }}>過去7日間（is_human=false 全合算）</p>
           </div>
 
-          {/* Humans */}
-          <div className="rounded-2xl p-5 transition-all hover:border-[#d0d0d0]" style={{ background: '#ffffff', border: '1px solid #e8e8e8' }}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#888888' }}>人間訪問</p>
-            <p className="text-2xl font-bold tabular-nums" style={{ color: '#111111' }}>
-              {(ai_stats.human_total ?? 0).toLocaleString()}
-              <span className="text-xs font-normal ml-1" style={{ color: '#888888' }}>人</span>
+          {/* ④ なりすまし検知 */}
+          <div className="rounded-2xl p-5 transition-all hover:border-[#d0d0d0]"
+            style={{ background: '#ffffff', border: '1px solid #e8e8e8' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#888888' }}>
+              なりすまし検知
             </p>
-            <p className="text-xs mt-2" style={{ color: '#bbbbbb' }}>人間訪問（過去7日間）</p>
+            <p className="text-2xl font-bold tabular-nums" style={{
+              color: spoofCount > 0 ? '#ca8a04' : '#16a34a',
+            }}>
+              {spoofCount.toLocaleString()}
+              <span className="text-xs font-normal ml-1" style={{ color: '#888888' }}>件</span>
+            </p>
+            <p className="text-xs mt-2" style={{ color: '#bbbbbb' }}>spoofed-bot 7日間累計</p>
           </div>
 
         </div>
