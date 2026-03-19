@@ -13,7 +13,11 @@ export default function SearchConsolePanel({ siteId }) {
   const fetchData = useCallback(async (force = false) => {
     try {
       const res = await fetch(`/api/search-console/fetch?siteId=${siteId}${force ? '&force=true' : ''}`);
-      if (!res.ok) throw new Error('Fetch failed');
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        const msg = json.error || json.message || 'Fetch failed';
+        throw new Error(msg);
+      }
       const json = await res.json();
       setData(json);
       setError(null);
