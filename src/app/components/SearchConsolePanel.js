@@ -72,37 +72,30 @@ export default function SearchConsolePanel({ siteId }) {
 
   if (!status?.connected) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-[#2a2f57] bg-gradient-to-br from-[#0f1229] to-[#1a1e47] p-6">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-blue-500/5 blur-3xl" />
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e2451] text-xl">📊</div>
-            <div>
-              <h3 className="font-semibold text-white">Search Console 連携</h3>
-              <p className="text-xs text-gray-400">Googleが保証するデータでAI参照を分析</p>
+      <div className="rounded-2xl p-6" style={{ background: '#ffffff', border: '1px solid #e8e8e8' }}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-xl shrink-0">📊</span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold" style={{ color: '#111111' }}>ゼロクリック検出</p>
+              <p className="text-xs mt-0.5" style={{ color: '#888888' }}>
+                Search Consoleを連携するとAIによるゼロクリック現象を検出できます
+              </p>
             </div>
           </div>
-          <div className="mb-5 rounded-xl bg-[#1e2451]/60 p-4 text-sm text-gray-300 leading-relaxed">
-            <p className="mb-2 font-medium text-blue-300">✦ 連携するとわかること</p>
-            <ul className="space-y-1 text-gray-400">
-              <li>• ゼロクリック現象の検出（AIが答えを生成しているサイン）</li>
-              <li>• 表示回数 vs CTRの乖離分析</li>
-              <li>• ブランドクエリの増加傾向（AIが紹介した証拠）</li>
-              <li>• AIに刺さっているページTOP10</li>
-            </ul>
-          </div>
-          <a href={`/api/auth/google?siteId=${siteId}`}
-            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:from-blue-400 hover:to-blue-500"
+          <a
+            href={`/api/auth/google?siteId=${siteId}`}
+            className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+            style={{ background: '#2d5be3' }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#fff"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff"/>
             </svg>
-            Googleアカウントで連携する
+            連携する
           </a>
-          <p className="mt-2 text-center text-xs text-gray-500">Search Console の読み取り権限のみ取得します</p>
         </div>
       </div>
     );
